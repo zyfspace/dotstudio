@@ -36,6 +36,7 @@ export interface Project {
   v: number;
   due: string;
   desc: string;
+  billingType?: string;
   n: string;
   plan: PlanItem[];
 }

@@ -118,6 +118,7 @@ export default function DashboardPage() {
   const [newProjectData, setNewProjectData] = useState({
     name: '',
     v: '',
+    billingType: 'One-time',
     due: '',
     desc: '',
     cn: '',
@@ -595,6 +596,7 @@ export default function DashboardPage() {
     setNewProjectData({
       name: '',
       v: '',
+      billingType: 'One-time',
       due: '',
       desc: '',
       cn: firstClient ? firstClient.name : '',
@@ -686,6 +688,7 @@ export default function DashboardPage() {
       name: newProjectData.name.trim(),
       c: c ? c.id : 0,
       v: val,
+      billingType: newProjectData.billingType || 'One-time',
       due: newProjectData.due,
       desc: newProjectData.desc,
       n: '',
@@ -782,6 +785,7 @@ export default function DashboardPage() {
       name: q.title,
       c: c ? c.id : 0,
       v: tot,
+      billingType: q.items[0]?.type || 'One-time',
       due: '',
       desc: q.items.map((l) => l.d).join('\n'),
       n: `From ${q.no}`,
@@ -1241,22 +1245,39 @@ export default function DashboardPage() {
                       />
                     </div>
                     <div className="f">
-                      <label htmlFor="nd">Deadline</label>
-                      <DatePicker
-                        id="nd"
-                        value={newProjectData.due}
-                        onChange={(val) =>
-                          setNewProjectData((prev) => ({ ...prev, due: val }))
+                      <label htmlFor="nbt">Jenis Biaya</label>
+                      <select
+                        id="nbt"
+                        className="in"
+                        value={newProjectData.billingType || 'One-time'}
+                        onChange={(e) =>
+                          setNewProjectData((prev) => ({ ...prev, billingType: e.target.value }))
                         }
-                        placeholder="Select deadline"
-                      />
+                      >
+                        <option value="One-time">One-time</option>
+                        <option value="Bulanan">Bulanan (Monthly)</option>
+                        <option value="Per Project">Per Project</option>
+                        <option value="Retainer">Retainer</option>
+                        <option value="Hourly">Hourly</option>
+                      </select>
                     </div>
+                  </div>
+                  <div className="f">
+                    <label htmlFor="nd">Deadline</label>
+                    <DatePicker
+                      id="nd"
+                      value={newProjectData.due}
+                      onChange={(val) =>
+                        setNewProjectData((prev) => ({ ...prev, due: val }))
+                      }
+                      placeholder="Select deadline"
+                    />
                   </div>
                   <div className="f" style={{ margin: 0 }}>
                     <label htmlFor="ne">Scope / description</label>
                     <AutoTextarea
                       id="ne"
-                      placeholder="Deliverables, links, what is included…"
+                      placeholder="Item pekerjaan / deliverables (1 baris = 1 poin lingkup)..."
                       value={newProjectData.desc}
                       onChange={(e) =>
                         setNewProjectData((prev) => ({ ...prev, desc: e.target.value }))
@@ -1618,7 +1639,24 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Section: Rincian Biaya */}
+                      {/* Section 1: Ruang Lingkup Pekerjaan (Scope of Work) */}
+                      <div className="docx-sec-title">Ruang Lingkup Pekerjaan (Scope of Work)</div>
+                      <ol className="docx-list">
+                        {(() => {
+                          const rawLines = newProjectData.desc
+                            ? newProjectData.desc
+                                .split('\n')
+                                .map((s) => s.trim().replace(/^[-*•\d.]+\s*/, ''))
+                                .filter(Boolean)
+                            : [];
+                          const scopeItems = rawLines.length > 0 ? rawLines : [newProjectData.name || 'Lingkup pekerjaan sesuai kesepakatan'];
+                          return scopeItems.map((sc, idx) => (
+                            <li key={idx}>{sc}</li>
+                          ));
+                        })()}
+                      </ol>
+
+                      {/* Section 2: Rincian Biaya */}
                       <div className="docx-sec-title bold">Rincian Biaya</div>
                       <table className="docx-cost-table">
                         <thead>
@@ -1629,22 +1667,13 @@ export default function DashboardPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {newProjectData.plan.map((r, idx) => {
-                            const totalVal = +newProjectData.v || 0;
-                            const itemAmount = Math.round((totalVal * (+r.pct || 0)) / 100);
-                            const isDp = r.l?.toLowerCase().includes('dp') || +r.pct >= 50;
-                            const itemType = +r.pct === 100 ? 'Full-payment' : isDp ? 'Down Payment' : 'Termin';
-
-                            return (
-                              <tr key={idx}>
-                                <td>{`${r.l || `Termin ${idx + 1}`} (${r.pct || 0}%) : ${newProjectData.name || 'Project Deliverable'}`}</td>
-                                <td className="c">{itemType}</td>
-                                <td className="c" style={{ fontWeight: 700 }}>
-                                  Rp{itemAmount.toLocaleString('id-ID')}
-                                </td>
-                              </tr>
-                            );
-                          })}
+                          <tr>
+                            <td>{newProjectData.name || 'Layanan Project'}</td>
+                            <td className="c">{newProjectData.billingType || 'One-time'}</td>
+                            <td className="c" style={{ fontWeight: 700 }}>
+                              Rp{(+newProjectData.v || 0).toLocaleString('id-ID')}
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
 
@@ -1687,11 +1716,6 @@ export default function DashboardPage() {
                         <li>
                           Jatuh tempo pembayaran pada {newProjectData.plan[0]?.due ? dt(newProjectData.plan[0].due) : (newProjectData.due ? dt(newProjectData.due) : 'sesuai kesepakatan')}.
                         </li>
-                        {newProjectData.desc && (
-                          <li>
-                            Lingkup: {newProjectData.desc}
-                          </li>
-                        )}
                       </ol>
                     </div>
 
@@ -2517,7 +2541,24 @@ export default function DashboardPage() {
                           </div>
                         </div>
 
-                        {/* Section: Rincian Biaya */}
+                        {/* Section 1: Ruang Lingkup Pekerjaan (Scope of Work) */}
+                        <div className="docx-sec-title">Ruang Lingkup Pekerjaan (Scope of Work)</div>
+                        <ol className="docx-list">
+                          {(() => {
+                            const rawLines = p.desc
+                              ? p.desc
+                                  .split('\n')
+                                  .map((s) => s.trim().replace(/^[-*•\d.]+\s*/, ''))
+                                  .filter(Boolean)
+                              : [];
+                            const scopeItems = rawLines.length > 0 ? rawLines : [p.name || 'Lingkup pekerjaan sesuai kesepakatan'];
+                            return scopeItems.map((sc, idx) => (
+                              <li key={idx}>{sc}</li>
+                            ));
+                          })()}
+                        </ol>
+
+                        {/* Section 2: Rincian Biaya */}
                         <div className="docx-sec-title bold">Rincian Biaya</div>
                         <table className="docx-cost-table">
                           <thead>
@@ -2529,16 +2570,10 @@ export default function DashboardPage() {
                           </thead>
                           <tbody>
                             <tr>
-                              <td>{`${i.l} (${i.pct}%) : ${p.name}`}</td>
-                              <td className="c">
-                                {i.pct === 100
-                                  ? 'Full-payment'
-                                  : i.l.toLowerCase().includes('dp') || i.pct >= 50
-                                  ? 'Down Payment'
-                                  : 'Termin'}
-                              </td>
+                              <td>{p.name}</td>
+                              <td className="c">{p.billingType || 'One-time'}</td>
                               <td className="c" style={{ fontWeight: 700 }}>
-                                Rp{i.a.toLocaleString('id-ID')}
+                                Rp{p.v.toLocaleString('id-ID')}
                               </td>
                             </tr>
                           </tbody>
@@ -4053,22 +4088,46 @@ export default function DashboardPage() {
                         />
                       </div>
                       <div className="f">
-                        <label htmlFor="ed">Deadline</label>
-                        <DatePicker
-                          id="ed"
-                          value={activeProject.due}
-                          onChange={(val) => {
+                        <label htmlFor="ebt">Jenis Biaya</label>
+                        <select
+                          id="ebt"
+                          className="in"
+                          value={activeProject.billingType || 'One-time'}
+                          onChange={(e) => {
+                            const val = e.target.value;
                             setProjects((prev) =>
                               prev.map((p) =>
                                 p.id === activeProject.id
-                                ? { ...p, due: val }
-                                : p
+                                  ? { ...p, billingType: val }
+                                  : p
                               )
                             );
                           }}
-                          placeholder="Select deadline"
-                        />
+                        >
+                          <option value="One-time">One-time</option>
+                          <option value="Bulanan">Bulanan (Monthly)</option>
+                          <option value="Per Project">Per Project</option>
+                          <option value="Retainer">Retainer</option>
+                          <option value="Hourly">Hourly</option>
+                        </select>
                       </div>
+                    </div>
+                    <div className="f">
+                      <label htmlFor="ed">Deadline</label>
+                      <DatePicker
+                        id="ed"
+                        value={activeProject.due}
+                        onChange={(val) => {
+                          setProjects((prev) =>
+                            prev.map((p) =>
+                              p.id === activeProject.id
+                              ? { ...p, due: val }
+                              : p
+                            )
+                          );
+                        }}
+                        placeholder="Select deadline"
+                      />
                     </div>
                     <div className="f" style={{ margin: 0 }}>
                       <label htmlFor="es">Scope</label>
