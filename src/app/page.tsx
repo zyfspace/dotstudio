@@ -2258,9 +2258,8 @@ export default function DashboardPage() {
                               });
                             }}
                           />
-                          <input
+                          <select
                             className="in"
-                            placeholder="Jenis (One-time, Bulanan, etc.)"
                             value={r.type || 'One-time'}
                             onChange={(e) => {
                               const val = e.target.value;
@@ -2270,7 +2269,13 @@ export default function DashboardPage() {
                                 return { ...prev, items: next };
                               });
                             }}
-                          />
+                          >
+                            <option value="One-time">One-time</option>
+                            <option value="Bulanan">Bulanan (Monthly)</option>
+                            <option value="Per Project">Per Project</option>
+                            <option value="Retainer">Retainer</option>
+                            <option value="Hourly">Hourly</option>
+                          </select>
                           <input
                             className="in"
                             type="number"
