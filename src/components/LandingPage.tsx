@@ -632,9 +632,9 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
       <footer className="lp-footer">
         <div className="lp-wrap">
           <span className="lp-footer-copy">
-            © {new Date().getFullYear()} <DotStudioPaperLogo height={15} />
+            © {new Date().getFullYear()} — <DotStudioPaperLogo height={15} />
           </span>
-          <span>Built for freelancers.</span>
+          <span>Built by freelancer for freelancer</span>
         </div>
       </footer>
     </div>
