@@ -2640,3 +2640,122 @@ input[type="file"] {
     print-color-adjust: exact !important;
   }
 }
+
+/* Accordion Groups for Invoices & Quotations */
+.accordion-group {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  margin-bottom: 14px;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.accordion-group:hover {
+  border-color: color-mix(in srgb, var(--fg) 22%, var(--bg));
+}
+
+.accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 18px;
+  cursor: pointer;
+  background: var(--soft);
+  user-select: none;
+  transition: background 0.15s ease;
+  gap: 12px;
+}
+
+.accordion-header:hover {
+  background: color-mix(in srgb, var(--fg) 6%, var(--bg));
+}
+
+.accordion-title-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.accordion-company-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mut);
+  flex-shrink: 0;
+}
+
+.accordion-company-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.accordion-count-badge {
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--mut);
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.accordion-meta-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.accordion-total-amount {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.accordion-chevron {
+  transition: transform 0.2s ease;
+  color: var(--mut);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.accordion-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.accordion-body {
+  border-top: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+.accordion-body table {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  width: 100%;
+}
+
+.accordion-body th {
+  background: var(--bg);
+  font-size: 11.5px;
+  padding: 9px 18px;
+}
+
+.accordion-body td {
+  padding: 12px 18px;
+}
+

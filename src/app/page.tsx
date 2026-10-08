@@ -99,6 +99,8 @@ export default function DashboardPage() {
   const [sortKey, setSortKey] = useState<'name' | 'due' | 'pg' | 'v'>('due');
   const [sortDir, setSortDir] = useState<number>(1);
   const [docState, setDocState] = useState<DocState | null>(null);
+  const [collapsedInvoiceGroups, setCollapsedInvoiceGroups] = useState<Record<string, boolean>>({});
+  const [collapsedQuoteGroups, setCollapsedQuoteGroups] = useState<Record<string, boolean>>({});
 
   // Drawers
   const [activeProjectDrawerId, setActiveProjectDrawerId] = useState<number | null>(null);
@@ -666,12 +668,18 @@ export default function DashboardPage() {
     const c = ensureClient(newProjectData);
     const id = Date.now();
     let rem = val;
+    let currentInvCount = allPayments.filter((x) => x.i.inv).length;
     const plan: PlanItem[] = newProjectData.plan.map((r, i) => {
       const a =
         i === newProjectData.plan.length - 1
           ? rem
           : Math.round((val * +r.pct) / 100);
       rem -= a;
+      currentInvCount += 1;
+      const mm = String(new Date().getMonth() + 1).padStart(2, '0');
+      const dd = String(new Date().getDate()).padStart(2, '0');
+      const prefix = getBrandInitials(studioProfile.studioName);
+      const invNo = `INV/${prefix}/${mm}/${dd}/${pad(currentInvCount)}`;
       return {
         id: id * 10 + i,
         l: r.l || `Payment ${i + 1}`,
@@ -681,7 +689,7 @@ export default function DashboardPage() {
         paid: false,
         pd: '',
         proof: null,
-        inv: null,
+        inv: { no: invNo, date: today() },
       };
     });
 
@@ -3507,7 +3515,7 @@ export default function DashboardPage() {
                       const c = getClient(x.p.c);
                       const invFormattedNo = formatInvoiceNo(x.i.inv.no, x.i.inv.date);
                       return (
-                        (invFormattedNo + x.p.name + c.name)
+                        (invFormattedNo + x.p.name + c.name + (c.co || ''))
                           .toLowerCase()
                           .indexOf(q) > -1
                       );
@@ -3519,152 +3527,200 @@ export default function DashboardPage() {
                   if (!invoicesList.length) {
                     return (
                       <div className="empty">
-                        No invoices yet. Create one from a project’s payment schedule.
+                        No invoices found.
                       </div>
                     );
                   }
 
+                  // Group by Company / Business Name
+                  const grouped: { company: string; items: typeof invoicesList }[] = [];
+                  const companyMap = new Map<string, typeof invoicesList>();
+
+                  invoicesList.forEach((item) => {
+                    const c = getClient(item.p.c);
+                    const comp = (c.co && c.co.trim()) ? c.co.trim() : (c.name && c.name.trim() ? `${c.name} (Individual)` : 'General / Unassigned');
+                    if (!companyMap.has(comp)) {
+                      companyMap.set(comp, []);
+                    }
+                    companyMap.get(comp)!.push(item);
+                  });
+
+                  companyMap.forEach((items, company) => {
+                    grouped.push({ company, items });
+                  });
+
                   return (
-                    <div className="tw">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>No.</th>
-                            <th>Date</th>
-                            <th>Project</th>
-                            <th>Client</th>
-                            <th>Status</th>
-                            <th className="r">Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {invoicesList.map((x) => {
-                            const c = getClient(x.p.c);
-                            const overdue = isOverdue(x.i.due, x.i.paid);
-                            const statusType = x.i.paid
-                              ? 'Finished'
-                              : overdue
-                              ? 'Progress'
-                              : 'Pending';
-                            const statusLabel = x.i.paid
-                              ? 'Paid'
-                              : overdue
-                              ? 'Overdue'
-                              : 'Unpaid';
-                            return (
-                              <tr
-                                key={x.i.id}
-                                onClick={() =>
-                                  openDoc('inv', x.p.id, x.i.id)
-                                }
-                              >
-                                <td>{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</td>
-                                <td className="mut">{dt(x.i.inv!.date)}</td>
-                                <td>
-                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                                    <span>{x.p.name}</span>
-                                    {x.i.l && (
-                                      <>
-                                        <span className="mut" style={{ opacity: 0.45, userSelect: 'none' }}>·</span>
-                                        <span className="mut" style={{ fontSize: '13px' }}>{x.i.l}</span>
-                                      </>
-                                    )}
-                                  </div>
-                                </td>
-                                <td>{c.name}</td>
-                                <td>
-                                  {x.i.paid ? (
-                                    <span
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        color: '#10b981',
-                                        fontSize: '13px',
-                                        fontWeight: 500,
-                                      }}
-                                    >
-                                      <span
-                                        style={{
-                                          width: '15px',
-                                          height: '15px',
-                                          borderRadius: '50%',
-                                          background: 'rgba(16, 185, 129, 0.15)',
-                                          border: '1px solid rgba(16, 185, 129, 0.4)',
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          flexShrink: 0,
-                                        }}
-                                      >
-                                        <svg
-                                          width="9"
-                                          height="9"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="3"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
+                    <div>
+                      {grouped.map(({ company, items }) => {
+                        const isCollapsed = !!collapsedInvoiceGroups[company];
+                        const totalGroupAmount = items.reduce((acc, curr) => acc + curr.i.a, 0);
+
+                        return (
+                          <div key={company} className="accordion-group">
+                            <div
+                              className="accordion-header"
+                              onClick={() =>
+                                setCollapsedInvoiceGroups((prev) => ({
+                                  ...prev,
+                                  [company]: !prev[company],
+                                }))
+                              }
+                            >
+                              <div className="accordion-title-box">
+                                <div className="accordion-company-icon">
+                                  <Icon name="bld" size={15} />
+                                </div>
+                                <span className="accordion-company-name">{company}</span>
+                                <span className="accordion-count-badge">
+                                  {items.length} {items.length === 1 ? 'invoice' : 'invoices'}
+                                </span>
+                              </div>
+                              <div className="accordion-meta-box">
+                                <span className="accordion-total-amount">
+                                  {rp(totalGroupAmount)}
+                                </span>
+                                <span className={`accordion-chevron ${isCollapsed ? '' : 'expanded'}`}>
+                                  <Icon name="chevron" size={15} />
+                                </span>
+                              </div>
+                            </div>
+
+                            {!isCollapsed && (
+                              <div className="accordion-body">
+                                <table>
+                                  <thead>
+                                    <tr>
+                                      <th>No.</th>
+                                      <th>Date</th>
+                                      <th>Project</th>
+                                      <th>Client</th>
+                                      <th>Status</th>
+                                      <th className="r">Amount</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {items.map((x) => {
+                                      const c = getClient(x.p.c);
+                                      const overdue = isOverdue(x.i.due, x.i.paid);
+                                      return (
+                                        <tr
+                                          key={x.i.id}
+                                          onClick={() =>
+                                            openDoc('inv', x.p.id, x.i.id)
+                                          }
                                         >
-                                          <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                      </span>
-                                      Paid
-                                    </span>
-                                  ) : overdue ? (
-                                    <span
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        color: '#ef4444',
-                                        fontSize: '13px',
-                                      }}
-                                    >
-                                      <span
-                                        style={{
-                                          width: '7px',
-                                          height: '7px',
-                                          borderRadius: '50%',
-                                          background: '#ef4444',
-                                          display: 'inline-block',
-                                          flexShrink: 0,
-                                        }}
-                                      />
-                                      Overdue
-                                    </span>
-                                  ) : (
-                                    <span
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        color: 'var(--mut)',
-                                        fontSize: '13px',
-                                      }}
-                                    >
-                                      <span
-                                        style={{
-                                          width: '7px',
-                                          height: '7px',
-                                          borderRadius: '50%',
-                                          border: '1.5px solid var(--mut)',
-                                          background: 'transparent',
-                                          display: 'inline-block',
-                                          flexShrink: 0,
-                                        }}
-                                      />
-                                      Unpaid
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="r">{rp(x.i.a)}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                                          <td>{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</td>
+                                          <td className="mut">{dt(x.i.inv!.date)}</td>
+                                          <td>
+                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                              <span>{x.p.name}</span>
+                                              {x.i.l && (
+                                                <>
+                                                  <span className="mut" style={{ opacity: 0.45, userSelect: 'none' }}>·</span>
+                                                  <span className="mut" style={{ fontSize: '13px' }}>{x.i.l}</span>
+                                                </>
+                                              )}
+                                            </div>
+                                          </td>
+                                          <td>{c.name}</td>
+                                          <td>
+                                            {x.i.paid ? (
+                                              <span
+                                                style={{
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  gap: '6px',
+                                                  color: '#10b981',
+                                                  fontSize: '13px',
+                                                  fontWeight: 500,
+                                                }}
+                                              >
+                                                <span
+                                                  style={{
+                                                    width: '15px',
+                                                    height: '15px',
+                                                    borderRadius: '50%',
+                                                    background: 'rgba(16, 185, 129, 0.15)',
+                                                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    flexShrink: 0,
+                                                  }}
+                                                >
+                                                  <svg
+                                                    width="9"
+                                                    height="9"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="3"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                  >
+                                                    <polyline points="20 6 9 17 4 12" />
+                                                  </svg>
+                                                </span>
+                                                Paid
+                                              </span>
+                                            ) : overdue ? (
+                                              <span
+                                                style={{
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  gap: '6px',
+                                                  color: '#ef4444',
+                                                  fontSize: '13px',
+                                                }}
+                                              >
+                                                <span
+                                                  style={{
+                                                    width: '7px',
+                                                    height: '7px',
+                                                    borderRadius: '50%',
+                                                    background: '#ef4444',
+                                                    display: 'inline-block',
+                                                    flexShrink: 0,
+                                                  }}
+                                                />
+                                                Overdue
+                                              </span>
+                                            ) : (
+                                              <span
+                                                style={{
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  gap: '6px',
+                                                  color: 'var(--mut)',
+                                                  fontSize: '13px',
+                                                }}
+                                              >
+                                                <span
+                                                  style={{
+                                                    width: '7px',
+                                                    height: '7px',
+                                                    borderRadius: '50%',
+                                                    border: '1.5px solid var(--mut)',
+                                                    background: 'transparent',
+                                                    display: 'inline-block',
+                                                    flexShrink: 0,
+                                                  }}
+                                                />
+                                                Unpaid
+                                              </span>
+                                            )}
+                                          </td>
+                                          <td className="r">{rp(x.i.a)}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })()}
@@ -3680,7 +3736,7 @@ export default function DashboardPage() {
                     .filter((x) => {
                       const qFormattedNo = formatQuoteNo(x.no, x.date, x.senderName);
                       return (
-                        (qFormattedNo + x.title + x.cn).toLowerCase().indexOf(q) > -1
+                        (qFormattedNo + x.title + x.cn + (x.co || '')).toLowerCase().indexOf(q) > -1
                       );
                     })
                     .sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -3695,47 +3751,107 @@ export default function DashboardPage() {
                     Accepted: 'Finished',
                   };
 
+                  // Group by Company / Business Name
+                  const grouped: { company: string; items: typeof filtered }[] = [];
+                  const companyMap = new Map<string, typeof filtered>();
+
+                  filtered.forEach((item) => {
+                    const comp = (item.co && item.co.trim()) ? item.co.trim() : (item.cn && item.cn.trim() ? `${item.cn} (Individual)` : 'General / Unassigned');
+                    if (!companyMap.has(comp)) {
+                      companyMap.set(comp, []);
+                    }
+                    companyMap.get(comp)!.push(item);
+                  });
+
+                  companyMap.forEach((items, company) => {
+                    grouped.push({ company, items });
+                  });
+
                   return (
-                    <div className="tw">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>No.</th>
-                            <th>Date</th>
-                            <th>Client</th>
-                            <th>Title</th>
-                            <th>Valid until</th>
-                            <th>Status</th>
-                            <th className="r">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filtered.map((x) => {
-                            const totalVal = x.items.reduce(
-                              (acc, curr) => acc + curr.q * curr.p,
-                              0
-                            );
-                            return (
-                              <tr
-                                key={x.id}
-                                onClick={() => openDoc('quo', x.id)}
-                              >
-                                <td>{formatQuoteNo(x.no, x.date, x.senderName)}</td>
-                                <td className="mut">{dt(x.date)}</td>
-                                <td>{x.cn}</td>
-                                <td>{x.title}</td>
-                                <td className="mut">{dt(x.valid)}</td>
-                                <td>
-                                  <span className={`st ${QS[x.s]}`}>
-                                    {x.s}
-                                  </span>
-                                </td>
-                                <td className="r">{rp(totalVal)}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                    <div>
+                      {grouped.map(({ company, items }) => {
+                        const isCollapsed = !!collapsedQuoteGroups[company];
+                        const totalGroupAmount = items.reduce((acc, curr) => {
+                          const val = curr.items.reduce((a, it) => a + (it.q * it.p), 0);
+                          return acc + val;
+                        }, 0);
+
+                        return (
+                          <div key={company} className="accordion-group">
+                            <div
+                              className="accordion-header"
+                              onClick={() =>
+                                setCollapsedQuoteGroups((prev) => ({
+                                  ...prev,
+                                  [company]: !prev[company],
+                                }))
+                              }
+                            >
+                              <div className="accordion-title-box">
+                                <div className="accordion-company-icon">
+                                  <Icon name="bld" size={15} />
+                                </div>
+                                <span className="accordion-company-name">{company}</span>
+                                <span className="accordion-count-badge">
+                                  {items.length} {items.length === 1 ? 'quotation' : 'quotations'}
+                                </span>
+                              </div>
+                              <div className="accordion-meta-box">
+                                <span className="accordion-total-amount">
+                                  {rp(totalGroupAmount)}
+                                </span>
+                                <span className={`accordion-chevron ${isCollapsed ? '' : 'expanded'}`}>
+                                  <Icon name="chevron" size={15} />
+                                </span>
+                              </div>
+                            </div>
+
+                            {!isCollapsed && (
+                              <div className="accordion-body">
+                                <table>
+                                  <thead>
+                                    <tr>
+                                      <th>No.</th>
+                                      <th>Date</th>
+                                      <th>Client</th>
+                                      <th>Title</th>
+                                      <th>Valid until</th>
+                                      <th>Status</th>
+                                      <th className="r">Total</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {items.map((x) => {
+                                      const totalVal = x.items.reduce(
+                                        (acc, curr) => acc + curr.q * curr.p,
+                                        0
+                                      );
+                                      return (
+                                        <tr
+                                          key={x.id}
+                                          onClick={() => openDoc('quo', x.id)}
+                                        >
+                                          <td>{formatQuoteNo(x.no, x.date, x.senderName)}</td>
+                                          <td className="mut">{dt(x.date)}</td>
+                                          <td>{x.cn}</td>
+                                          <td>{x.title}</td>
+                                          <td className="mut">{dt(x.valid)}</td>
+                                          <td>
+                                            <span className={`st ${QS[x.s]}`}>
+                                              {x.s}
+                                            </span>
+                                          </td>
+                                          <td className="r">{rp(totalVal)}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })()}
