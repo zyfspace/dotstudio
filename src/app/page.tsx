@@ -4142,241 +4142,90 @@ export default function DashboardPage() {
                     })}
                   </div>
 
-                  {/* Project Details Editor */}
+                  {/* Project Details (Read-only) */}
                   <div className="sec">
                     <small>Details</small>
-                    <div className="f">
-                      <label htmlFor="en">Project name</label>
-                      <input
-                        id="en"
-                        type="text"
-                        value={activeProject.name}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setProjects((prev) =>
-                            prev.map((p) =>
-                              p.id === activeProject.id
-                                ? { ...p, name: val }
-                                : p
-                            )
-                          );
-                        }}
-                      />
-                    </div>
-                    <div className="two">
-                      <div className="f">
-                        <label htmlFor="ev">Value (Rp)</label>
-                        <input
-                          id="ev"
-                          type="number"
-                          min="0"
-                          value={activeProject.v}
-                          onChange={(e) => {
-                            const val = +e.target.value || 0;
-                            setProjects((prev) =>
-                              prev.map((p) => {
-                                if (p.id !== activeProject.id) return p;
-                                return {
-                                  ...p,
-                                  v: val,
-                                  plan: p.plan.map((item) => {
-                                    if (!item.paid) {
-                                      return {
-                                        ...item,
-                                        a: Math.round((val * item.pct) / 100),
-                                      };
-                                    }
-                                    return item;
-                                  }),
-                                };
-                              })
-                            );
-                          }}
-                        />
-                      </div>
-                      <div className="f">
-                        <label htmlFor="ebt">Jenis Biaya</label>
-                        <select
-                          id="ebt"
-                          className="in"
-                          value={activeProject.billingType || 'One-time'}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setProjects((prev) =>
-                              prev.map((p) =>
-                                p.id === activeProject.id
-                                  ? { ...p, billingType: val }
-                                  : p
-                              )
-                            );
-                          }}
-                        >
-                          <option value="One-time">One-time</option>
-                          <option value="Bulanan">Bulanan (Monthly)</option>
-                          <option value="Per Project">Per Project</option>
-                          <option value="Retainer">Retainer</option>
-                          <option value="Hourly">Hourly</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="f">
-                      <label htmlFor="ed">Deadline</label>
-                      <DatePicker
-                        id="ed"
-                        value={activeProject.due}
-                        onChange={(val) => {
-                          setProjects((prev) =>
-                            prev.map((p) =>
-                              p.id === activeProject.id
-                              ? { ...p, due: val }
-                              : p
-                            )
-                          );
-                        }}
-                        placeholder="Select deadline"
-                      />
-                    </div>
-                    <div className="f" style={{ margin: 0 }}>
-                      <label htmlFor="es">Scope</label>
-                      <AutoTextarea
-                        id="es"
-                        value={activeProject.desc}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setProjects((prev) =>
-                            prev.map((p) =>
-                              p.id === activeProject.id
-                                ? { ...p, desc: val }
-                                : p
-                            )
-                          );
-                        }}
-                      />
-                    </div>
-
-                    {/* Project Items in Drawer */}
-                    <div style={{ marginTop: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span className="mut" style={{ fontSize: '12px', fontWeight: 500 }}>Rincian Biaya (Items)</span>
-                        <button
-                          type="button"
-                          className="btn sm"
-                          onClick={() => {
-                            setProjects((prev) =>
-                              prev.map((p) => {
-                                if (p.id !== activeProject.id) return p;
-                                const currentItems = p.items || [{ d: p.name, type: p.billingType || 'One-time', p: p.v }];
-                                return {
-                                  ...p,
-                                  items: [...currentItems, { d: '', type: p.billingType || 'One-time', p: 0 }],
-                                };
-                              })
-                            );
-                          }}
-                        >
-                          <Icon name="plus" size={13} /> Add item
-                        </button>
-                      </div>
-                      {(activeProject.items && activeProject.items.length > 0 ? activeProject.items : [{ d: activeProject.name, type: activeProject.billingType || 'One-time', p: activeProject.v }]).map((it, idx) => (
-                        <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr 28px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
-                          <input
-                            className="in"
-                            style={{ height: '30px', fontSize: '12.5px', padding: '0 8px' }}
-                            placeholder="Nama item / layanan"
-                            value={it.d}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setProjects((prev) =>
-                                prev.map((p) => {
-                                  if (p.id !== activeProject.id) return p;
-                                  const base = p.items || [{ d: p.name, type: p.billingType || 'One-time', p: p.v }];
-                                  const nextItems = [...base];
-                                  nextItems[idx] = { ...nextItems[idx], d: val };
-                                  return { ...p, items: nextItems };
-                                })
-                              );
-                            }}
-                          />
-                          <select
-                            className="in"
-                            style={{ height: '30px', fontSize: '12px' }}
-                            value={it.type || 'One-time'}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setProjects((prev) =>
-                                prev.map((p) => {
-                                  if (p.id !== activeProject.id) return p;
-                                  const base = p.items || [{ d: p.name, type: p.billingType || 'One-time', p: p.v }];
-                                  const nextItems = [...base];
-                                  nextItems[idx] = { ...nextItems[idx], type: val };
-                                  return { ...p, items: nextItems };
-                                })
-                              );
-                            }}
-                          >
-                            <option value="One-time">One-time</option>
-                            <option value="Bulanan">Bulanan</option>
-                            <option value="Per Project">Per Project</option>
-                            <option value="Retainer">Retainer</option>
-                            <option value="Hourly">Hourly</option>
-                          </select>
-                          <input
-                            className="in"
-                            type="number"
-                            style={{ height: '30px', fontSize: '12.5px', padding: '0 8px' }}
-                            min="0"
-                            placeholder="0"
-                            value={it.p}
-                            onChange={(e) => {
-                              const val = +e.target.value || 0;
-                              setProjects((prev) =>
-                                prev.map((p) => {
-                                  if (p.id !== activeProject.id) return p;
-                                  const base = p.items || [{ d: p.name, type: p.billingType || 'One-time', p: p.v }];
-                                  const nextItems = [...base];
-                                  nextItems[idx] = { ...nextItems[idx], p: val };
-                                  const sumVal = nextItems.reduce((acc, curr) => acc + (+curr.p || 0), 0);
-                                  return {
-                                    ...p,
-                                    items: nextItems,
-                                    v: sumVal > 0 ? sumVal : p.v,
-                                    plan: p.plan.map((item) => {
-                                      if (!item.paid && sumVal > 0) {
-                                        return { ...item, a: Math.round((sumVal * item.pct) / 100) };
-                                      }
-                                      return item;
-                                    }),
-                                  };
-                                })
-                              );
-                            }}
-                          />
-                          <button
-                            type="button"
-                            className="ib"
-                            style={{ width: '28px', height: '28px' }}
-                            onClick={() => {
-                              setProjects((prev) =>
-                                prev.map((p) => {
-                                  if (p.id !== activeProject.id) return p;
-                                  const base = p.items || [{ d: p.name, type: p.billingType || 'One-time', p: p.v }];
-                                  const nextItems = base.filter((_, i) => i !== idx);
-                                  const fallback = nextItems.length ? nextItems : [{ d: p.name, type: p.billingType || 'One-time', p: p.v }];
-                                  const sumVal = fallback.reduce((acc, curr) => acc + (+curr.p || 0), 0);
-                                  return {
-                                    ...p,
-                                    items: fallback,
-                                    v: sumVal > 0 ? sumVal : p.v,
-                                  };
-                                })
-                              );
-                            }}
-                            aria-label="Remove item"
-                          >
-                            <Icon name="x" size={13} />
-                          </button>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '6px' }}>
+                      <div>
+                        <div className="mut" style={{ fontSize: '11.5px', marginBottom: '2px' }}>Project name</div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--fg)' }}>
+                          {activeProject.name}
                         </div>
-                      ))}
+                      </div>
+
+                      <div className="two" style={{ gap: '12px' }}>
+                        <div>
+                          <div className="mut" style={{ fontSize: '11.5px', marginBottom: '2px' }}>Value (Rp)</div>
+                          <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--fg)' }}>
+                            {rp(activeProject.v)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="mut" style={{ fontSize: '11.5px', marginBottom: '2px' }}>Jenis Biaya</div>
+                          <div style={{ fontSize: '13.5px', color: 'var(--fg)' }}>
+                            {activeProject.billingType || 'One-time'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="mut" style={{ fontSize: '11.5px', marginBottom: '2px' }}>Deadline</div>
+                        <div style={{ fontSize: '13px', color: 'var(--fg)' }}>
+                          {activeProject.due ? dt(activeProject.due) : '—'}
+                        </div>
+                      </div>
+
+                      {activeProject.desc && (
+                        <div>
+                          <div className="mut" style={{ fontSize: '11.5px', marginBottom: '4px' }}>Scope</div>
+                          <div
+                            style={{
+                              fontSize: '12.5px',
+                              lineHeight: '1.55',
+                              color: 'var(--fg)',
+                              whiteSpace: 'pre-wrap',
+                              background: 'var(--panel)',
+                              padding: '10px 12px',
+                              borderRadius: '6px',
+                              border: '1px solid var(--line)',
+                            }}
+                          >
+                            {activeProject.desc}
+                          </div>
+                        </div>
+                      )}
+
+                      {activeProject.items && activeProject.items.length > 0 && (
+                        <div>
+                          <div className="mut" style={{ fontSize: '11.5px', marginBottom: '6px' }}>Rincian Biaya (Items)</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {activeProject.items.map((it, idx) => (
+                              <div
+                                key={idx}
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  fontSize: '12.5px',
+                                  padding: '8px 10px',
+                                  background: 'var(--panel)',
+                                  borderRadius: '6px',
+                                  border: '1px solid var(--line)',
+                                }}
+                              >
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0, flex: 1, paddingRight: '10px' }}>
+                                  <span style={{ fontWeight: 500, color: 'var(--fg)' }}>{it.d || activeProject.name}</span>
+                                  {it.type && <span className="mut" style={{ fontSize: '11px' }}>{it.type}</span>}
+                                </div>
+                                <span style={{ fontWeight: 600, color: 'var(--fg)', whiteSpace: 'nowrap' }}>
+                                  {rp(+it.p || 0)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
