@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Client,
   Project,
@@ -36,6 +36,11 @@ import { Icon } from '@/components/Icons';
 import { IncomeChart, ChartMode } from '@/components/IncomeChart';
 import { AutoTextarea } from '@/components/AutoTextarea';
 import { DatePicker } from '@/components/DatePicker';
+import { DocumentWatermark } from '@/components/DocumentWatermark';
+import { LandingPage } from '@/components/LandingPage';
+import { AuthScreen } from '@/components/AuthScreen';
+import { DotStudioPaperLogo } from '@/components/Logo';
+import { AuthUser, getActiveSession, setAuthSession } from '@/lib/auth';
 import { uploadFiles } from '@/lib/uploadthing';
 
 const PRESETS: Record<string, [string, number][]> = {
@@ -67,6 +72,10 @@ const STATUS_LABELS: Record<ProjectStatus, string> = {
 
 export default function DashboardPage() {
   const [isMounted, setIsMounted] = useState(false);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [guestView, setGuestView] = useState<'landing' | 'auth'>('landing');
+  const [authInitialMode, setAuthInitialMode] = useState<'login' | 'signup'>('login');
+  const [authInitialEmail, setAuthInitialEmail] = useState<string>('');
   const [clients, setClients] = useState<Client[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [quotes, setQuotes] = useState<Quotation[]>([]);
@@ -154,9 +163,8 @@ export default function DashboardPage() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize data on mount and fetch from Supabase
-  useEffect(() => {
-    setIsMounted(true);
+  // Load and sync data from LocalStorage & Supabase
+  const loadData = useCallback(async () => {
     const data = loadStoredData();
     const profile = loadStudioProfile();
     setStudioProfile(profile);
@@ -167,56 +175,14 @@ export default function DashboardPage() {
     const mm = todayParts[1] || '10';
     const dd = todayParts[2] || '08';
 
-    // Normalize any legacy project plan invoice numbers & quote numbers
-    let invCounter = 0;
-    const normalizedProjects = data.projects.map((p) => ({
-      ...p,
-      plan: p.plan.map((item) => {
-        if (item.inv && item.inv.no) {
-          invCounter++;
-          if (!item.inv.no.startsWith('INV/')) {
-            const seqMatch = item.inv.no.match(/\d+$/);
-            const seq = seqMatch ? pad(seqMatch[0]) : pad(invCounter);
-            const invDate = item.inv.date || today();
-            const invParts = invDate.split('-');
-            const invMm = invParts[1] || mm;
-            const invDd = invParts[2] || dd;
-            return {
-              ...item,
-              inv: {
-                ...item.inv,
-                no: `INV/${prefix}/${invMm}/${invDd}/${seq}`,
-              },
-            };
-          }
-        }
-        return item;
-      }),
-    }));
+    if (data.clients.length > 0 || data.projects.length > 0 || data.quotes.length > 0) {
+      setClients(data.clients);
+      setProjects(data.projects);
+      setQuotes(data.quotes);
+    }
 
-    const normalizedQuotes = data.quotes.map((q, idx) => {
-      if (q.no && !q.no.startsWith('QT/')) {
-        const seqMatch = q.no.match(/\d+$/);
-        const seq = seqMatch ? pad(seqMatch[0]) : pad(idx + 1);
-        const qDate = q.date || today();
-        const qParts = qDate.split('-');
-        const qMm = qParts[1] || mm;
-        const qDd = qParts[2] || dd;
-        return {
-          ...q,
-          no: `QT/${prefix}/${qMm}/${qDd}/${seq}`,
-        };
-      }
-      return q;
-    });
-
-    setClients(data.clients);
-    setProjects(normalizedProjects);
-    setQuotes(normalizedQuotes);
-    saveStoredData({ clients: data.clients, projects: normalizedProjects, quotes: normalizedQuotes });
-
-    // Fetch from Supabase
-    fetchFromSupabase().then((remote) => {
+    try {
+      const remote = await fetchFromSupabase();
       if (remote) {
         let invSeq = 0;
         const normProjects = remote.projects.map((p) => ({
@@ -263,8 +229,26 @@ export default function DashboardPage() {
         setClients(remote.clients);
         setProjects(normProjects);
         setQuotes(normQuotes);
-        saveStoredData({ clients: remote.clients, projects: normProjects, quotes: normQuotes });
       }
+    } catch (e) {
+      console.error('Failed to load from Supabase', e);
+    }
+  }, []);
+
+  const isDataInitializedRef = useRef(false);
+
+  // Initialize data on mount
+  useEffect(() => {
+    setIsMounted(true);
+    const session = getActiveSession();
+    if (session) {
+      setAuthUser(session);
+    }
+    loadData().then(() => {
+      // Allow auto-sync after initial fetch is complete
+      setTimeout(() => {
+        isDataInitializedRef.current = true;
+      }, 500);
     });
 
     try {
@@ -282,7 +266,13 @@ export default function DashboardPage() {
     } catch (e) {
       console.error(e);
     }
-  }, []);
+  }, [loadData]);
+
+  // Persist and sync whenever projects, clients, or quotes change
+  useEffect(() => {
+    if (!isMounted || !isDataInitializedRef.current) return;
+    saveStoredData({ clients, projects, quotes }, authUser?.email);
+  }, [clients, projects, quotes, isMounted, authUser?.email]);
 
   const handleStartEditSettings = () => {
     setPinError('');
@@ -1121,13 +1111,54 @@ export default function DashboardPage() {
 
   if (!isMounted) return null;
 
+  if (!authUser) {
+    if (guestView === 'landing') {
+      return (
+        <LandingPage
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onOpenAuth={(mode, email) => {
+            setAuthInitialMode(mode);
+            if (email) setAuthInitialEmail(email);
+            setGuestView('auth');
+          }}
+        />
+      );
+    }
+
+    return (
+      <AuthScreen
+        onSuccess={(user) => {
+          setAuthUser(user);
+          loadData();
+          if (user.studioName || user.name) {
+            const currentProfile = loadStudioProfile();
+            const updatedProfile = {
+              ...currentProfile,
+              ownerName: user.name || currentProfile.ownerName,
+              studioName: user.studioName || currentProfile.studioName,
+              email: user.email || currentProfile.email,
+            };
+            setStudioProfile(updatedProfile);
+            setProfileDraft(updatedProfile);
+            saveStudioProfile(updatedProfile);
+          }
+        }}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        initialMode={authInitialMode}
+        initialEmail={authInitialEmail}
+        onBackToLanding={() => setGuestView('landing')}
+      />
+    );
+  }
+
   return (
     <div className={`app ${isSidebarCollapsed ? 'c' : ''}`}>
       {/* Sidebar */}
       <aside>
         <div className="brand">
-          <i />
-          <b>Studio</b>
+          <DotStudioPaperLogo height={20} />
           <button
             className="ib"
             id="tg"
@@ -1205,18 +1236,33 @@ export default function DashboardPage() {
           <span className="sidebar-tooltip">Settings</span>
         </button>
 
-        <button
-          className="nav"
-          id="th"
-          style={{ marginTop: 'auto' }}
-          onClick={toggleTheme}
-        >
-          <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
-          <span className="lb">{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-          <span className="sidebar-tooltip">
-            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-          </span>
-        </button>
+        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <button
+            className="nav"
+            id="th"
+            onClick={toggleTheme}
+          >
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
+            <span className="lb">{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+            <span className="sidebar-tooltip">
+              {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            </span>
+          </button>
+
+          <button
+            className="nav"
+            onClick={() => {
+              setAuthSession(null);
+              setAuthUser(null);
+              setGuestView('landing');
+            }}
+            title="Log out"
+          >
+            <Icon name="logout" size={17} />
+            <span className="lb">Log out</span>
+            <span className="sidebar-tooltip">Log out</span>
+          </button>
+        </div>
       </aside>
 
       {/* Main Content View */}
@@ -1853,10 +1899,7 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Subtle Watermark */}
-                      <div className="docx-watermark">
-                        <span className="docx-watermark-dot" />
-                        <span>Studio</span>
-                      </div>
+                      <DocumentWatermark />
                     </div>
                   </div>
                 </div>
@@ -2565,10 +2608,7 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Studio Subtle Bottom Watermark */}
-                      <div className="docx-watermark">
-                        <span className="docx-watermark-dot" />
-                        <span>Studio</span>
-                      </div>
+                      <DocumentWatermark />
                     </div>
                   </div>
                 </div>
@@ -2778,10 +2818,7 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Studio Subtle Bottom Watermark */}
-                        <div className="docx-watermark">
-                          <span className="docx-watermark-dot" />
-                          <span>Studio</span>
-                        </div>
+                        <DocumentWatermark />
                       </div>
                     </div>
                   </>
@@ -2970,10 +3007,7 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Studio Subtle Bottom Watermark */}
-                      <div className="docx-watermark">
-                        <span className="docx-watermark-dot" />
-                        <span>Studio</span>
-                      </div>
+                      <DocumentWatermark />
                     </div>
                   </div>
                 </>

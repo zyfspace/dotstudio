@@ -2,8 +2,15 @@ import { Client, Project, Quotation, PlanItem, StudioProfile } from '../types';
 import { ago, Y } from './formatters';
 import { supabase } from './supabase';
 
-export const STORAGE_KEY = 'zyf-studio-db-v1';
-export const STUDIO_PROFILE_KEY = 'zyf-studio-profile-v1';
+export const getStorageKey = (email?: string) => {
+  const clean = email ? email.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'zyfxspace_gmail_com';
+  return `zyf-studio-db-${clean}`;
+};
+
+export const getProfileKey = (email?: string) => {
+  const clean = email ? email.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'zyfxspace_gmail_com';
+  return `zyf-studio-profile-${clean}`;
+};
 
 export const DEFAULT_STUDIO_PROFILE: StudioProfile = {
   studioName: 'Zyf.Space',
@@ -18,10 +25,11 @@ export const DEFAULT_STUDIO_PROFILE: StudioProfile = {
   defaultNotes: 'Quotation berlaku sesuai tanggal yang tertera.',
 };
 
-export const loadStudioProfile = (): StudioProfile => {
+export const loadStudioProfile = (userEmail?: string): StudioProfile => {
   if (typeof window === 'undefined') return DEFAULT_STUDIO_PROFILE;
   try {
-    const raw = localStorage.getItem(STUDIO_PROFILE_KEY);
+    const key = getProfileKey(userEmail);
+    const raw = localStorage.getItem(key) || (userEmail?.toLowerCase() === 'zyfxspace@gmail.com' ? localStorage.getItem('zyf-studio-profile-v1') : null);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
@@ -34,10 +42,11 @@ export const loadStudioProfile = (): StudioProfile => {
   return DEFAULT_STUDIO_PROFILE;
 };
 
-export const saveStudioProfile = (profile: StudioProfile) => {
+export const saveStudioProfile = (profile: StudioProfile, userEmail?: string) => {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(STUDIO_PROFILE_KEY, JSON.stringify(profile));
+    const key = getProfileKey(userEmail);
+    localStorage.setItem(key, JSON.stringify(profile));
   } catch (e) {
     console.error('Failed to save studio profile', e);
   }
@@ -56,8 +65,8 @@ export interface StorageData {
   quotes: Quotation[];
 }
 
-// Load data from LocalStorage (initial fallback / cache)
-export const loadStoredData = (): StorageData => {
+// Load data from LocalStorage (isolated per user email)
+export const loadStoredData = (userEmail?: string): StorageData => {
   if (typeof window === 'undefined') {
     return {
       clients: getInitialClients(),
@@ -67,20 +76,8 @@ export const loadStoredData = (): StorageData => {
   }
 
   try {
-    // Purge ALL legacy storage versions completely
-    const keepKeys = new Set([STORAGE_KEY, 'studio-theme', 'studio-sb']);
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && !keepKeys.has(key) && (key.startsWith('studio-') || key.startsWith('zyf-') || key === 'studio-state' || key === 'studio-data')) {
-        keysToRemove.push(key);
-      }
-    }
-    keysToRemove.forEach((k) => {
-      try { localStorage.removeItem(k); } catch (_) {}
-    });
-
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const key = getStorageKey(userEmail);
+    const raw = localStorage.getItem(key) || (userEmail?.toLowerCase() === 'zyfxspace@gmail.com' ? localStorage.getItem('zyf-studio-db-v1') : null);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.projects) && Array.isArray(parsed.clients)) {
@@ -103,10 +100,11 @@ export const loadStoredData = (): StorageData => {
 };
 
 // Save to LocalStorage and sync to Supabase in background
-export const saveStoredData = (data: StorageData) => {
+export const saveStoredData = (data: StorageData, userEmail?: string) => {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const key = getStorageKey(userEmail);
+    localStorage.setItem(key, JSON.stringify(data));
   } catch (e) {
     console.error('Failed to save localStorage data', e);
   }
@@ -116,77 +114,72 @@ export const saveStoredData = (data: StorageData) => {
 };
 
 // Fetch from Supabase
-export const fetchFromSupabase = async (): Promise<StorageData | null> => {
+export const fetchFromSupabase = async (userEmail?: string): Promise<StorageData | null> => {
   try {
-    const [clientsRes, projectsRes, quotesRes] = await Promise.all([
+    const [clientsRes, projectsRes, quotesRes] = await Promise.allSettled([
       supabase.from('clients').select('*'),
       supabase.from('projects').select('*'),
       supabase.from('quotes').select('*'),
     ]);
 
-    if (clientsRes.error || projectsRes.error || quotesRes.error) {
-      return null;
-    }
+    const clientsRaw = clientsRes.status === 'fulfilled' && clientsRes.value.data ? clientsRes.value.data : [];
+    const projectsRaw = projectsRes.status === 'fulfilled' && projectsRes.value.data ? projectsRes.value.data : [];
+    const quotesRaw = quotesRes.status === 'fulfilled' && quotesRes.value.data ? quotesRes.value.data : [];
 
-    if (clientsRes.data && projectsRes.data) {
-      const clients: Client[] = clientsRes.data.map((c: any) => ({
-        id: Number(c.id),
-        name: c.name,
-        co: c.company || '',
-        mail: c.email || '',
-        tel: c.phone || '',
-        n: c.address || '',
-      }));
+    const clients: Client[] = clientsRaw.map((c: any) => ({
+      id: Number(c.id),
+      name: c.name || '',
+      co: c.company || '',
+      mail: c.email || '',
+      tel: c.phone || '',
+      n: c.address || '',
+    }));
 
-      const projects: Project[] = projectsRes.data.map((p: any) => ({
-        id: Number(p.id),
-        name: p.name,
-        c: Number(p.client_id) || 1,
-        v: Number(p.value) || 0,
-        due: p.deadline || '',
-        desc: p.notes || '',
-        n: '',
-        plan: Array.isArray(p.plan) ? p.plan : [],
-      }));
+    const projects: Project[] = projectsRaw.map((p: any) => ({
+      id: Number(p.id),
+      name: p.name || '',
+      c: Number(p.client_id) || 1,
+      v: Number(p.value) || 0,
+      due: p.deadline || '',
+      desc: p.notes || '',
+      n: '',
+      plan: Array.isArray(p.plan) ? p.plan : [],
+    }));
 
-      const quotes: Quotation[] = (quotesRes.data || []).map((q: any) => ({
-        id: Number(q.id),
-        no: q.number,
-        cn: q.client_name,
-        co: q.client_company || '',
-        mail: '',
-        tel: '',
-        title: q.title,
-        date: q.date || '',
-        valid: q.valid_until || '',
-        items: Array.isArray(q.items) ? q.items : [],
-        note: '',
-        s: q.status || 'Draft',
-        pid: Number(q.client_id) || 0,
-      }));
+    const quotes: Quotation[] = quotesRaw.map((q: any) => ({
+      id: Number(q.id),
+      no: q.number || '',
+      cn: q.client_name || '',
+      co: q.client_company || '',
+      mail: '',
+      tel: '',
+      title: q.title || '',
+      date: q.date || '',
+      valid: q.valid_until || '',
+      items: Array.isArray(q.items) ? q.items : [],
+      note: '',
+      s: q.status || 'Draft',
+      pid: Number(q.client_id) || 0,
+    }));
 
+    if (clients.length > 0 || projects.length > 0 || quotes.length > 0) {
       const syncedData = { clients, projects, quotes };
       if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(syncedData));
+        const key = getStorageKey(userEmail);
+        localStorage.setItem(key, JSON.stringify(syncedData));
       }
       return syncedData;
     }
   } catch (e) {
-    // Graceful fallback to local cache
+    console.error('Error fetching from Supabase', e);
   }
   return null;
 };
 
-// Sync whole state to Supabase
+// Sync whole state to Supabase safely (Upsert items, never wipe entire table on empty local state)
 export const syncToSupabase = async (data: StorageData) => {
   try {
-    // 1. Sync Clients (Delete removed, upsert existing)
-    const clientIds = data.clients.map((c) => c.id);
-    if (clientIds.length > 0) {
-      await supabase.from('clients').delete().not('id', 'in', `(${clientIds.join(',')})`);
-    } else {
-      await supabase.from('clients').delete().neq('id', 0);
-    }
+    // 1. Sync Clients
     for (const c of data.clients) {
       await supabase.from('clients').upsert(
         {
@@ -201,13 +194,7 @@ export const syncToSupabase = async (data: StorageData) => {
       );
     }
 
-    // 2. Sync Projects (Delete removed, upsert existing)
-    const projectIds = data.projects.map((p) => p.id);
-    if (projectIds.length > 0) {
-      await supabase.from('projects').delete().not('id', 'in', `(${projectIds.join(',')})`);
-    } else {
-      await supabase.from('projects').delete().neq('id', 0);
-    }
+    // 2. Sync Projects
     for (const p of data.projects) {
       const client = data.clients.find((c) => c.id === p.c);
       await supabase.from('projects').upsert(
@@ -226,13 +213,7 @@ export const syncToSupabase = async (data: StorageData) => {
       );
     }
 
-    // 3. Sync Quotes (Delete removed, upsert existing)
-    const quoteIds = data.quotes.map((q) => q.id);
-    if (quoteIds.length > 0) {
-      await supabase.from('quotes').delete().not('id', 'in', `(${quoteIds.join(',')})`);
-    } else {
-      await supabase.from('quotes').delete().neq('id', 0);
-    }
+    // 3. Sync Quotes
     for (const q of data.quotes) {
       await supabase.from('quotes').upsert(
         {
@@ -251,6 +232,6 @@ export const syncToSupabase = async (data: StorageData) => {
       );
     }
   } catch (e) {
-    // Supabase will sync whenever tables are created/online
+    console.error('Error syncing to Supabase', e);
   }
 };
