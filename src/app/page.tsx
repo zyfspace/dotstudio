@@ -4087,18 +4087,6 @@ export default function DashboardPage() {
                                 ) : (
                                   <span className="mut" style={{ fontSize: '12px' }}>No proof</span>
                                 )}
-                                <button
-                                  className="btn sm"
-                                  onClick={() =>
-                                    handleTogglePaymentPaid(
-                                      activeProject.id,
-                                      item.id,
-                                      false
-                                    )
-                                  }
-                                >
-                                  Undo
-                                </button>
                               </>
                             ) : (
                               <label
