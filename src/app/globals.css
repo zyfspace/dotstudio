@@ -1531,13 +1531,17 @@ textarea:focus,
 }
 
 .project-preview-sticky-wrap .docx-paper {
-  min-height: auto;
-  padding: 40px 42px;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  min-height: 1040px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 44px 48px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   margin-bottom: 0;
 }
 
 .project-preview-sticky-wrap .docx-footer-wrap {
+  margin-top: auto;
   padding-top: 36px;
 }
 
