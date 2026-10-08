@@ -2059,28 +2059,34 @@ input[type="file"] {
 }
 
 .docx-cost-table {
-  width: 100%;
-  border-collapse: collapse;
-  border: 1px solid #000000;
-  margin-bottom: 22px;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+  border: 1px solid #000000 !important;
+  margin-bottom: 20px !important;
+  box-sizing: border-box !important;
 }
 
 .docx-cost-table thead th {
-  background: #1f3864;
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 13px;
-  padding: 8px 12px;
-  border: 1px solid #000000;
+  background: #1f3864 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 12.5px !important;
+  padding: 7px 10px !important;
+  border: 1px solid #000000 !important;
   text-align: left;
+  white-space: normal !important;
+  box-sizing: border-box !important;
 }
 
 .docx-cost-table thead th.c {
-  text-align: center;
+  text-align: center !important;
 }
 
 .docx-cost-table thead th.r {
-  text-align: right;
+  text-align: right !important;
 }
 
 .docx-cost-table tbody tr {
@@ -2093,14 +2099,17 @@ input[type="file"] {
 }
 
 .docx-cost-table tbody td {
-  border: 1px solid #000000;
-  padding: 8px 12px;
-  font-size: 13px;
-  color: #000000;
+  border: 1px solid #000000 !important;
+  padding: 7px 10px !important;
+  font-size: 12.5px !important;
+  color: #000000 !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  box-sizing: border-box !important;
 }
 
 .docx-cost-table tbody td.c {
-  text-align: center;
+  text-align: center !important;
 }
 
 .docx-cost-table tfoot td {

@@ -1702,7 +1702,7 @@ export default function DashboardPage() {
               {/* Right Column: Live Invoice Preview */}
               <div className="project-preview-col">
                 <div className="project-preview-sticky-wrap">
-                  <div className="docx-paper" style={{ maxWidth: '100%', margin: 0, boxShadow: '0 2px 14px rgba(0, 0, 0, 0.08)' }}>
+                  <div className="docx-paper">
                     <div className="docx-body-content">
                       {/* Header */}
                       <div className="docx-header-grid">
@@ -2437,7 +2437,7 @@ export default function DashboardPage() {
               {/* Right Column: Live Quotation Preview */}
               <div className="project-preview-col">
                 <div className="project-preview-sticky-wrap">
-                  <div className="docx-paper" style={{ maxWidth: '100%', margin: 0, boxShadow: '0 2px 14px rgba(0, 0, 0, 0.08)' }}>
+                  <div className="docx-paper">
                     <div className="docx-body-content">
                       {/* Header */}
                       <div className="docx-header-grid">
