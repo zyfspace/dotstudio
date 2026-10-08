@@ -4056,25 +4056,9 @@ export default function DashboardPage() {
                                 <span className={overdue ? 'od' : 'mut'} style={{ fontSize: '12px' }}>
                                   {item.paid ? 'Paid date:' : overdue ? 'Overdue:' : 'Due date:'}
                                 </span>
-                                <DatePicker
-                                  value={item.paid ? item.pd : item.due}
-                                  onChange={(val) => {
-                                    if (item.paid) {
-                                      handleUpdatePaymentDate(
-                                        activeProject.id,
-                                        item.id,
-                                        val
-                                      );
-                                    } else {
-                                      handleUpdateDueDate(
-                                        activeProject.id,
-                                        item.id,
-                                        val
-                                      );
-                                    }
-                                  }}
-                                  placeholder="DD/MM/YYYY"
-                                />
+                                <span style={{ fontSize: '12px', fontWeight: 500, color: overdue ? 'var(--red, #ef4444)' : 'inherit' }}>
+                                  {item.paid ? (item.pd ? dt(item.pd) : '—') : (item.due ? dt(item.due) : '—')}
+                                </span>
                               </div>
                             </div>
                             <span className={`ins-amount ${item.paid ? 'mut' : ''}`}>
