@@ -163,10 +163,14 @@ export default function DashboardPage() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const isDataInitializedRef = useRef(false);
+
   // Load and sync data from LocalStorage & Supabase
-  const loadData = useCallback(async () => {
-    const data = loadStoredData();
-    const profile = loadStudioProfile();
+  const loadData = useCallback(async (email?: string) => {
+    isDataInitializedRef.current = false;
+    const userEmail = email || authUser?.email;
+    const data = loadStoredData(userEmail);
+    const profile = loadStudioProfile(userEmail);
     setStudioProfile(profile);
     setProfileDraft(profile);
 
@@ -182,7 +186,7 @@ export default function DashboardPage() {
     }
 
     try {
-      const remote = await fetchFromSupabase();
+      const remote = await fetchFromSupabase(userEmail);
       if (remote) {
         let invSeq = 0;
         const normProjects = remote.projects.map((p) => ({
@@ -232,10 +236,12 @@ export default function DashboardPage() {
       }
     } catch (e) {
       console.error('Failed to load from Supabase', e);
+    } finally {
+      setTimeout(() => {
+        isDataInitializedRef.current = true;
+      }, 500);
     }
-  }, []);
-
-  const isDataInitializedRef = useRef(false);
+  }, [authUser?.email]);
 
   // Initialize data on mount
   useEffect(() => {
@@ -243,13 +249,10 @@ export default function DashboardPage() {
     const session = getActiveSession();
     if (session) {
       setAuthUser(session);
+      loadData(session.email);
+    } else {
+      loadData();
     }
-    loadData().then(() => {
-      // Allow auto-sync after initial fetch is complete
-      setTimeout(() => {
-        isDataInitializedRef.current = true;
-      }, 500);
-    });
 
     try {
       const savedSb = localStorage.getItem('studio-sb');
@@ -1130,9 +1133,9 @@ export default function DashboardPage() {
       <AuthScreen
         onSuccess={(user) => {
           setAuthUser(user);
-          loadData();
+          loadData(user.email);
           if (user.studioName || user.name) {
-            const currentProfile = loadStudioProfile();
+            const currentProfile = loadStudioProfile(user.email);
             const updatedProfile = {
               ...currentProfile,
               ownerName: user.name || currentProfile.ownerName,
@@ -1141,7 +1144,7 @@ export default function DashboardPage() {
             };
             setStudioProfile(updatedProfile);
             setProfileDraft(updatedProfile);
-            saveStudioProfile(updatedProfile);
+            saveStudioProfile(updatedProfile, user.email);
           }
         }}
         theme={theme}
