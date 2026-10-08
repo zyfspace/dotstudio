@@ -193,11 +193,14 @@ aside .nav em {
   justify-content: center;
 }
 
+.c aside .brand .dotstudio-paper-logo,
+.c aside .brand .dot-studio-logo,
+.c aside .brand svg,
 .c aside .brand i,
 .c aside .brand b,
 .c aside .lb,
 .c aside .nav em {
-  display: none;
+  display: none !important;
 }
 
 .c aside #tg {
@@ -332,12 +335,19 @@ aside #tg {
   align-items: center;
   gap: 8px;
   height: 34px;
-  padding: 0 11px;
+  padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   width: 240px;
   color: var(--mut);
-  transition: 0.15s;
+  background: var(--bg);
+  transition: border-color 0.15s ease, color 0.15s ease;
+  cursor: text;
+  box-sizing: border-box;
+}
+
+.search:hover {
+  border-color: color-mix(in srgb, var(--fg) 25%, var(--bg));
 }
 
 .search:focus-within {
@@ -345,22 +355,42 @@ aside #tg {
   color: var(--fg);
 }
 
-.search input {
-  border: 0;
-  outline: 0;
-  background: none;
-  color: var(--fg);
-  width: 100%;
-  font-size: 14px;
+.search input,
+.app .search input {
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  color: var(--fg) !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: 13.5px !important;
+  font-family: inherit !important;
+  box-shadow: none !important;
+  line-height: normal !important;
 }
 
-kbd {
+.search input::placeholder {
+  color: var(--mut);
+  opacity: 1;
+}
+
+.search kbd,
+.app .search kbd {
   font-size: 11px;
   border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 0 5px;
+  border-radius: 4px;
+  padding: 1px 5px;
   color: var(--mut);
   font-family: inherit;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--soft);
+  user-select: none;
 }
 
 .stats {
@@ -1373,9 +1403,6 @@ tbody tr:hover {
   color: var(--mut);
 }
 
-.app input,
-.app select,
-.app textarea,
 .pl input,
 .pl select,
 .f input,
@@ -1403,9 +1430,6 @@ tbody tr:hover {
   font-size: 14px;
 }
 
-.app input:focus,
-.app select:focus,
-.app textarea:focus,
 .pl input:focus,
 .pl select:focus,
 .f input:focus,

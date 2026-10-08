@@ -1162,7 +1162,7 @@ export default function DashboardPage() {
       {/* Sidebar */}
       <aside>
         <div className="brand">
-          <DotStudioPaperLogo height={20} />
+          {!isSidebarCollapsed && <DotStudioPaperLogo height={20} />}
           <button
             className="ib"
             id="tg"
@@ -1170,7 +1170,9 @@ export default function DashboardPage() {
             aria-label="Toggle sidebar"
           >
             <Icon name="side" size={17} />
-            <span className="sidebar-tooltip">Expand sidebar</span>
+            <span className="sidebar-tooltip">
+              {isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            </span>
           </button>
         </div>
 
