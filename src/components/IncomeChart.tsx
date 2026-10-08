@@ -838,7 +838,8 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
           {(() => {
             const isDaily = buckets.length > 20;
             const isMedium = buckets.length > 6 && buckets.length <= 20;
-            const barMaxWidth = isDaily ? '8px' : isMedium ? '18px' : '38px';
+            const barWidth = isDaily ? '12px' : '100%';
+            const barMaxWidth = isDaily ? '12px' : isMedium ? '18px' : '38px';
             const barGap = isDaily ? '4px' : isMedium ? '6px' : '10px';
             const barRadius = isDaily ? '3px 3px 0 0' : isMedium ? '4px 4px 0 0' : '6px 6px 0 0';
 
@@ -871,9 +872,10 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                       <div
                         className="bar-pillar"
                         style={{
-                          height: hasIncome ? `${safeHeight}%` : '2px',
+                          height: hasIncome ? `${safeHeight}%` : '3px',
+                          width: barWidth,
                           maxWidth: barMaxWidth,
-                          borderRadius: hasIncome ? barRadius : '1px',
+                          borderRadius: barRadius,
                         }}
                       />
                     </div>
