@@ -889,33 +889,29 @@ kbd {
   align-items: center;
   position: relative;
   cursor: pointer;
-  min-width: 0;
 }
 
 .bar-pillar {
   width: 100%;
   background: color-mix(in srgb, var(--fg) 15%, var(--bg));
-  min-height: 0;
-  transition: height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.15s, transform 0.15s;
+  border-radius: 6px 6px 0 0;
+  min-height: 2px;
+  transition: height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.15s, transform 0.15s;
   display: block;
-}
-
-.bar-col.empty .bar-pillar {
-  background: color-mix(in srgb, var(--fg) 8%, var(--bg));
 }
 
 .bar-col.current .bar-pillar {
   background: var(--ac);
 }
 
-.bar-col:not(.empty):hover .bar-pillar,
-.bar-col:not(.empty).hovered .bar-pillar {
+.bar-col:hover .bar-pillar,
+.bar-col.hovered .bar-pillar {
   background: var(--fg);
   transform: translateY(-2px);
 }
 
-.bar-col.current:not(.empty):hover .bar-pillar,
-.bar-col.current:not(.empty).hovered .bar-pillar {
+.bar-col.current:hover .bar-pillar,
+.bar-col.current.hovered .bar-pillar {
   background: var(--ac);
   filter: brightness(1.1);
   transform: translateY(-2px);
