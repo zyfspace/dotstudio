@@ -801,8 +801,15 @@
 .lp-root .lp-footer .lp-wrap {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.lp-root .lp-footer-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* Responsive Media Queries */
