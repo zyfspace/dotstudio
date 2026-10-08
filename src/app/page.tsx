@@ -1239,7 +1239,7 @@ export default function DashboardPage() {
                     <input
                       id="nn"
                       type="text"
-                      placeholder="e.g. Website redesign"
+                      placeholder="Nama project / pekerjaan"
                       value={newProjectData.name}
                       onChange={(e) =>
                         setNewProjectData((prev) => ({ ...prev, name: e.target.value }))
@@ -1261,7 +1261,7 @@ export default function DashboardPage() {
                     <label htmlFor="ne">Scope / description</label>
                     <AutoTextarea
                       id="ne"
-                      placeholder="Item pekerjaan / deliverables (1 baris = 1 poin lingkup)..."
+                      placeholder="Detail ruang lingkup / deliverables (1 baris = 1 poin)..."
                       value={newProjectData.desc}
                       onChange={(e) =>
                         setNewProjectData((prev) => ({ ...prev, desc: e.target.value }))
@@ -1307,7 +1307,7 @@ export default function DashboardPage() {
                       >
                         <input
                           className="in"
-                          placeholder="e.g. Handling Google Ads"
+                          placeholder="Nama item / layanan"
                           value={r.d}
                           onChange={(e) => {
                             const val = e.target.value;
@@ -2048,7 +2048,7 @@ export default function DashboardPage() {
                     <input
                       id="qn"
                       type="text"
-                      placeholder="e.g. Website Redesign & SEO Strategy"
+                      placeholder="Nama quotation / project"
                       value={newQuoteData.title}
                       onChange={(e) =>
                         setNewQuoteData((prev) => ({ ...prev, title: e.target.value }))
@@ -2123,7 +2123,7 @@ export default function DashboardPage() {
                       </span>
                       <input
                         className="in"
-                        placeholder={`Scope item ${i + 1} (e.g. Audit teknis & kecepatan)`}
+                        placeholder={`Scope item ${i + 1}`}
                         value={sc}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -2193,7 +2193,7 @@ export default function DashboardPage() {
                         >
                           <input
                             className="in"
-                            placeholder="Detail scope / item"
+                            placeholder="Nama item / layanan"
                             value={r.d}
                             onChange={(e) => {
                               const val = e.target.value;
@@ -2292,7 +2292,7 @@ export default function DashboardPage() {
                       </span>
                       <input
                         className="in"
-                        placeholder={`Service deliverable ${i + 1} (e.g. Laporan bulanan & monitoring)`}
+                        placeholder={`Deliverable item ${i + 1}`}
                         value={sv}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -4298,7 +4298,7 @@ export default function DashboardPage() {
                           <input
                             className="in"
                             style={{ height: '30px', fontSize: '12.5px', padding: '0 8px' }}
-                            placeholder="Item name"
+                            placeholder="Nama item / layanan"
                             value={it.d}
                             onChange={(e) => {
                               const val = e.target.value;
