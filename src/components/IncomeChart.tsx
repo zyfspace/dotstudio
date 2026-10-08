@@ -835,42 +835,62 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
           </div>
 
           {/* Bars */}
-          <div className="bars-area">
-            {buckets.map((b, i) => {
-              const isHovered = hoveredIdx === i;
-              const heightPct = yMax > 0 ? (b.t / yMax) * 85 : 0;
-              const safeHeight = b.t > 0 ? Math.max(heightPct, 4) : 1.5;
+          {(() => {
+            const isDense = buckets.length > 12;
+            const isUltraDense = buckets.length > 25;
+            const gapSize = isUltraDense ? '4px' : isDense ? '6px' : '14px';
+            const maxBarWidth = isUltraDense ? '12px' : isDense ? '18px' : '36px';
+            const barRadius = isUltraDense ? '3px 3px 0 0' : '4px 4px 0 0';
 
-              return (
-                <div
-                  key={b.k}
-                  className={`bar-col ${b.isCurrent ? 'current' : ''} ${isHovered ? 'hovered' : ''}`}
-                  onMouseEnter={() => setHoveredIdx(i)}
-                  onMouseLeave={() => setHoveredIdx(null)}
-                  onClick={() => handleBarClick(b.k)}
-                  style={{ cursor: mode === '6m' ? 'pointer' : 'default' }}
-                >
-                  {/* Full number above bar only on hover */}
-                  <span className={`bar-value-label ${isHovered ? 'active' : ''}`}>
-                    {b.t ? num(b.t) : ''}
-                  </span>
+            return (
+              <div className="bars-area" style={{ gap: gapSize }}>
+                {buckets.map((b, i) => {
+                  const isHovered = hoveredIdx === i;
+                  const heightPct = yMax > 0 ? (b.t / yMax) * 86 : 0;
+                  const hasIncome = b.t > 0;
+                  const safeHeight = hasIncome ? Math.max(heightPct, 4) : 0;
 
-                  {/* Pillar */}
-                  <div
-                    className="bar-pillar"
-                    style={{ height: `${safeHeight}%` }}
-                  />
-                </div>
-              );
-            })}
-          </div>
+                  return (
+                    <div
+                      key={b.k}
+                      className={`bar-col ${b.isCurrent ? 'current' : ''} ${isHovered ? 'hovered' : ''} ${!hasIncome ? 'empty' : ''}`}
+                      onMouseEnter={() => setHoveredIdx(i)}
+                      onMouseLeave={() => setHoveredIdx(null)}
+                      onClick={() => handleBarClick(b.k)}
+                      style={{ cursor: mode === '6m' ? 'pointer' : 'default' }}
+                    >
+                      {/* Full number above bar only on hover */}
+                      <span className={`bar-value-label ${isHovered ? 'active' : ''}`}>
+                        {b.t ? num(b.t) : ''}
+                      </span>
+
+                      {/* Pillar */}
+                      <div
+                        className="bar-pillar"
+                        style={{
+                          height: hasIncome ? `${safeHeight}%` : '2px',
+                          maxWidth: maxBarWidth,
+                          borderRadius: hasIncome ? barRadius : '0',
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       </div>
 
       {/* X-Axis Month / Date Labels below baseline */}
       <div className="x-axis-wrapper">
         <div className="x-axis-spacer-left" />
-        <div className="x-axis-months">
+        <div
+          className="x-axis-months"
+          style={{
+            gap: buckets.length > 25 ? '4px' : buckets.length > 12 ? '6px' : '14px',
+          }}
+        >
           {buckets.map((b, i) => {
             const isHovered = hoveredIdx === i;
             return (
@@ -882,7 +902,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                 onClick={() => handleBarClick(b.k)}
                 type="button"
                 style={{
-                  fontSize: buckets.length > 20 ? '10px' : '11px',
+                  fontSize: buckets.length > 25 ? '10px' : buckets.length > 12 ? '11px' : '12px',
                   padding: buckets.length > 20 ? '2px 0' : '4px 0',
                   cursor: mode === '6m' ? 'pointer' : 'default',
                 }}
