@@ -11,6 +11,19 @@ export const ago = (n: number): string => {
 
 export const today = (): string => ago(0);
 
+export const addDays = (dateStr: string, days: number): string => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return '';
+  const d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+  if (isNaN(d.getTime())) return '';
+  d.setDate(d.getDate() + days);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const num = (n?: number): string => {
   return new Intl.NumberFormat('id-ID').format(n || 0);
 };

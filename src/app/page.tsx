@@ -26,6 +26,7 @@ import {
   Y,
   ago,
   today,
+  addDays,
   rp,
   sh,
   dt,
@@ -148,7 +149,7 @@ export default function DashboardPage() {
     tel: '',
     title: '',
     date: today(),
-    valid: ago(-7),
+    valid: addDays(today(), 7),
     validDays: 7,
     scope: [''],
     items: [{ d: '', type: 'One-time', q: 1, p: '' as number | string }],
@@ -619,7 +620,7 @@ export default function DashboardPage() {
       tel: firstClient ? firstClient.tel : '',
       title: '',
       date: today(),
-      valid: ago(-7),
+      valid: addDays(today(), 7),
       validDays: 7,
       scope: [''],
       items: [{ d: '', type: 'One-time', q: 1, p: '' }],
@@ -2116,7 +2117,11 @@ export default function DashboardPage() {
                         id="qd"
                         value={newQuoteData.date}
                         onChange={(val) =>
-                          setNewQuoteData((prev) => ({ ...prev, date: val }))
+                          setNewQuoteData((prev) => ({
+                            ...prev,
+                            date: val,
+                            valid: addDays(val, prev.validDays || 7),
+                          }))
                         }
                       />
                     </div>
@@ -2127,14 +2132,15 @@ export default function DashboardPage() {
                           id="qvd"
                           type="number"
                           min="1"
-                          max="90"
-                          value={newQuoteData.validDays}
+                          max="365"
+                          value={newQuoteData.validDays === 0 ? '' : newQuoteData.validDays}
                           onChange={(e) => {
-                            const days = +e.target.value || 7;
+                            const raw = e.target.value;
+                            const days = raw === '' ? 0 : Math.max(0, parseInt(raw, 10) || 0);
                             setNewQuoteData((prev) => ({
                               ...prev,
                               validDays: days,
-                              valid: ago(-days),
+                              valid: addDays(prev.date || today(), days),
                             }));
                           }}
                         />
@@ -2144,9 +2150,7 @@ export default function DashboardPage() {
                         <DatePicker
                           id="qv"
                           value={newQuoteData.valid}
-                          onChange={(val) =>
-                            setNewQuoteData((prev) => ({ ...prev, valid: val }))
-                          }
+                          disabled={true}
                         />
                       </div>
                     </div>
