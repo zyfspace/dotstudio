@@ -3573,9 +3573,91 @@ export default function DashboardPage() {
                                 </td>
                                 <td>{c.name}</td>
                                 <td>
-                                  <span className={`st ${statusType}`}>
-                                    {statusLabel}
-                                  </span>
+                                  {x.i.paid ? (
+                                    <span
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        color: '#10b981',
+                                        fontSize: '13px',
+                                        fontWeight: 500,
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          width: '15px',
+                                          height: '15px',
+                                          borderRadius: '50%',
+                                          background: 'rgba(16, 185, 129, 0.15)',
+                                          border: '1px solid rgba(16, 185, 129, 0.4)',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          flexShrink: 0,
+                                        }}
+                                      >
+                                        <svg
+                                          width="9"
+                                          height="9"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="3"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        >
+                                          <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                      </span>
+                                      Paid
+                                    </span>
+                                  ) : overdue ? (
+                                    <span
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        color: '#ef4444',
+                                        fontSize: '13px',
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          width: '7px',
+                                          height: '7px',
+                                          borderRadius: '50%',
+                                          background: '#ef4444',
+                                          display: 'inline-block',
+                                          flexShrink: 0,
+                                        }}
+                                      />
+                                      Overdue
+                                    </span>
+                                  ) : (
+                                    <span
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        color: 'var(--mut)',
+                                        fontSize: '13px',
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          width: '7px',
+                                          height: '7px',
+                                          borderRadius: '50%',
+                                          border: '1.5px solid var(--mut)',
+                                          background: 'transparent',
+                                          display: 'inline-block',
+                                          flexShrink: 0,
+                                        }}
+                                      />
+                                      Unpaid
+                                    </span>
+                                  )}
                                 </td>
                                 <td className="r">{rp(x.i.a)}</td>
                               </tr>
