@@ -80,7 +80,7 @@
 .lp-root .lp-nav .lp-wrap {
   display: flex;
   align-items: center;
-  gap: 28px;
+  justify-content: space-between;
   height: 64px;
 }
 
@@ -89,9 +89,9 @@
   align-items: center;
   gap: 9px;
   font-weight: 500;
-  margin-right: auto;
   cursor: pointer;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .lp-root .lp-brand i {
@@ -103,10 +103,25 @@
   flex: none;
 }
 
+.lp-root .lp-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-left: auto;
+  margin-right: 28px;
+}
+
+.lp-root .lp-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .lp-root .lp-nav a.lp-l {
   color: var(--mut);
   transition: color 0.15s;
-  font-size: 15px;
+  font-size: 14.5px;
 }
 
 .lp-root .lp-nav a.lp-l:hover {
@@ -815,7 +830,7 @@
   .lp-root .lp-fc:nth-last-child(-n+2) {
     border-bottom: 0;
   }
-  .lp-root .lp-nav a.lp-l {
+  .lp-root .lp-nav-links {
     display: none;
   }
 }

@@ -305,23 +305,27 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
           <div className="lp-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <DotStudioPaperLogo height={22} />
           </div>
-          <a className="lp-l" href="#demo">Try it</a>
-          <a className="lp-l" href="#features">Features</a>
-          <a className="lp-l" href="#flow">How it flows</a>
-          <button
-            className="lp-ib"
-            onClick={onToggleTheme}
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            aria-label="Toggle theme"
-          >
-            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
-          </button>
-          <button className="lp-btn lp-gh" onClick={() => onOpenAuth('login')}>
-            Log in
-          </button>
-          <button className="lp-btn lp-pri" onClick={() => onOpenAuth('signup')}>
-            Get started
-          </button>
+          <nav className="lp-nav-links">
+            <a className="lp-l" href="#demo">Try it</a>
+            <a className="lp-l" href="#features">Features</a>
+            <a className="lp-l" href="#flow">How it flows</a>
+          </nav>
+          <div className="lp-nav-actions">
+            <button
+              className="lp-ib"
+              onClick={onToggleTheme}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              aria-label="Toggle theme"
+            >
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
+            </button>
+            <button className="lp-btn lp-gh" onClick={() => onOpenAuth('login')}>
+              Log in
+            </button>
+            <button className="lp-btn lp-pri" onClick={() => onOpenAuth('signup')}>
+              Get started
+            </button>
+          </div>
         </div>
       </header>
 
