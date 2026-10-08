@@ -109,12 +109,20 @@ export const saveStoredData = (data: StorageData, userEmail?: string) => {
     console.error('Failed to save localStorage data', e);
   }
 
-  // Push to Supabase asynchronously
-  syncToSupabase(data).catch(() => {});
+  // Only sync to master Supabase tables for the owner account (zyfxspace@gmail.com)
+  const isMasterAccount = !userEmail || userEmail.toLowerCase() === 'zyfxspace@gmail.com';
+  if (isMasterAccount) {
+    syncToSupabase(data).catch(() => {});
+  }
 };
 
 // Fetch from Supabase
 export const fetchFromSupabase = async (userEmail?: string): Promise<StorageData | null> => {
+  const isMasterAccount = !userEmail || userEmail.toLowerCase() === 'zyfxspace@gmail.com';
+  if (!isMasterAccount) {
+    return null;
+  }
+
   try {
     const [clientsRes, projectsRes, quotesRes] = await Promise.allSettled([
       supabase.from('clients').select('*'),
