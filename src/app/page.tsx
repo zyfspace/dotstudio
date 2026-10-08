@@ -4097,7 +4097,7 @@ export default function DashboardPage() {
                                 }}
                               >
                                 <Icon name="upload" size={14} />
-                                {uploadingItemId === item.id ? 'Uploading…' : 'Upload proof'}
+                                {uploadingItemId === item.id ? 'Uploading…' : 'Add Payment Proof'}
                                 <input
                                   type="file"
                                   accept="image/*,.pdf"
