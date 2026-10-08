@@ -440,7 +440,8 @@
   transition-delay: var(--d, 0s);
 }
 
-.lp-root .lp-rv.in {
+.lp-root .lp-rv.in,
+.lp-root .lp-rv.lp-in {
   opacity: 1;
   transform: none;
 }

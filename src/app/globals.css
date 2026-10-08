@@ -1389,7 +1389,8 @@ tbody tr:hover {
 .dr input,
 .dr select,
 .dr textarea,
-.in {
+.app .in,
+.settings-input {
   height: 36px;
   padding: 0 11px;
   border: 1px solid var(--line);
@@ -1412,7 +1413,8 @@ tbody tr:hover {
 .f textarea:focus,
 .modal input:focus,
 .modal select:focus,
-.in:focus {
+.app .in:focus,
+.settings-input:focus {
   border-color: var(--fg);
 }
 
@@ -1489,7 +1491,7 @@ textarea {
 .f select:focus,
 .f textarea:focus,
 textarea:focus,
-.in:focus {
+.app .in:focus {
   border-color: var(--fg);
 }
 

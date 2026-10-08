@@ -107,6 +107,7 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
+            entry.target.classList.add('lp-in');
             entry.target.classList.add('in');
             observer.unobserve(entry.target);
           }
@@ -119,6 +120,7 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
     elements.forEach((el) => {
       const rect = el.getBoundingClientRect();
       if (rect.top < window.innerHeight) {
+        el.classList.add('lp-in');
         el.classList.add('in');
       } else {
         observer.observe(el);
