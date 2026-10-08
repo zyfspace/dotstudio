@@ -29,6 +29,12 @@ export interface PlanItem {
   inv: InvoiceMeta | null;
 }
 
+export interface ProjectCostItem {
+  d: string;
+  type: string;
+  p: number;
+}
+
 export interface Project {
   id: number;
   name: string;
@@ -37,6 +43,7 @@ export interface Project {
   due: string;
   desc: string;
   billingType?: string;
+  items?: ProjectCostItem[];
   n: string;
   plan: PlanItem[];
 }

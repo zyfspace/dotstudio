@@ -119,6 +119,7 @@ export default function DashboardPage() {
     name: '',
     v: '',
     billingType: 'One-time',
+    items: [{ d: '', type: 'One-time', p: '' as number | string }],
     due: '',
     desc: '',
     cn: '',
@@ -597,6 +598,7 @@ export default function DashboardPage() {
       name: '',
       v: '',
       billingType: 'One-time',
+      items: [{ d: '', type: 'One-time', p: '' }],
       due: '',
       desc: '',
       cn: firstClient ? firstClient.name : '',
@@ -683,12 +685,21 @@ export default function DashboardPage() {
       };
     });
 
+    const validItems = newProjectData.items
+      .filter((i) => i.d.trim() || +i.p > 0)
+      .map((i) => ({
+        d: i.d.trim() || newProjectData.name.trim(),
+        type: i.type || 'One-time',
+        p: +i.p || 0,
+      }));
+
     const createdProj: Project = {
       id,
       name: newProjectData.name.trim(),
       c: c ? c.id : 0,
       v: val,
-      billingType: newProjectData.billingType || 'One-time',
+      billingType: newProjectData.billingType || (validItems[0]?.type || 'One-time'),
+      items: validItems.length > 0 ? validItems : [{ d: newProjectData.name.trim(), type: newProjectData.billingType || 'One-time', p: val }],
       due: newProjectData.due,
       desc: newProjectData.desc,
       n: '',
@@ -786,8 +797,13 @@ export default function DashboardPage() {
       c: c ? c.id : 0,
       v: tot,
       billingType: q.items[0]?.type || 'One-time',
+      items: q.items.map((it) => ({
+        d: it.d || q.title,
+        type: it.type || 'One-time',
+        p: (it.q || 1) * it.p,
+      })),
       due: '',
-      desc: q.items.map((l) => l.d).join('\n'),
+      desc: q.scope && q.scope.length ? q.scope.join('\n') : q.items.map((l) => l.d).join('\n'),
       n: `From ${q.no}`,
       plan,
     };
@@ -1230,38 +1246,6 @@ export default function DashboardPage() {
                       }
                     />
                   </div>
-                  <div className="two">
-                    <div className="f">
-                      <label htmlFor="nv">Total value (Rp)</label>
-                      <input
-                        id="nv"
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        value={newProjectData.v}
-                        onChange={(e) =>
-                          setNewProjectData((prev) => ({ ...prev, v: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="f">
-                      <label htmlFor="nbt">Jenis Biaya</label>
-                      <select
-                        id="nbt"
-                        className="in"
-                        value={newProjectData.billingType || 'One-time'}
-                        onChange={(e) =>
-                          setNewProjectData((prev) => ({ ...prev, billingType: e.target.value }))
-                        }
-                      >
-                        <option value="One-time">One-time</option>
-                        <option value="Bulanan">Bulanan (Monthly)</option>
-                        <option value="Per Project">Per Project</option>
-                        <option value="Retainer">Retainer</option>
-                        <option value="Hourly">Hourly</option>
-                      </select>
-                    </div>
-                  </div>
                   <div className="f">
                     <label htmlFor="nd">Deadline</label>
                     <DatePicker
@@ -1283,6 +1267,128 @@ export default function DashboardPage() {
                         setNewProjectData((prev) => ({ ...prev, desc: e.target.value }))
                       }
                     />
+                  </div>
+                </div>
+
+                {/* Rincian Biaya Panel */}
+                <div className="panel">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0 }}>Rincian Biaya</h3>
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() => {
+                        setNewProjectData((prev) => {
+                          const nextItems = [...prev.items, { d: '', type: prev.billingType || 'One-time', p: '' }];
+                          return { ...prev, items: nextItems };
+                        });
+                      }}
+                    >
+                      <Icon name="plus" size={14} />
+                      Add item
+                    </button>
+                  </div>
+
+                  <div id="project-items-table">
+                    <div
+                      className="pl hd"
+                      style={{ gridTemplateColumns: '2fr 1.2fr 1.2fr 30px' }}
+                    >
+                      <span>Item</span>
+                      <span>Jenis Biaya</span>
+                      <span>Biaya (Rp)</span>
+                      <span />
+                    </div>
+                    {newProjectData.items.map((r, i) => (
+                      <div
+                        key={i}
+                        className="pl"
+                        style={{ gridTemplateColumns: '2fr 1.2fr 1.2fr 30px' }}
+                      >
+                        <input
+                          className="in"
+                          placeholder="e.g. Handling Google Ads"
+                          value={r.d}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setNewProjectData((prev) => {
+                              const nextItems = [...prev.items];
+                              nextItems[i] = { ...nextItems[i], d: val };
+                              return { ...prev, items: nextItems };
+                            });
+                          }}
+                        />
+                        <select
+                          className="in"
+                          value={r.type || 'One-time'}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setNewProjectData((prev) => {
+                              const nextItems = [...prev.items];
+                              nextItems[i] = { ...nextItems[i], type: val };
+                              return { ...prev, items: nextItems };
+                            });
+                          }}
+                        >
+                          <option value="One-time">One-time</option>
+                          <option value="Bulanan">Bulanan (Monthly)</option>
+                          <option value="Per Project">Per Project</option>
+                          <option value="Retainer">Retainer</option>
+                          <option value="Hourly">Hourly</option>
+                        </select>
+                        <input
+                          className="in"
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={r.p}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setNewProjectData((prev) => {
+                              const nextItems = [...prev.items];
+                              nextItems[i] = { ...nextItems[i], p: val };
+                              const sumVal = nextItems.reduce((acc, curr) => acc + (+curr.p || 0), 0);
+                              return {
+                                ...prev,
+                                items: nextItems,
+                                v: sumVal > 0 ? String(sumVal) : prev.v,
+                              };
+                            });
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="ib"
+                          onClick={() => {
+                            setNewProjectData((prev) => {
+                              const nextItems = prev.items.filter((_, idx) => idx !== i);
+                              const fallback = nextItems.length ? nextItems : [{ d: '', type: 'One-time', p: '' }];
+                              const sumVal = fallback.reduce((acc, curr) => acc + (+curr.p || 0), 0);
+                              return {
+                                ...prev,
+                                items: fallback,
+                                v: sumVal > 0 ? String(sumVal) : prev.v,
+                              };
+                            });
+                          }}
+                          aria-label="Remove item"
+                        >
+                          <Icon name="x" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="row" style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--line)' }}>
+                    <span className="mut" style={{ fontSize: '13px' }}>Total Project Value</span>
+                    <b style={{ fontSize: '15px' }}>
+                      {rp(
+                        newProjectData.items.reduce(
+                          (acc, curr) => acc + (+curr.p || 0),
+                          0
+                        ) || (+newProjectData.v || 0)
+                      )}
+                    </b>
                   </div>
                 </div>
 
@@ -1667,13 +1773,22 @@ export default function DashboardPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          <tr>
-                            <td>{newProjectData.name || 'Layanan Project'}</td>
-                            <td className="c">{newProjectData.billingType || 'One-time'}</td>
-                            <td className="c" style={{ fontWeight: 700 }}>
-                              Rp{(+newProjectData.v || 0).toLocaleString('id-ID')}
-                            </td>
-                          </tr>
+                          {(() => {
+                            const activeItems = newProjectData.items.filter((it) => it.d.trim() || +it.p > 0);
+                            const displayItems = activeItems.length > 0
+                              ? activeItems
+                              : [{ d: newProjectData.name || 'Layanan Project', type: newProjectData.billingType || 'One-time', p: +newProjectData.v || 0 }];
+
+                            return displayItems.map((it, idx) => (
+                              <tr key={idx}>
+                                <td>{it.d || newProjectData.name || `Item Layanan ${idx + 1}`}</td>
+                                <td className="c">{it.type || 'One-time'}</td>
+                                <td className="c" style={{ fontWeight: 700 }}>
+                                  Rp{(+it.p || 0).toLocaleString('id-ID')}
+                                </td>
+                              </tr>
+                            ));
+                          })()}
                         </tbody>
                       </table>
 
@@ -2569,13 +2684,21 @@ export default function DashboardPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            <tr>
-                              <td>{p.name}</td>
-                              <td className="c">{p.billingType || 'One-time'}</td>
-                              <td className="c" style={{ fontWeight: 700 }}>
-                                Rp{p.v.toLocaleString('id-ID')}
-                              </td>
-                            </tr>
+                            {(() => {
+                              const activeItems = (p.items && p.items.length > 0)
+                                ? p.items
+                                : [{ d: p.name, type: p.billingType || 'One-time', p: p.v }];
+
+                              return activeItems.map((it, idx) => (
+                                <tr key={idx}>
+                                  <td>{it.d || p.name || `Item Layanan ${idx + 1}`}</td>
+                                  <td className="c">{it.type || 'One-time'}</td>
+                                  <td className="c" style={{ fontWeight: 700 }}>
+                                    Rp{(+it.p || 0).toLocaleString('id-ID')}
+                                  </td>
+                                </tr>
+                              ));
+                            })()}
                           </tbody>
                         </table>
 
@@ -4145,6 +4268,131 @@ export default function DashboardPage() {
                           );
                         }}
                       />
+                    </div>
+
+                    {/* Project Items in Drawer */}
+                    <div style={{ marginTop: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <span className="mut" style={{ fontSize: '12px', fontWeight: 500 }}>Rincian Biaya (Items)</span>
+                        <button
+                          type="button"
+                          className="btn sm"
+                          onClick={() => {
+                            setProjects((prev) =>
+                              prev.map((p) => {
+                                if (p.id !== activeProject.id) return p;
+                                const currentItems = p.items || [{ d: p.name, type: p.billingType || 'One-time', p: p.v }];
+                                return {
+                                  ...p,
+                                  items: [...currentItems, { d: '', type: p.billingType || 'One-time', p: 0 }],
+                                };
+                              })
+                            );
+                          }}
+                        >
+                          <Icon name="plus" size={13} /> Add item
+                        </button>
+                      </div>
+                      {(activeProject.items && activeProject.items.length > 0 ? activeProject.items : [{ d: activeProject.name, type: activeProject.billingType || 'One-time', p: activeProject.v }]).map((it, idx) => (
+                        <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr 28px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                          <input
+                            className="in"
+                            style={{ height: '30px', fontSize: '12.5px', padding: '0 8px' }}
+                            placeholder="Item name"
+                            value={it.d}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setProjects((prev) =>
+                                prev.map((p) => {
+                                  if (p.id !== activeProject.id) return p;
+                                  const base = p.items || [{ d: p.name, type: p.billingType || 'One-time', p: p.v }];
+                                  const nextItems = [...base];
+                                  nextItems[idx] = { ...nextItems[idx], d: val };
+                                  return { ...p, items: nextItems };
+                                })
+                              );
+                            }}
+                          />
+                          <select
+                            className="in"
+                            style={{ height: '30px', fontSize: '12px', padding: '0 4px' }}
+                            value={it.type || 'One-time'}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setProjects((prev) =>
+                                prev.map((p) => {
+                                  if (p.id !== activeProject.id) return p;
+                                  const base = p.items || [{ d: p.name, type: p.billingType || 'One-time', p: p.v }];
+                                  const nextItems = [...base];
+                                  nextItems[idx] = { ...nextItems[idx], type: val };
+                                  return { ...p, items: nextItems };
+                                })
+                              );
+                            }}
+                          >
+                            <option value="One-time">One-time</option>
+                            <option value="Bulanan">Bulanan</option>
+                            <option value="Per Project">Per Project</option>
+                            <option value="Retainer">Retainer</option>
+                            <option value="Hourly">Hourly</option>
+                          </select>
+                          <input
+                            className="in"
+                            type="number"
+                            style={{ height: '30px', fontSize: '12.5px', padding: '0 8px' }}
+                            min="0"
+                            placeholder="0"
+                            value={it.p}
+                            onChange={(e) => {
+                              const val = +e.target.value || 0;
+                              setProjects((prev) =>
+                                prev.map((p) => {
+                                  if (p.id !== activeProject.id) return p;
+                                  const base = p.items || [{ d: p.name, type: p.billingType || 'One-time', p: p.v }];
+                                  const nextItems = [...base];
+                                  nextItems[idx] = { ...nextItems[idx], p: val };
+                                  const sumVal = nextItems.reduce((acc, curr) => acc + (+curr.p || 0), 0);
+                                  return {
+                                    ...p,
+                                    items: nextItems,
+                                    v: sumVal > 0 ? sumVal : p.v,
+                                    plan: p.plan.map((item) => {
+                                      if (!item.paid && sumVal > 0) {
+                                        return { ...item, a: Math.round((sumVal * item.pct) / 100) };
+                                      }
+                                      return item;
+                                    }),
+                                  };
+                                })
+                              );
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="ib"
+                            style={{ width: '28px', height: '28px' }}
+                            onClick={() => {
+                              setProjects((prev) =>
+                                prev.map((p) => {
+                                  if (p.id !== activeProject.id) return p;
+                                  const base = p.items || [{ d: p.name, type: p.billingType || 'One-time', p: p.v }];
+                                  const nextItems = base.filter((_, i) => i !== idx);
+                                  const fallback = nextItems.length ? nextItems : [{ d: p.name, type: p.billingType || 'One-time', p: p.v }];
+                                  const sumVal = fallback.reduce((acc, curr) => acc + (+curr.p || 0), 0);
+                                  return {
+                                    ...p,
+                                    items: fallback,
+                                    v: sumVal > 0 ? sumVal : p.v,
+                                  };
+                                })
+                              );
+                            }}
+                            aria-label="Remove item"
+                          >
+                            <Icon name="x" size={13} />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
