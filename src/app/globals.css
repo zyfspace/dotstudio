@@ -881,7 +881,9 @@ kbd {
 }
 
 .bar-col {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  width: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -952,10 +954,13 @@ kbd {
 .x-axis-months {
   display: flex;
   gap: 10px;
+  min-width: 0;
 }
 
 .x-month-label {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  width: 0;
   text-align: center;
   font-size: 12px;
   color: var(--mut);
@@ -965,6 +970,9 @@ kbd {
   background: none;
   border: 0;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .x-month-label:hover,
