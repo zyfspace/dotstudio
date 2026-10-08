@@ -1467,9 +1467,14 @@ textarea:focus,
   width: 100%;
 }
 
-@media (max-width: 1140px) {
+@media (max-width: 1024px) {
   .project-split-layout {
     grid-template-columns: 1fr;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .project-preview-col {
+    display: none !important;
   }
 }
 
