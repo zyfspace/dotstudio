@@ -1143,7 +1143,8 @@ tbody tr:hover {
 .prog i {
   display: block;
   height: 100%;
-  background: var(--fg);
+  background: var(--ac);
+  border-radius: 9px;
   transition: width 0.3s;
 }
 
