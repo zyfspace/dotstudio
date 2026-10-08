@@ -4315,7 +4315,7 @@ export default function DashboardPage() {
                           />
                           <select
                             className="in"
-                            style={{ height: '30px', fontSize: '12px', padding: '0 4px' }}
+                            style={{ height: '30px', fontSize: '12px' }}
                             value={it.type || 'One-time'}
                             onChange={(e) => {
                               const val = e.target.value;
