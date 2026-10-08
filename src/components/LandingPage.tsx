@@ -101,7 +101,7 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
     return 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(num));
   };
 
-  // 1. Reveal on scroll (.rv)
+  // 1. Reveal on scroll (.lp-rv)
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -112,10 +112,10 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
           }
         });
       },
-      { threshold: 0.08 }
+      { threshold: 0.12 }
     );
 
-    const elements = document.querySelectorAll('.landing-page .rv');
+    const elements = document.querySelectorAll('.lp-root .lp-rv');
     elements.forEach((el) => {
       const rect = el.getBoundingClientRect();
       if (rect.top < window.innerHeight) {
@@ -147,7 +147,7 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
 
     window.addEventListener('pointermove', handlePointerMove);
 
-    const layers = document.querySelectorAll<HTMLElement>('.landing-page .mc.ly');
+    const layers = document.querySelectorAll<HTMLElement>('.lp-root .lp-mc.lp-ly');
 
     const frame = (t: number) => {
       const scrollY = window.scrollY || 0;
@@ -245,7 +245,7 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
 
   const isAllPaid = paidCount === planRows.length;
   const isPartiallyPaid = paidCount > 0 && !isAllPaid;
-  const demoStatusClass = isAllPaid ? 'Finished' : isPartiallyPaid ? 'Progress' : '';
+  const demoStatusClass = isAllPaid ? 'lp-Finished' : isPartiallyPaid ? 'lp-Progress' : '';
   const demoStatusLabel = isAllPaid ? 'Finished' : isPartiallyPaid ? 'In progress' : 'Pending';
   const progressPercent = (calculatedReceived / TOTAL_VALUE) * 100;
 
@@ -269,10 +269,8 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
     return () => cancelAnimationFrame(raf);
   }, [calculatedReceived]);
 
-  const handleMarkPaid = (index: number) => {
-    if (!paidInstallments[index]) {
-      setPaidInstallments((prev) => ({ ...prev, [index]: true }));
-    }
+  const handleTogglePaid = (index: number) => {
+    setPaidInstallments((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
   const handleResetDemo = () => {
@@ -296,138 +294,134 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
   };
 
   return (
-    <div className="landing-page">
+    <div className="lp-root">
       {/* Navigation */}
-      <header className={`nav ${isScrolled ? 's' : ''}`}>
-        <div className="wrap">
-          <div className="brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ cursor: 'pointer' }}>
+      <header className={`lp-nav ${isScrolled ? 's' : ''}`} id="lp-nav">
+        <div className="lp-wrap">
+          <div className="lp-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <DotStudioPaperLogo height={22} />
           </div>
-          <div className="nav-links">
-            <a className="l" href="#demo">Try it</a>
-            <a className="l" href="#features">Features</a>
-            <a className="l" href="#flow">How it flows</a>
-          </div>
-          <div className="nav-actions">
-            <button
-              className="ib"
-              onClick={onToggleTheme}
-              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              aria-label="Toggle theme"
-            >
-              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
-            </button>
-            <button className="btn gh" onClick={() => onOpenAuth('login')}>
-              Log in
-            </button>
-            <button className="btn pri" onClick={() => onOpenAuth('signup')}>
-              Get started
-            </button>
-          </div>
+          <a className="lp-l" href="#demo">Try it</a>
+          <a className="lp-l" href="#features">Features</a>
+          <a className="lp-l" href="#flow">How it flows</a>
+          <button
+            className="lp-ib"
+            onClick={onToggleTheme}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label="Toggle theme"
+          >
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
+          </button>
+          <button className="lp-btn lp-gh" onClick={() => onOpenAuth('login')}>
+            Log in
+          </button>
+          <button className="lp-btn lp-pri" onClick={() => onOpenAuth('signup')}>
+            Get started
+          </button>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="hero">
-        <div className="wrap">
-          <div className="hero-content">
-            <div className="tagl rv">
+      <section className="lp-hero">
+        <div className="lp-wrap">
+          <div>
+            <div className="lp-tagl lp-rv">
               <i />
-              For everyone who get paid in installments
+              For freelancers who get paid in installments
             </div>
-            <h1 className="big rv" style={{ transitionDelay: '.05s' }}>
+            <h1 className="lp-big lp-rv" style={{ transitionDelay: '.05s' }}>
               Know exactly what you’re owed<em>.</em>
             </h1>
-            <p className="lead rv" style={{ transitionDelay: '.12s' }}>
-              DotStudio keeps your projects, clients and payments in one quiet place. Mark a payment received and the project status updates itself.
+            <p className="lp-lead lp-rv" style={{ transitionDelay: '.12s' }}>
+              Studio keeps your projects, clients and payments in one quiet place. Mark a payment received and the project status updates itself.
             </p>
-            <div className="cta rv" style={{ transitionDelay: '.2s' }}>
-              <button className="btn pri lg" onClick={() => onOpenAuth('signup')}>
+            <div className="lp-cta lp-rv" style={{ transitionDelay: '.2s' }}>
+              <button className="lp-btn lp-pri lp-lg" onClick={() => onOpenAuth('signup')}>
                 Get started <Icon name="arrow" size={16} />
               </button>
-              <a className="btn lg" href="#demo">
+              <a className="lp-btn lp-lg" href="#demo">
                 Try it live
               </a>
             </div>
           </div>
 
           {/* 3D Stage */}
-          <div className="stage" id="stage" ref={stageRef}>
-            <div className="rig" id="rig" ref={rigRef}>
-              <div className="floor" />
+          <div className="lp-stage" id="lp-stage" ref={stageRef}>
+            <div className="lp-rig" id="lp-rig" ref={rigRef}>
+              <div className="lp-floor" />
 
               {/* Layer 1: Main Project Card */}
-              <div className="mc ly" data-x="20" data-y="80" data-z="0" style={{ width: '350px' }}>
-                <div className="row">
+              <div className="lp-mc lp-ly" data-x="20" data-y="80" data-z="0" style={{ width: '350px' }}>
+                <div className="lp-row">
                   <div>
                     <b>Website redesign</b>
-                    <div className="mut">Nadia Pratama · Lumen Studio</div>
+                    <div className="lp-mut">Nadia Pratama · Lumen Studio</div>
                   </div>
-                  <span className="st Progress">In progress</span>
+                  <span className="lp-st lp-Progress">In progress</span>
                 </div>
-                <div className="amt">
+                <div className="lp-amt">
                   Rp 9.250.000 <span>of Rp 18.500.000</span>
                 </div>
-                <div className="prog">
-                  <i ref={heroProgressRef} style={{ width: '0%' }} />
+                <div className="lp-prog">
+                  <i ref={heroProgressRef} />
                 </div>
-                <div className="ins" style={{ marginTop: '16px' }}>
+                <div className="lp-ins" style={{ marginTop: '16px' }}>
                   <span>
-                    <span className="chk">
+                    <span className="lp-chk">
                       <Icon name="check" size={10} />
                     </span>
                     DP · 50%
                   </span>
-                  <span className="mut">Paid 12 Sep</span>
+                  <span className="lp-mut">Paid 12 Sep</span>
                 </div>
-                <div className="ins">
+                <div className="lp-ins">
                   <span>Final payment · 50%</span>
-                  <span className="mut">Due 21 Oct</span>
+                  <span className="lp-mut">Due 21 Oct</span>
                 </div>
               </div>
 
               {/* Layer 2: Upcoming payments */}
-              <div className="mc ly" data-x="250" data-y="-6" data-z="70" style={{ width: '250px' }}>
-                <div className="mut" style={{ marginBottom: '8px' }}>Upcoming payments</div>
-                <div className="row" style={{ padding: '7px 0', borderTop: '1px solid var(--line)' }}>
+              <div className="lp-mc lp-ly" data-x="250" data-y="-6" data-z="70" style={{ width: '250px' }}>
+                <div className="lp-mut" style={{ marginBottom: '8px' }}>Upcoming payments</div>
+                <div className="lp-row" style={{ padding: '7px 0', borderTop: '1px solid var(--line)' }}>
                   <span>
                     Booking automation
-                    <div className="mut">Final · due 12 Nov</div>
+                    <div className="lp-mut">Final · due 12 Nov</div>
                   </span>
                   <b>Rp 7 jt</b>
                 </div>
-                <div className="row" style={{ padding: '7px 0', borderTop: '1px solid var(--line)' }}>
+                <div className="lp-row" style={{ padding: '7px 0', borderTop: '1px solid var(--line)' }}>
                   <span>
                     SEO content plan
-                    <div className="mut" style={{ color: 'var(--ac)' }}>Final · overdue</div>
+                    <div className="lp-mut" style={{ color: 'var(--ac)' }}>Final · overdue</div>
                   </span>
                   <b>Rp 3,6 jt</b>
                 </div>
               </div>
 
               {/* Layer 3: Invoice preview */}
-              <div className="mc ly" data-x="0" data-y="330" data-z="115" style={{ width: '240px' }}>
-                <div className="row">
-                  <span className="mut">INV-2026-001</span>
-                  <span className="st">Unpaid</span>
+              <div className="lp-mc lp-ly" data-x="0" data-y="330" data-z="115" style={{ width: '240px' }}>
+                <div className="lp-row">
+                  <span className="lp-mut">INV-2026-001</span>
+                  <span className="lp-st">Unpaid</span>
                 </div>
                 <div style={{ margin: '10px 0 2px' }}>
                   <b>Final payment · 50%</b>
                 </div>
-                <div className="mut">Website redesign</div>
-                <div className="amt" style={{ fontSize: '18px', margin: '10px 0 0' }}>
+                <div className="lp-mut">Website redesign</div>
+                <div className="lp-amt" style={{ fontSize: '18px', margin: '10px 0 0' }}>
                   Rp 9.250.000
                 </div>
               </div>
 
               {/* Layer 4: Toast notification */}
-              <div className="mc ly toast" id="toast" ref={toastRef} data-x="238" data-y="392" data-z="170" style={{ width: '236px' }}>
-                <span className="ring">
+              <div className="lp-mc lp-ly lp-toast" id="lp-toast" ref={toastRef} data-x="238" data-y="392" data-z="170" style={{ width: '236px' }}>
+                <span className="lp-ring">
                   <Icon name="upload" size={13} />
                 </span>
                 <div>
                   <b>Proof uploaded</b>
-                  <div className="mut">Final payment · just now</div>
+                  <div className="lp-mut">Final payment · just now</div>
                 </div>
               </div>
             </div>
@@ -436,25 +430,25 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
       </section>
 
       {/* Interactive Demo Section */}
-      <section id="demo">
-        <div className="wrap demo">
+      <section id="demo" className="lp-sec">
+        <div className="lp-wrap lp-demo">
           <div>
-            <div className="eyebrow rv">Try it</div>
-            <h2 className="t rv" style={{ transitionDelay: '.05s' }}>
+            <div className="lp-eyebrow lp-rv">Try it</div>
+            <h2 className="lp-t lp-rv" style={{ transitionDelay: '.05s' }}>
               A project that updates itself.
             </h2>
-            <p className="sub rv" style={{ transitionDelay: '.1s' }}>
+            <p className="lp-sub lp-rv" style={{ transitionDelay: '.1s' }}>
               Pick a payment scheme, then confirm each payment. Watch the status, progress and balance change on their own. There is nothing to edit by hand.
             </p>
           </div>
 
-          <div className="pn rv" style={{ transitionDelay: '.12s' }}>
-            <div className="chips">
+          <div className="lp-pn lp-rv" style={{ transitionDelay: '.12s' }}>
+            <div className="lp-chips">
               {Object.keys(PRESET_SCHEMES).map((schemeKey) => (
                 <button
                   key={schemeKey}
                   type="button"
-                  className={`chip ${schemeKey === currentScheme ? 'on' : ''}`}
+                  className={`lp-chip ${schemeKey === currentScheme ? 'on' : ''}`}
                   onClick={() => handleSchemeChange(schemeKey)}
                 >
                   {schemeKey}
@@ -462,26 +456,24 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
               ))}
             </div>
 
-            <div className="row">
+            <div className="lp-row">
               <div>
                 <b>Brand identity</b>
-                <div className="mut">Kopi Sudut · {formatRp(TOTAL_VALUE)}</div>
+                <div className="lp-mut">Kopi Sudut · {formatRp(TOTAL_VALUE)}</div>
               </div>
-              <span className={`st ${demoStatusClass}`}>
+              <span className={`lp-st ${demoStatusClass}`}>
                 {demoStatusLabel}
               </span>
             </div>
 
-            <div className="amt">
+            <div className="lp-amt">
               {formatRp(animatedAmount)} <span>received</span>
             </div>
 
-            <div className="prog">
+            <div className="lp-prog">
               <i
-                className={isAllPaid ? 'finished' : ''}
                 style={{
                   width: `${progressPercent}%`,
-                  transition: 'width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)',
                 }}
               />
             </div>
@@ -493,23 +485,22 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
                 return (
                   <div
                     key={`${currentScheme}-${i}`}
-                    className="irow"
+                    className="lp-irow"
                     style={{ animationDelay: `${i * 0.06}s` }}
                   >
                     <div>
-                      <b>{r[0]}</b> <span className="mut">{r[1]}%</span>
-                      <div className="mut">{formatRp(rowAmount)}</div>
+                      <b>{r[0]}</b> <span className="lp-mut">{r[1]}%</span>
+                      <div className="lp-mut">{formatRp(rowAmount)}</div>
                     </div>
                     <button
                       type="button"
-                      className={`sm ${isPaid ? 'paid' : 'go'}`}
-                      onClick={() => handleMarkPaid(i)}
-                      disabled={isPaid}
+                      className={`lp-sm ${isPaid ? '' : 'lp-go'}`}
+                      onClick={() => handleTogglePaid(i)}
                     >
                       {isPaid ? (
                         <>
                           <Icon name="check" size={14} />
-                          <span>Paid</span>
+                          <span>Paid · Undo</span>
                         </>
                       ) : (
                         <>
@@ -523,13 +514,13 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
               })}
             </div>
 
-            <div className="note">
+            <div className="lp-note">
               <span>
                 {isAllPaid
                   ? 'All payments received. Status finished itself.'
                   : `${formatRp(TOTAL_VALUE - calculatedReceived)} remaining`}
               </span>
-              <button type="button" className="lk" onClick={handleResetDemo}>
+              <button type="button" className="lp-lk" onClick={handleResetDemo}>
                 Reset
               </button>
             </div>
@@ -538,20 +529,20 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
       </section>
 
       {/* Features Grid */}
-      <section id="features" style={{ paddingTop: '24px' }}>
-        <div className="wrap">
-          <div className="eyebrow rv">What’s inside</div>
-          <h2 className="t rv" style={{ transitionDelay: '.05s' }}>
+      <section id="features" className="lp-sec" style={{ paddingTop: '24px' }}>
+        <div className="lp-wrap">
+          <div className="lp-eyebrow lp-rv">What’s inside</div>
+          <h2 className="lp-t lp-rv" style={{ transitionDelay: '.05s' }}>
             Everything a payment-driven practice needs. Nothing it doesn’t.
           </h2>
-          <div className="grid">
+          <div className="lp-grid">
             {FEATURES.map((feat, i) => (
               <div
                 key={feat.title}
-                className="fc rv"
+                className="lp-fc lp-rv"
                 style={{ transitionDelay: `${(i % 3) * 0.07}s` }}
               >
-                <div className="ic">
+                <div className="lp-ic">
                   <Icon name={feat.icon} size={24} />
                 </div>
                 <h3>{feat.title}</h3>
@@ -563,21 +554,21 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
       </section>
 
       {/* How it Flows */}
-      <section id="flow" style={{ paddingTop: '24px' }}>
-        <div className="wrap">
-          <div className="eyebrow rv">How it flows</div>
-          <h2 className="t rv" style={{ transitionDelay: '.05s' }}>
+      <section id="flow" className="lp-sec" style={{ paddingTop: '24px' }}>
+        <div className="lp-wrap">
+          <div className="lp-eyebrow lp-rv">How it flows</div>
+          <h2 className="lp-t lp-rv" style={{ transitionDelay: '.05s' }}>
             From first quote to final payment, in one line.
           </h2>
-          <div className="flow" ref={flowRef}>
-            <div className="line">
-              <i
-                style={{
-                  transform: `scaleX(${flowProgress.toFixed(3)})`,
-                }}
-              />
+          <div
+            className="lp-flow"
+            ref={flowRef}
+            style={{ '--p': flowProgress } as React.CSSProperties}
+          >
+            <div className="lp-line">
+              <i />
             </div>
-            <div className="steps">
+            <div className="lp-steps">
               {FLOW_STEPS.map((step, i) => {
                 const stepCount = Math.round(flowProgress * 4 + 0.15);
                 const isOn = i < stepCount;
@@ -585,9 +576,9 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
                 return (
                   <div
                     key={step.title}
-                    className={`step ${isOn ? 'on' : ''} ${isCur ? 'cur' : ''}`}
+                    className={`lp-step ${isOn ? 'on' : ''} ${isCur ? 'cur' : ''}`}
                   >
-                    <div className="dot">
+                    <div className="lp-dot">
                       <Icon name={step.icon} size={18} />
                     </div>
                     <h3>{step.title}</h3>
@@ -601,12 +592,12 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
       </section>
 
       {/* Final CTA */}
-      <section id="start" style={{ paddingTop: '24px' }}>
-        <div className="wrap">
-          <div className="end rv">
-            <h2 className="t">Stop chasing. Start tracking.</h2>
-            <p className="sub">Join the early list and be first in when Studio opens.</p>
-            <form className="mail" onSubmit={handleJoinSubmit} noValidate>
+      <section id="start" className="lp-sec" style={{ paddingTop: '24px' }}>
+        <div className="lp-wrap">
+          <div className="lp-end lp-rv">
+            <h2 className="lp-t">Stop chasing. Start tracking.</h2>
+            <p className="lp-sub">Join the early list and be first in when Studio opens.</p>
+            <form className="lp-mail" onSubmit={handleJoinSubmit} noValidate>
               <input
                 type="email"
                 placeholder="you@example.com"
@@ -618,18 +609,18 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
                 }}
                 aria-invalid={!!emailError}
               />
-              <button type="submit" className="btn pri" style={{ height: '46px' }}>
+              <button type="submit" className="lp-btn lp-pri" style={{ height: '46px' }}>
                 Get started
               </button>
             </form>
-            <div className="er">{emailError}</div>
+            <div className="lp-er">{emailError}</div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer>
-        <div className="wrap">
+      <footer className="lp-footer">
+        <div className="lp-wrap">
           <span>© {new Date().getFullYear()} DotStudio</span>
           <span>Built for freelancers.</span>
         </div>
