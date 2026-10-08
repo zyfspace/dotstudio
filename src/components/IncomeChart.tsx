@@ -835,95 +835,73 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
           </div>
 
           {/* Bars */}
-          {(() => {
-            const isDaily = buckets.length > 20;
-            const isMedium = buckets.length > 6 && buckets.length <= 20;
-            const barWidth = isDaily ? '12px' : '100%';
-            const barMaxWidth = isDaily ? '12px' : isMedium ? '18px' : '38px';
-            const barGap = isDaily ? '4px' : isMedium ? '6px' : '10px';
-            const barRadius = isDaily ? '3px 3px 0 0' : isMedium ? '4px 4px 0 0' : '6px 6px 0 0';
+          <div
+            className="bars-area"
+            style={buckets.length > 20 ? { gap: '4px' } : undefined}
+          >
+            {buckets.map((b, i) => {
+              const isHovered = hoveredIdx === i;
+              const heightPct = yMax > 0 ? (b.t / yMax) * 85 : 0;
+              const safeHeight = b.t > 0 ? Math.max(heightPct, 4) : 1.5;
 
-            return (
-              <div
-                className="bars-area"
-                style={{ gap: barGap }}
-              >
-                {buckets.map((b, i) => {
-                  const isHovered = hoveredIdx === i;
-                  const heightPct = yMax > 0 ? (b.t / yMax) * 85 : 0;
-                  const hasIncome = b.t > 0;
-                  const safeHeight = hasIncome ? Math.max(heightPct, 4) : 0;
+              return (
+                <div
+                  key={b.k}
+                  className={`bar-col ${b.isCurrent ? 'current' : ''} ${isHovered ? 'hovered' : ''}`}
+                  onMouseEnter={() => setHoveredIdx(i)}
+                  onMouseLeave={() => setHoveredIdx(null)}
+                  onClick={() => handleBarClick(b.k)}
+                  style={{ cursor: mode === '6m' ? 'pointer' : 'default' }}
+                >
+                  {/* Full number above bar only on hover */}
+                  <span className={`bar-value-label ${isHovered ? 'active' : ''}`}>
+                    {b.t ? num(b.t) : ''}
+                  </span>
 
-                  return (
-                    <div
-                      key={b.k}
-                      className={`bar-col ${b.isCurrent ? 'current' : ''} ${isHovered ? 'hovered' : ''}`}
-                      onMouseEnter={() => setHoveredIdx(i)}
-                      onMouseLeave={() => setHoveredIdx(null)}
-                      onClick={() => handleBarClick(b.k)}
-                      style={{ cursor: mode === '6m' ? 'pointer' : 'default' }}
-                    >
-                      {/* Full number above bar only on hover */}
-                      <span className={`bar-value-label ${isHovered ? 'active' : ''}`}>
-                        {b.t ? num(b.t) : ''}
-                      </span>
-
-                      {/* Pillar */}
-                      <div
-                        className="bar-pillar"
-                        style={{
-                          height: hasIncome ? `${safeHeight}%` : '3px',
-                          width: barWidth,
-                          maxWidth: barMaxWidth,
-                          borderRadius: barRadius,
-                        }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
+                  {/* Pillar */}
+                  <div
+                    className="bar-pillar"
+                    style={{
+                      height: `${safeHeight}%`,
+                      ...(buckets.length > 20 ? { borderRadius: '3px 3px 0 0' } : {}),
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* X-Axis Month / Date Labels below baseline */}
-      {(() => {
-        const isDaily = buckets.length > 20;
-        const isMedium = buckets.length > 6 && buckets.length <= 20;
-        const barGap = isDaily ? '4px' : isMedium ? '6px' : '10px';
-
-        return (
-          <div className="x-axis-wrapper">
-            <div className="x-axis-spacer-left" />
-            <div
-              className="x-axis-months"
-              style={{ gap: barGap }}
-            >
-              {buckets.map((b, i) => {
-                const isHovered = hoveredIdx === i;
-                return (
-                  <button
-                    key={b.k}
-                    className={`x-month-label ${b.isCurrent ? 'current' : ''} ${isHovered ? 'hovered' : ''}`}
-                    onMouseEnter={() => setHoveredIdx(i)}
-                    onMouseLeave={() => setHoveredIdx(null)}
-                    onClick={() => handleBarClick(b.k)}
-                    type="button"
-                    style={{
-                      fontSize: isDaily ? '10px' : isMedium ? '11px' : '12px',
-                      padding: isDaily ? '2px 0' : '4px 0',
-                      cursor: mode === '6m' ? 'pointer' : 'default',
-                    }}
-                  >
-                    {b.l}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
+      <div className="x-axis-wrapper">
+        <div className="x-axis-spacer-left" />
+        <div
+          className="x-axis-months"
+          style={buckets.length > 20 ? { gap: '4px' } : undefined}
+        >
+          {buckets.map((b, i) => {
+            const isHovered = hoveredIdx === i;
+            return (
+              <button
+                key={b.k}
+                className={`x-month-label ${b.isCurrent ? 'current' : ''} ${isHovered ? 'hovered' : ''}`}
+                onMouseEnter={() => setHoveredIdx(i)}
+                onMouseLeave={() => setHoveredIdx(null)}
+                onClick={() => handleBarClick(b.k)}
+                type="button"
+                style={{
+                  fontSize: buckets.length > 20 ? '10px' : '11px',
+                  padding: buckets.length > 20 ? '2px 0' : '4px 0',
+                  cursor: mode === '6m' ? 'pointer' : 'default',
+                }}
+              >
+                {b.l}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 };
