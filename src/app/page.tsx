@@ -1105,12 +1105,12 @@ export default function DashboardPage() {
     currentView === 'new'
       ? 'projects'
       : currentView === 'quote'
-      ? 'quotations'
-      : currentView === 'doc'
-      ? docState?.t === 'inv'
-        ? 'invoices'
-        : 'quotations'
-      : currentView;
+        ? 'quotations'
+        : currentView === 'doc'
+          ? docState?.t === 'inv'
+            ? 'invoices'
+            : 'quotations'
+          : currentView;
 
   if (!isMounted) return null;
 
@@ -1808,9 +1808,9 @@ export default function DashboardPage() {
                         {(() => {
                           const rawLines = newProjectData.desc
                             ? newProjectData.desc
-                                .split('\n')
-                                .map((s) => s.trim().replace(/^[-*•\d.]+\s*/, ''))
-                                .filter(Boolean)
+                              .split('\n')
+                              .map((s) => s.trim().replace(/^[-*•\d.]+\s*/, ''))
+                              .filter(Boolean)
                             : [];
                           const scopeItems = rawLines.length > 0 ? rawLines : [newProjectData.name || 'Lingkup pekerjaan sesuai kesepakatan'];
                           return scopeItems.map((sc, idx) => (
@@ -2541,8 +2541,8 @@ export default function DashboardPage() {
                         {(newQuoteData.scope.filter(s => s.trim()).length > 0
                           ? newQuoteData.scope.filter(s => s.trim())
                           : newQuoteData.items.map(i => i.d).filter(d => d.trim()).length > 0
-                          ? newQuoteData.items.map(i => i.d).filter(d => d.trim())
-                          : ['Lingkup pekerjaan sesuai kesepakatan']
+                            ? newQuoteData.items.map(i => i.d).filter(d => d.trim())
+                            : ['Lingkup pekerjaan sesuai kesepakatan']
                         ).map((sc, idx) => (
                           <li key={idx}>{sc}</li>
                         ))}
@@ -2713,9 +2713,9 @@ export default function DashboardPage() {
                           {(() => {
                             const rawLines = p.desc
                               ? p.desc
-                                  .split('\n')
-                                  .map((s) => s.trim().replace(/^[-*•\d.]+\s*/, ''))
-                                  .filter(Boolean)
+                                .split('\n')
+                                .map((s) => s.trim().replace(/^[-*•\d.]+\s*/, ''))
+                                .filter(Boolean)
                               : [];
                             const scopeItems = rawLines.length > 0 ? rawLines : [p.name || 'Lingkup pekerjaan sesuai kesepakatan'];
                             return scopeItems.map((sc, idx) => (
@@ -3250,8 +3250,8 @@ export default function DashboardPage() {
                           s === 'All'
                             ? projects.length
                             : projects.filter(
-                                (p) => getProjectStatus(p) === s
-                              ).length;
+                              (p) => getProjectStatus(p) === s
+                            ).length;
                         const label =
                           s === 'Progress'
                             ? 'In progress'
@@ -3288,10 +3288,10 @@ export default function DashboardPage() {
                       sortKey === 'v'
                         ? (p: Project) => p.v
                         : sortKey === 'name'
-                        ? (p: Project) => p.name
-                        : sortKey === 'pg'
-                        ? getProjectPct
-                        : (p: Project) => p.due || '9';
+                          ? (p: Project) => p.name
+                          : sortKey === 'pg'
+                            ? getProjectPct
+                            : (p: Project) => p.due || '9';
                     const x = f(a);
                     const y = f(b);
                     return (x > y ? 1 : x < y ? -1 : 0) * sortDir;
@@ -4077,7 +4077,7 @@ export default function DashboardPage() {
                   {/* Rekening & Detail Pembayaran Freelancer */}
                   <div className="panel">
                     <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--fg)', marginBottom: '4px' }}>
-                      Rekening &amp; Detail Pembayaran Freelancer
+                      Rekening &amp; Detail Pembayaran
                     </h3>
                     <p style={{ fontSize: '13px', color: 'var(--mut)', margin: '0 0 16px 0', lineHeight: 1.45 }}>
                       Data penerima transfer untuk pembayaran invoice. Nama pemilik rekening menggunakan nama asli pribadi (personal), terpisah dari nama branding agency di atas.
@@ -4091,7 +4091,7 @@ export default function DashboardPage() {
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. Faiz Dawami"
+                          placeholder="Your Name"
                           value={profileDraft.accountHolder}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, accountHolder: e.target.value }))
@@ -4105,7 +4105,7 @@ export default function DashboardPage() {
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. BCA / Mandiri Transfer"
+                          placeholder="BCA"
                           value={profileDraft.bankName}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, bankName: e.target.value }))
@@ -4136,7 +4136,7 @@ export default function DashboardPage() {
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. Faiz Dawami"
+                          placeholder="Account Holder Name"
                           value={profileDraft.ownerName}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, ownerName: e.target.value }))
@@ -4151,7 +4151,7 @@ export default function DashboardPage() {
                         id="st-terms"
                         disabled={!isSettingsUnlocked}
                         className="settings-input"
-                        placeholder="e.g. 50% di awal sebelum pengerjaan, pelunasan saat selesai"
+                        placeholder="Put your default payment terms here"
                         value={profileDraft.defaultPaymentTerms}
                         onChange={(e) =>
                           setProfileDraft((prev) => ({ ...prev, defaultPaymentTerms: e.target.value }))
@@ -4165,7 +4165,7 @@ export default function DashboardPage() {
                         id="st-notes"
                         disabled={!isSettingsUnlocked}
                         className="settings-input"
-                        placeholder="e.g. Quotation berlaku sesuai tanggal yang tertera."
+                        placeholder="Quotation Terms"
                         value={profileDraft.defaultNotes}
                         onChange={(e) =>
                           setProfileDraft((prev) => ({ ...prev, defaultNotes: e.target.value }))
@@ -4368,7 +4368,7 @@ export default function DashboardPage() {
                   {/* Project Details (Read-only) */}
                   <div className="sec">
                     <small>Details</small>
-                    
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '6px' }}>
                       <div>
                         <div className="mut" style={{ fontSize: '11.5px', marginBottom: '2px' }}>Project name</div>

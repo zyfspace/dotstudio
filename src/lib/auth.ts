@@ -102,7 +102,7 @@ export const verifyLogin = (
   }
 
   if (match.passwordHash !== cleanPass) {
-    return { success: false, error: 'Password yang kamu masukkan salah.' };
+    return { success: false, error: 'You entered wrong password.' };
   }
 
   return { success: true, user: match.user };
@@ -126,7 +126,7 @@ export const registerUser = (
   );
 
   if (exists) {
-    return { success: false, error: 'Email ini sudah terdaftar. Silakan log in.' };
+    return { success: false, error: 'This email is already registered. Please log in.' };
   }
 
   const newUser: AuthUser = {

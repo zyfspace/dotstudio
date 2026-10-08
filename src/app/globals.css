@@ -1373,10 +1373,23 @@ tbody tr:hover {
   color: var(--mut);
 }
 
+.app input,
+.app select,
+.app textarea,
+.pl input,
+.pl select,
 .f input,
 .f select,
+.f textarea,
 .f .in,
-.modal .in {
+.modal input,
+.modal select,
+.modal textarea,
+.modal .in,
+.dr input,
+.dr select,
+.dr textarea,
+.in {
   height: 36px;
   padding: 0 11px;
   border: 1px solid var(--line);
@@ -1385,8 +1398,22 @@ tbody tr:hover {
   color: var(--fg);
   outline: 0;
   width: 100%;
-  transition: 0.15s;
+  transition: border-color 0.15s, background-color 0.15s;
   font-size: 14px;
+}
+
+.app input:focus,
+.app select:focus,
+.app textarea:focus,
+.pl input:focus,
+.pl select:focus,
+.f input:focus,
+.f select:focus,
+.f textarea:focus,
+.modal input:focus,
+.modal select:focus,
+.in:focus {
+  border-color: var(--fg);
 }
 
 select,
