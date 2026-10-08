@@ -271,8 +271,10 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
     return () => cancelAnimationFrame(raf);
   }, [calculatedReceived]);
 
-  const handleTogglePaid = (index: number) => {
-    setPaidInstallments((prev) => ({ ...prev, [index]: !prev[index] }));
+  const handleMarkPaid = (index: number) => {
+    if (!paidInstallments[index]) {
+      setPaidInstallments((prev) => ({ ...prev, [index]: true }));
+    }
   };
 
   const handleResetDemo = () => {
@@ -329,13 +331,13 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
           <div>
             <div className="lp-tagl lp-rv">
               <i />
-              For freelancers who get paid in installments
+              Not just track, we help you manage.
             </div>
             <h1 className="lp-big lp-rv" style={{ transitionDelay: '.05s' }}>
               Know exactly what you’re owed<em>.</em>
             </h1>
             <p className="lp-lead lp-rv" style={{ transitionDelay: '.12s' }}>
-              Studio keeps your projects, clients and payments in one quiet place. Mark a payment received and the project status updates itself.
+              DotStudio keeps your projects, clients and payments in one quiet place. Mark a payment received and the project status updates itself.
             </p>
             <div className="lp-cta lp-rv" style={{ transitionDelay: '.2s' }}>
               <button className="lp-btn lp-pri lp-lg" onClick={() => onOpenAuth('signup')}>
@@ -464,6 +466,7 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
                 <div className="lp-mut">Kopi Sudut · {formatRp(TOTAL_VALUE)}</div>
               </div>
               <span className={`lp-st ${demoStatusClass}`}>
+                {isAllPaid && <Icon name="check" size={14} />}
                 {demoStatusLabel}
               </span>
             </div>
@@ -496,13 +499,14 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
                     </div>
                     <button
                       type="button"
-                      className={`lp-sm ${isPaid ? '' : 'lp-go'}`}
-                      onClick={() => handleTogglePaid(i)}
+                      className={`lp-sm ${isPaid ? 'lp-paid' : 'lp-go'}`}
+                      onClick={() => handleMarkPaid(i)}
+                      disabled={isPaid}
                     >
                       {isPaid ? (
                         <>
                           <Icon name="check" size={14} />
-                          <span>Paid · Undo</span>
+                          <span>Paid</span>
                         </>
                       ) : (
                         <>

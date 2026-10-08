@@ -328,8 +328,13 @@
 
 .lp-root .lp-st.Finished:before,
 .lp-root .lp-st.lp-Finished:before {
-  background: var(--fg);
-  border-color: var(--fg);
+  display: none;
+}
+
+.lp-root .lp-st.Finished,
+.lp-root .lp-st.lp-Finished {
+  color: var(--gr);
+  gap: 5px;
 }
 
 .lp-root .lp-amt {
@@ -544,14 +549,22 @@
   cursor: pointer;
 }
 
-.lp-root .lp-sm:hover {
+.lp-root .lp-sm:hover:not(:disabled) {
   background: var(--soft);
 }
 
-.lp-root .lp-sm.lp-go:hover {
+.lp-root .lp-sm.lp-go:hover:not(:disabled) {
   background: var(--ac);
   border-color: var(--ac);
   color: #fff;
+}
+
+.lp-root .lp-sm:disabled,
+.lp-root .lp-sm.lp-paid {
+  cursor: default;
+  color: var(--mut);
+  border-color: var(--line);
+  background: var(--soft);
 }
 
 .lp-root .lp-note {
