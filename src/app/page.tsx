@@ -15,12 +15,17 @@ import {
   loadStoredData,
   saveStoredData,
   fetchFromSupabase,
+  syncToSupabase,
+  deleteProjectFromSupabase,
+  deleteClientFromSupabase,
+  deleteQuoteFromSupabase,
   getInitialClients,
   getInitialProjects,
   getInitialQuotes,
   DEFAULT_STUDIO_PROFILE,
   loadStudioProfile,
   saveStudioProfile,
+  syncProfileToSupabase,
 } from '@/lib/storage';
 import {
   Y,
@@ -92,6 +97,11 @@ export default function DashboardPage() {
   const [profileSavedFeedback, setProfileSavedFeedback] = useState(false);
   const [previewProof, setPreviewProof] = useState<{ name: string; url: string } | null>(null);
   const [profileRequiredModal, setProfileRequiredModal] = useState<'project' | 'invoice' | 'quote' | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+  const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
+  const [showSchemaModal, setShowSchemaModal] = useState(false);
+  const [schemaCopied, setSchemaCopied] = useState(false);
 
   const isProfileComplete = Boolean(
     studioProfile.studioName?.trim() &&
@@ -220,8 +230,13 @@ export default function DashboardPage() {
     try {
       const remote = await fetchFromSupabase(userEmail);
       if (remote) {
+        if (remote.profile) {
+          setStudioProfile(remote.profile);
+          setProfileDraft(remote.profile);
+        }
+
         let invSeq = 0;
-        const normProjects = remote.projects.map((p) => ({
+        const normProjects = remote.data.projects.map((p) => ({
           ...p,
           plan: p.plan.map((item) => {
             if (item.inv && item.inv.no) {
@@ -246,7 +261,7 @@ export default function DashboardPage() {
           }),
         }));
 
-        const normQuotes = remote.quotes.map((q, idx) => {
+        const normQuotes = remote.data.quotes.map((q, idx) => {
           if (q.no && !q.no.startsWith('QT/')) {
             const seqMatch = q.no.match(/\d+$/);
             const seq = seqMatch ? pad(seqMatch[0]) : pad(idx + 1);
@@ -262,9 +277,11 @@ export default function DashboardPage() {
           return q;
         });
 
-        setClients(remote.clients);
-        setProjects(normProjects);
-        setQuotes(normQuotes);
+        if (remote.data.clients.length > 0 || remote.data.projects.length > 0 || remote.data.quotes.length > 0) {
+          setClients(remote.data.clients);
+          setProjects(normProjects);
+          setQuotes(normQuotes);
+        }
       }
     } catch (e) {
       console.error('Failed to load from Supabase', e);
@@ -274,6 +291,37 @@ export default function DashboardPage() {
       }, 500);
     }
   }, [authUser?.email]);
+
+  // Manual Cloud Sync Trigger
+  const handleManualCloudSync = async () => {
+    setIsSyncingCloud(true);
+    setSyncFeedback(null);
+    try {
+      const email = authUser?.email;
+      await syncToSupabase({ clients, projects, quotes }, email);
+      await syncProfileToSupabase(studioProfile, email);
+      const remote = await fetchFromSupabase(email);
+      if (remote) {
+        if (remote.profile) {
+          setStudioProfile(remote.profile);
+          setProfileDraft(remote.profile);
+        }
+        if (remote.data.clients.length > 0 || remote.data.projects.length > 0 || remote.data.quotes.length > 0) {
+          setClients(remote.data.clients);
+          setProjects(remote.data.projects);
+          setQuotes(remote.data.quotes);
+        }
+        setSyncFeedback('Data berhasil disinkronkan!');
+      } else {
+        setSyncFeedback('Data tersimpan lokal.');
+      }
+    } catch (e: any) {
+      setSyncFeedback(e?.message || 'Gagal sinkronisasi');
+    } finally {
+      setIsSyncingCloud(false);
+      setTimeout(() => setSyncFeedback(null), 4000);
+    }
+  };
 
   // Initialize data on mount
   useEffect(() => {
@@ -456,12 +504,6 @@ export default function DashboardPage() {
     a.click();
     URL.revokeObjectURL(url);
   };
-
-  // Save changes to localStorage
-  useEffect(() => {
-    if (!isMounted) return;
-    saveStoredData({ clients, projects, quotes });
-  }, [clients, projects, quotes, isMounted]);
 
   // Keyboard navigation & shortcuts
   useEffect(() => {
@@ -1055,6 +1097,7 @@ export default function DashboardPage() {
       return;
     }
     setProjects((prev) => prev.filter((p) => p.id !== projectId));
+    deleteProjectFromSupabase(projectId);
     closeDrawer();
   };
 
@@ -1065,12 +1108,14 @@ export default function DashboardPage() {
       return;
     }
     setClients((prev) => prev.filter((c) => c.id !== clientId));
+    deleteClientFromSupabase(clientId);
     closeDrawer();
   };
 
   // Delete quote
   const handleDeleteQuote = (quoteId: number) => {
     setQuotes((prev) => prev.filter((q) => q.id !== quoteId));
+    deleteQuoteFromSupabase(quoteId);
     setCurrentView('quotations');
   };
 
@@ -1267,6 +1312,42 @@ export default function DashboardPage() {
 
   return (
     <div key="page-dashboard" className={`app page-view-transition ${isSidebarCollapsed ? 'c' : ''}`}>
+      {/* Mobile Header (<= 768px) */}
+      <header className="mob-header">
+        <div className="mob-header-left">
+          <DotStudioPaperLogo height={18} />
+          <span className="mob-header-title">
+            {currentView === 'overview'
+              ? 'Dashboard'
+              : currentView === 'new'
+              ? 'New Project'
+              : currentView === 'quote'
+              ? 'New Quote'
+              : currentView === 'doc'
+              ? (docState?.t === 'inv' ? 'Invoice' : 'Quotation')
+              : currentView.charAt(0).toUpperCase() + currentView.slice(1)}
+          </span>
+        </div>
+        <div className="mob-header-right">
+          <button
+            type="button"
+            className="ib"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+          >
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
+          </button>
+          <button
+            type="button"
+            className="ib"
+            onClick={() => setIsMobileMenuOpen(true)}
+            aria-label="Open navigation menu"
+          >
+            <Icon name="side" size={18} />
+          </button>
+        </div>
+      </header>
+
       {/* Sidebar */}
       <aside>
         <div className="brand">
@@ -3498,62 +3579,109 @@ export default function DashboardPage() {
                   }
 
                   return (
-                    <div className="tw">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th className="s" onClick={() => toggleSort('name')}>
-                              Project {sortKey === 'name' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
-                            </th>
-                            <th>Client</th>
-                            <th>Status</th>
-                            <th className="s" onClick={() => toggleSort('due')}>
-                              Due {sortKey === 'due' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
-                            </th>
-                            <th className="s" onClick={() => toggleSort('pg')}>
-                              Received {sortKey === 'pg' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
-                            </th>
-                            <th className="s r" onClick={() => toggleSort('v')}>
-                              Value {sortKey === 'v' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filtered.map((p) => {
-                            const c = getClient(p.c);
-                            const st = getProjectStatus(p);
-                            const pctVal = getProjectPct(p);
-                            return (
-                              <tr
-                                key={p.id}
-                                onClick={() => setActiveProjectDrawerId(p.id)}
-                              >
-                                <td>{p.name}</td>
-                                <td>
-                                  <span>{c.name}</span>
-                                  {c.co && <span className="mut"> · {c.co}</span>}
-                                </td>
-                                <td>
-                                  <span className={`st ${st}`}>
-                                    {STATUS_LABELS[st]}
-                                  </span>
-                                </td>
-                                <td className="mut">{dt(p.due)}</td>
-                                <td>
-                                  <div className="pg">
-                                    <div className="prog">
-                                      <i style={{ width: `${pctVal}%` }} />
+                    <>
+                      <div className="tw tw-desktop-only">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th className="s" onClick={() => toggleSort('name')}>
+                                Project {sortKey === 'name' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
+                              </th>
+                              <th>Client</th>
+                              <th>Status</th>
+                              <th className="s" onClick={() => toggleSort('due')}>
+                                Due {sortKey === 'due' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
+                              </th>
+                              <th className="s" onClick={() => toggleSort('pg')}>
+                                Received {sortKey === 'pg' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
+                              </th>
+                              <th className="s r" onClick={() => toggleSort('v')}>
+                                Value {sortKey === 'v' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filtered.map((p) => {
+                              const c = getClient(p.c);
+                              const st = getProjectStatus(p);
+                              const pctVal = getProjectPct(p);
+                              return (
+                                <tr
+                                  key={p.id}
+                                  onClick={() => setActiveProjectDrawerId(p.id)}
+                                >
+                                  <td>{p.name}</td>
+                                  <td>
+                                    <span>{c.name}</span>
+                                    {c.co && <span className="mut"> · {c.co}</span>}
+                                  </td>
+                                  <td>
+                                    <span className={`st ${st}`}>
+                                      {STATUS_LABELS[st]}
+                                    </span>
+                                  </td>
+                                  <td className="mut">{dt(p.due)}</td>
+                                  <td>
+                                    <div className="pg">
+                                      <div className="prog">
+                                        <i style={{ width: `${pctVal}%` }} />
+                                      </div>
+                                      <span className="mut">{pctVal}%</span>
                                     </div>
-                                    <span className="mut">{pctVal}%</span>
+                                  </td>
+                                  <td className="r">{rp(p.v)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile Card List (<= 768px) */}
+                      <div className="mob-card-list">
+                        {filtered.map((p) => {
+                          const c = getClient(p.c);
+                          const st = getProjectStatus(p);
+                          const pctVal = getProjectPct(p);
+                          const overdue = isOverdue(p.due, st === 'Finished');
+                          return (
+                            <div
+                              key={p.id}
+                              className="mob-item-card"
+                              onClick={() => setActiveProjectDrawerId(p.id)}
+                            >
+                              <div className="mob-item-top">
+                                <div style={{ minWidth: 0 }}>
+                                  <div className="mob-item-title">{p.name}</div>
+                                  <div className="mob-item-sub">
+                                    {c.name}{c.co ? ` · ${c.co}` : ''}
                                   </div>
-                                </td>
-                                <td className="r">{rp(p.v)}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                                </div>
+                                <span className={`st ${st}`} style={{ fontSize: '11.5px', flexShrink: 0 }}>
+                                  {STATUS_LABELS[st]}
+                                </span>
+                              </div>
+
+                              <div className="pg" style={{ margin: '2px 0 4px', gap: '8px' }}>
+                                <div className="prog" style={{ height: '4px' }}>
+                                  <i style={{ width: `${pctVal}%` }} />
+                                </div>
+                                <span className="mut" style={{ fontSize: '11px', fontVariantNumeric: 'tabular-nums' }}>
+                                  {pctVal}%
+                                </span>
+                              </div>
+
+                              <div className="mob-item-bottom">
+                                <span className={overdue ? 'od' : 'mut'} style={{ fontSize: '12px' }}>
+                                  {overdue ? 'Overdue: ' : 'Due: '}{dt(p.due)}
+                                </span>
+                                <span className="mob-item-val">{rp(p.v)}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
                   );
                 })()}
               </div>
@@ -3842,135 +3970,166 @@ export default function DashboardPage() {
 
                             {!isCollapsed && (
                               <div className="accordion-body">
-                                <table>
-                                  <thead>
-                                    <tr>
-                                      <th>No.</th>
-                                      <th>Date</th>
-                                      <th>Project</th>
-                                      <th>Client</th>
-                                      <th>Status</th>
-                                      <th className="r">Amount</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {items.map((x) => {
-                                      const c = getClient(x.p.c);
-                                      const overdue = isOverdue(x.i.due, x.i.paid);
-                                      return (
-                                        <tr
-                                          key={x.i.id}
-                                          onClick={() =>
-                                            openDoc('inv', x.p.id, x.i.id)
-                                          }
-                                        >
-                                          <td>{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</td>
-                                          <td className="mut">{dt(x.i.inv!.date)}</td>
-                                          <td>
-                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                                              <span>{x.p.name}</span>
-                                              {x.i.l && (
-                                                <>
-                                                  <span className="mut" style={{ opacity: 0.45, userSelect: 'none' }}>·</span>
-                                                  <span className="mut" style={{ fontSize: '13px' }}>{x.i.l}</span>
-                                                </>
-                                              )}
-                                            </div>
-                                          </td>
-                                          <td>{c.name}</td>
-                                          <td>
-                                            {x.i.paid ? (
-                                              <span
-                                                style={{
-                                                  display: 'inline-flex',
-                                                  alignItems: 'center',
-                                                  gap: '6px',
-                                                  color: '#10b981',
-                                                  fontSize: '13px',
-                                                  fontWeight: 500,
-                                                }}
-                                              >
+                                <div className="tw-desktop-only">
+                                  <table>
+                                    <thead>
+                                      <tr>
+                                        <th>No.</th>
+                                        <th>Date</th>
+                                        <th>Project</th>
+                                        <th>Client</th>
+                                        <th>Status</th>
+                                        <th className="r">Amount</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {items.map((x) => {
+                                        const c = getClient(x.p.c);
+                                        const overdue = isOverdue(x.i.due, x.i.paid);
+                                        return (
+                                          <tr
+                                            key={x.i.id}
+                                            onClick={() =>
+                                              openDoc('inv', x.p.id, x.i.id)
+                                            }
+                                          >
+                                            <td>{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</td>
+                                            <td className="mut">{dt(x.i.inv!.date)}</td>
+                                            <td>
+                                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                                <span>{x.p.name}</span>
+                                                {x.i.l && (
+                                                  <>
+                                                    <span className="mut" style={{ opacity: 0.45, userSelect: 'none' }}>·</span>
+                                                    <span className="mut" style={{ fontSize: '13px' }}>{x.i.l}</span>
+                                                  </>
+                                                )}
+                                              </div>
+                                            </td>
+                                            <td>{c.name}</td>
+                                            <td>
+                                              {x.i.paid ? (
                                                 <span
                                                   style={{
-                                                    width: '15px',
-                                                    height: '15px',
-                                                    borderRadius: '50%',
-                                                    background: 'rgba(16, 185, 129, 0.15)',
-                                                    border: '1px solid rgba(16, 185, 129, 0.4)',
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    flexShrink: 0,
+                                                    gap: '6px',
+                                                    color: '#10b981',
+                                                    fontSize: '13px',
+                                                    fontWeight: 500,
                                                   }}
                                                 >
-                                                  <svg
-                                                    width="9"
-                                                    height="9"
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth="3"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
+                                                  <span
+                                                    style={{
+                                                      width: '15px',
+                                                      height: '15px',
+                                                      borderRadius: '50%',
+                                                      background: 'rgba(16, 185, 129, 0.15)',
+                                                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                                                      display: 'inline-flex',
+                                                      alignItems: 'center',
+                                                      justifyContent: 'center',
+                                                      flexShrink: 0,
+                                                    }}
                                                   >
-                                                    <polyline points="20 6 9 17 4 12" />
-                                                  </svg>
+                                                    <svg
+                                                      width="9"
+                                                      height="9"
+                                                      viewBox="0 0 24 24"
+                                                      fill="none"
+                                                      stroke="currentColor"
+                                                      strokeWidth="3"
+                                                      strokeLinecap="round"
+                                                      strokeLinejoin="round"
+                                                    >
+                                                      <polyline points="20 6 9 17 4 12" />
+                                                    </svg>
+                                                  </span>
+                                                  Paid
                                                 </span>
-                                                Paid
-                                              </span>
-                                            ) : overdue ? (
-                                              <span
-                                                style={{
-                                                  display: 'inline-flex',
-                                                  alignItems: 'center',
-                                                  gap: '6px',
-                                                  color: '#ef4444',
-                                                  fontSize: '13px',
-                                                }}
-                                              >
+                                              ) : overdue ? (
                                                 <span
                                                   style={{
-                                                    width: '7px',
-                                                    height: '7px',
-                                                    borderRadius: '50%',
-                                                    background: '#ef4444',
-                                                    display: 'inline-block',
-                                                    flexShrink: 0,
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    color: '#ef4444',
+                                                    fontSize: '13px',
                                                   }}
-                                                />
-                                                Overdue
-                                              </span>
-                                            ) : (
-                                              <span
-                                                style={{
-                                                  display: 'inline-flex',
-                                                  alignItems: 'center',
-                                                  gap: '6px',
-                                                  color: 'var(--mut)',
-                                                  fontSize: '13px',
-                                                }}
-                                              >
+                                                >
+                                                  <span
+                                                    style={{
+                                                      width: '7px',
+                                                      height: '7px',
+                                                      borderRadius: '50%',
+                                                      background: '#ef4444',
+                                                      display: 'inline-block',
+                                                      flexShrink: 0,
+                                                    }}
+                                                  />
+                                                  Overdue
+                                                </span>
+                                              ) : (
                                                 <span
                                                   style={{
-                                                    width: '7px',
-                                                    height: '7px',
-                                                    borderRadius: '50%',
-                                                    border: '1.5px solid var(--mut)',
-                                                    background: 'transparent',
-                                                    display: 'inline-block',
-                                                    flexShrink: 0,
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    color: 'var(--mut)',
+                                                    fontSize: '13px',
                                                   }}
-                                                />
-                                                Unpaid
-                                              </span>
-                                            )}
-                                          </td>
-                                          <td className="r">{rp(x.i.a)}</td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
+                                                >
+                                                  <span
+                                                    style={{
+                                                      width: '7px',
+                                                      height: '7px',
+                                                      borderRadius: '50%',
+                                                      border: '1.5px solid var(--mut)',
+                                                      background: 'transparent',
+                                                      display: 'inline-block',
+                                                      flexShrink: 0,
+                                                    }}
+                                                  />
+                                                  Unpaid
+                                                </span>
+                                              )}
+                                            </td>
+                                            <td className="r">{rp(x.i.a)}</td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+
+                                {/* Mobile Invoices Card List */}
+                                <div className="mob-card-list">
+                                  {items.map((x) => {
+                                    const c = getClient(x.p.c);
+                                    const overdue = isOverdue(x.i.due, x.i.paid);
+                                    return (
+                                      <div
+                                        key={x.i.id}
+                                        className="mob-item-card"
+                                        onClick={() => openDoc('inv', x.p.id, x.i.id)}
+                                      >
+                                        <div className="mob-item-top">
+                                          <div>
+                                            <div className="mob-item-title">{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</div>
+                                            <div className="mob-item-sub">{x.p.name} · {x.i.l}</div>
+                                          </div>
+                                          <span style={{ fontSize: '12px', fontWeight: 500, color: x.i.paid ? '#10b981' : overdue ? '#ef4444' : 'var(--mut)' }}>
+                                            {x.i.paid ? 'Paid' : overdue ? 'Overdue' : 'Unpaid'}
+                                          </span>
+                                        </div>
+                                        <div className="mob-item-bottom">
+                                          <span className="mut">{dt(x.i.inv!.date)}</span>
+                                          <span className="mob-item-val">{rp(x.i.a)}</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             )}
                           </div>
@@ -4063,45 +4222,80 @@ export default function DashboardPage() {
 
                             {!isCollapsed && (
                               <div className="accordion-body">
-                                <table>
-                                  <thead>
-                                    <tr>
-                                      <th>No.</th>
-                                      <th>Date</th>
-                                      <th>Client</th>
-                                      <th>Title</th>
-                                      <th>Valid until</th>
-                                      <th>Status</th>
-                                      <th className="r">Total</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {items.map((x) => {
-                                      const totalVal = x.items.reduce(
-                                        (acc, curr) => acc + curr.q * curr.p,
-                                        0
-                                      );
-                                      return (
-                                        <tr
-                                          key={x.id}
-                                          onClick={() => openDoc('quo', x.id)}
-                                        >
-                                          <td>{formatQuoteNo(x.no, x.date, x.senderName)}</td>
-                                          <td className="mut">{dt(x.date)}</td>
-                                          <td>{x.cn}</td>
-                                          <td>{x.title}</td>
-                                          <td className="mut">{dt(x.valid)}</td>
-                                          <td>
-                                            <span className={`st ${QS[x.s]}`}>
-                                              {x.s}
-                                            </span>
-                                          </td>
-                                          <td className="r">{rp(totalVal)}</td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
+                                <div className="tw-desktop-only">
+                                  <table>
+                                    <thead>
+                                      <tr>
+                                        <th>No.</th>
+                                        <th>Date</th>
+                                        <th>Client</th>
+                                        <th>Title</th>
+                                        <th>Valid until</th>
+                                        <th>Status</th>
+                                        <th className="r">Total</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {items.map((x) => {
+                                        const totalVal = x.items.reduce(
+                                          (acc, curr) => acc + curr.q * curr.p,
+                                          0
+                                        );
+                                        return (
+                                          <tr
+                                            key={x.id}
+                                            onClick={() => openDoc('quo', x.id)}
+                                          >
+                                            <td>{formatQuoteNo(x.no, x.date, x.senderName)}</td>
+                                            <td className="mut">{dt(x.date)}</td>
+                                            <td>{x.cn}</td>
+                                            <td>{x.title}</td>
+                                            <td className="mut">{dt(x.valid)}</td>
+                                            <td>
+                                              <span className={`st ${QS[x.s]}`}>
+                                                {x.s}
+                                              </span>
+                                            </td>
+                                            <td className="r">{rp(totalVal)}</td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+
+                                {/* Mobile Quotations Card List */}
+                                <div className="mob-card-list">
+                                  {items.map((x) => {
+                                    const totalVal = x.items.reduce(
+                                      (acc, curr) => acc + curr.q * curr.p,
+                                      0
+                                    );
+                                    return (
+                                      <div
+                                        key={x.id}
+                                        className="mob-item-card"
+                                        onClick={() => openDoc('quo', x.id)}
+                                      >
+                                        <div className="mob-item-top">
+                                          <div>
+                                            <div className="mob-item-title">{formatQuoteNo(x.no, x.date, x.senderName)}</div>
+                                            <div className="mob-item-sub">{x.title} · {x.cn}</div>
+                                          </div>
+                                          <span className={`st ${QS[x.s]}`}>
+                                            {x.s}
+                                          </span>
+                                        </div>
+                                        <div className="mob-item-bottom">
+                                          <div className="mob-item-amount">{rp(totalVal)}</div>
+                                          <span className="mut" style={{ fontSize: '12px' }}>
+                                            Valid: {dt(x.valid)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             )}
                           </div>
@@ -4422,6 +4616,51 @@ export default function DashboardPage() {
                       <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Icon name="check" size={14} /> Settings tersimpan &amp; terkunci kembali
                       </span>
+                    )}
+                  </div>
+
+                  {/* Cloud Sync & Supabase Database Configuration */}
+                  <div className="panel" style={{ marginTop: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                      <div style={{ flex: '1 1 280px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <Icon name="check" size={16} />
+                          <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--fg)', margin: 0 }}>
+                            Sinkronisasi Cloud Supabase
+                          </h3>
+                        </div>
+                        <p style={{ fontSize: '13px', color: 'var(--mut)', margin: '0 0 8px 0', lineHeight: 1.45 }}>
+                          Data project, client, quotation, dan invoice otomatis tersinkron ke Supabase Cloud sehingga dapat diakses secara real-time dari HP dan Laptop.
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          className="btn out sm"
+                          onClick={() => setShowSchemaModal(true)}
+                          style={{ fontSize: '12.5px' }}
+                        >
+                          <Icon name="key" size={13} style={{ marginRight: '4px' }} />
+                          Setup Database SQL
+                        </button>
+                        <button
+                          type="button"
+                          className="btn pri sm"
+                          onClick={handleManualCloudSync}
+                          disabled={isSyncingCloud}
+                          style={{ fontSize: '12.5px' }}
+                        >
+                          <Icon name="check" size={13} style={{ marginRight: '4px' }} />
+                          {isSyncingCloud ? 'Menyinkronkan...' : 'Sync Sekarang'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {syncFeedback && (
+                      <div style={{ fontSize: '12px', color: syncFeedback.includes('berhasil') ? '#16a34a' : 'var(--mut)', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Icon name="info" size={13} />
+                        <span>{syncFeedback}</span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -5385,6 +5624,337 @@ export default function DashboardPage() {
                 <Icon name="settings" size={14} style={{ marginRight: '4px' }} />
                 Lengkapi di Settings
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="mob-bottom-nav" aria-label="Mobile Navigation">
+        <button
+          type="button"
+          className={`mob-nav-item ${currentView === 'overview' ? 'active' : ''}`}
+          onClick={() => {
+            setCurrentView('overview');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
+          <Icon name="chart" size={18} />
+          <span>Overview</span>
+        </button>
+        <button
+          type="button"
+          className={`mob-nav-item ${currentView === 'projects' || currentView === 'new' ? 'active' : ''}`}
+          onClick={() => {
+            setCurrentView('projects');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
+          <Icon name="briefcase" size={18} />
+          <span>Projects</span>
+        </button>
+        <button
+          type="button"
+          className={`mob-nav-item ${currentView === 'clients' ? 'active' : ''}`}
+          onClick={() => {
+            setCurrentView('clients');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
+          <Icon name="users" size={18} />
+          <span>Clients</span>
+        </button>
+        <button
+          type="button"
+          className={`mob-nav-item ${currentView === 'invoices' ? 'active' : ''}`}
+          onClick={() => {
+            setCurrentView('invoices');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
+          <Icon name="file" size={18} />
+          <span>Invoices</span>
+        </button>
+        <button
+          type="button"
+          className={`mob-nav-item ${isMobileMenuOpen ? 'active' : ''}`}
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          <Icon name="dots" size={18} />
+          <span>More</span>
+        </button>
+      </nav>
+
+      {/* Mobile Menu Drawer Sheet */}
+      <div
+        className={`mob-menu-overlay ${isMobileMenuOpen ? 'on' : ''}`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+      <div className={`mob-menu-drawer ${isMobileMenuOpen ? 'on' : ''}`}>
+        <div className="mob-menu-handle" />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+          <div>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--fg)' }}>Menu Lainnya</div>
+            <div style={{ fontSize: '12px', color: 'var(--mut)' }}>{authUser?.email || 'Freelance Workspace'}</div>
+          </div>
+          <button
+            type="button"
+            className="ib"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Tutup menu"
+          >
+            <Icon name="x" size={16} />
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setCurrentView('quotations');
+              setIsMobileMenuOpen(false);
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', borderRadius: '8px', textAlign: 'left', background: currentView === 'quotations' ? 'var(--soft)' : 'transparent', color: 'var(--fg)', fontSize: '13.5px', border: 'none', cursor: 'pointer' }}
+          >
+            <Icon name="quote" size={16} />
+            <span>Quotations</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setCurrentView('payments');
+              setIsMobileMenuOpen(false);
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', borderRadius: '8px', textAlign: 'left', background: currentView === 'payments' ? 'var(--soft)' : 'transparent', color: 'var(--fg)', fontSize: '13.5px', border: 'none', cursor: 'pointer' }}
+          >
+            <Icon name="coins" size={16} />
+            <span>Payments &amp; Income</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setCurrentView('settings');
+              setIsMobileMenuOpen(false);
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', borderRadius: '8px', textAlign: 'left', background: currentView === 'settings' ? 'var(--soft)' : 'transparent', color: 'var(--fg)', fontSize: '13.5px', border: 'none', cursor: 'pointer' }}
+          >
+            <Icon name="settings" size={16} />
+            <span>Settings &amp; Branding</span>
+          </button>
+
+          <div style={{ height: '1px', background: 'var(--line)', margin: '8px 0' }} />
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              handleManualCloudSync();
+            }}
+            disabled={isSyncingCloud}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', borderRadius: '8px', textAlign: 'left', background: 'transparent', color: 'var(--fg)', fontSize: '13.5px', border: 'none', cursor: 'pointer' }}
+          >
+            <Icon name="check" size={16} />
+            <span>{isSyncingCloud ? 'Sedang Sync Cloud...' : 'Sync Cloud Supabase'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              setShowSchemaModal(true);
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', borderRadius: '8px', textAlign: 'left', background: 'transparent', color: 'var(--fg)', fontSize: '13.5px', border: 'none', cursor: 'pointer' }}
+          >
+            <Icon name="key" size={16} />
+            <span>Setup Supabase SQL</span>
+          </button>
+
+          <div style={{ height: '1px', background: 'var(--line)', margin: '8px 0' }} />
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              setGuestView('landing');
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', borderRadius: '8px', textAlign: 'left', background: 'transparent', color: 'var(--mut)', fontSize: '13.5px', border: 'none', cursor: 'pointer' }}
+          >
+            <Icon name="bld" size={16} />
+            <span>Lihat Landing Page</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              setAuthSession(null);
+              setAuthUser(null);
+              setGuestView('landing');
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', borderRadius: '8px', textAlign: 'left', background: 'transparent', color: '#ef4444', fontSize: '13.5px', border: 'none', cursor: 'pointer' }}
+          >
+            <Icon name="logout" size={16} />
+            <span>Keluar (Logout)</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Supabase Schema Modal for 1-Click Database Setup */}
+      {showSchemaModal && (
+        <div
+          className="pin-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowSchemaModal(false);
+            }
+          }}
+        >
+          <div className="pin-modal-card" role="dialog" aria-modal="true" style={{ maxWidth: '580px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, margin: 0, color: 'var(--fg)' }}>
+                  Setup Tabel Supabase Cloud
+                </h3>
+                <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '4px 0 0', lineHeight: 1.45 }}>
+                  Jalankan query SQL ini 1x di Supabase SQL Editor agar data tersimpan di Cloud dan otomatis muncul di HP / Laptop lain.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="ib"
+                onClick={() => setShowSchemaModal(false)}
+                aria-label="Tutup"
+              >
+                <Icon name="x" size={16} />
+              </button>
+            </div>
+
+            <div style={{ position: 'relative', background: 'var(--soft)', border: '1px solid var(--line)', borderRadius: '6px', padding: '12px', maxHeight: '220px', overflowY: 'auto', fontSize: '11.5px', fontFamily: 'var(--mono)', lineHeight: 1.5, color: 'var(--fg)' }}>
+              <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+{`-- Jalankan ini di Supabase Dashboard -> SQL Editor -> New Query
+CREATE TABLE IF NOT EXISTS public.clients (
+  id BIGINT PRIMARY KEY,
+  name TEXT NOT NULL,
+  co TEXT,
+  email TEXT,
+  phone TEXT,
+  owner_email TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.projects (
+  id BIGINT PRIMARY KEY,
+  c BIGINT NOT NULL,
+  name TEXT NOT NULL,
+  v BIGINT NOT NULL,
+  s TEXT,
+  d TEXT,
+  notes TEXT,
+  billing_type TEXT,
+  scope JSONB,
+  services JSONB,
+  inv JSONB,
+  p JSONB,
+  owner_email TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.quotes (
+  id BIGINT PRIMARY KEY,
+  no BIGINT NOT NULL,
+  date TEXT NOT NULL,
+  valid TEXT NOT NULL,
+  cn TEXT NOT NULL,
+  co TEXT,
+  ce TEXT,
+  cp TEXT,
+  title TEXT NOT NULL,
+  items JSONB NOT NULL,
+  s TEXT NOT NULL,
+  notes TEXT,
+  owner_email TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.studio_profiles (
+  owner_email TEXT PRIMARY KEY,
+  profile JSONB NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);`}
+              </pre>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px' }}>
+              <span style={{ fontSize: '12px', color: schemaCopied ? '#16a34a' : 'var(--mut)' }}>
+                {schemaCopied ? 'Tersalin ke clipboard!' : 'Buka supabase.com -> SQL Editor -> Run'}
+              </span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn out sm"
+                  onClick={() => {
+                    const sql = `-- Supabase Table Setup for Zyf Studio Dashboard
+CREATE TABLE IF NOT EXISTS public.clients (
+  id BIGINT PRIMARY KEY,
+  name TEXT NOT NULL,
+  co TEXT,
+  email TEXT,
+  phone TEXT,
+  owner_email TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.projects (
+  id BIGINT PRIMARY KEY,
+  c BIGINT NOT NULL,
+  name TEXT NOT NULL,
+  v BIGINT NOT NULL,
+  s TEXT,
+  d TEXT,
+  notes TEXT,
+  billing_type TEXT,
+  scope JSONB,
+  services JSONB,
+  inv JSONB,
+  p JSONB,
+  owner_email TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.quotes (
+  id BIGINT PRIMARY KEY,
+  no BIGINT NOT NULL,
+  date TEXT NOT NULL,
+  valid TEXT NOT NULL,
+  cn TEXT NOT NULL,
+  co TEXT,
+  ce TEXT,
+  cp TEXT,
+  title TEXT NOT NULL,
+  items JSONB NOT NULL,
+  s TEXT NOT NULL,
+  notes TEXT,
+  owner_email TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.studio_profiles (
+  owner_email TEXT PRIMARY KEY,
+  profile JSONB NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);`;
+                    navigator.clipboard.writeText(sql);
+                    setSchemaCopied(true);
+                    setTimeout(() => setSchemaCopied(false), 3000);
+                  }}
+                >
+                  <Icon name="copy" size={13} style={{ marginRight: '4px' }} />
+                  {schemaCopied ? 'Copied' : 'Salin SQL'}
+                </button>
+                <button
+                  type="button"
+                  className="btn pri sm"
+                  onClick={() => setShowSchemaModal(false)}
+                >
+                  Selesai
+                </button>
+              </div>
             </div>
           </div>
         </div>

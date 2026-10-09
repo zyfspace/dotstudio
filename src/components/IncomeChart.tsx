@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { num, rp, dt, today, ago } from '@/lib/formatters';
+import { num, numShort, rp, dt, today, ago } from '@/lib/formatters';
 import { Icon } from '@/components/Icons';
 import { PlanItem, Project } from '@/types';
 
@@ -816,7 +816,8 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
               className="y-tick-left"
               style={{ bottom: `${tick.pct}%` }}
             >
-              <span>{num(tick.val)}</span>
+              <span className="y-tick-desktop">{num(tick.val)}</span>
+              <span className="y-tick-mobile">{numShort(tick.val)}</span>
             </div>
           ))}
         </div>
@@ -850,10 +851,11 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                   className={`bar-col ${b.isCurrent ? 'current' : ''} ${isHovered ? 'hovered' : ''}`}
                   onMouseEnter={() => setHoveredIdx(i)}
                   onMouseLeave={() => setHoveredIdx(null)}
+                  onTouchStart={() => setHoveredIdx(hoveredIdx === i ? null : i)}
                   onClick={() => handleBarClick(b.k)}
                   style={{ cursor: mode === '6m' ? 'pointer' : 'default' }}
                 >
-                  {/* Full number above bar only on hover */}
+                  {/* Full number above bar only on hover / tap */}
                   <span className={`bar-value-label ${isHovered ? 'active' : ''}`}>
                     {b.t ? num(b.t) : ''}
                   </span>

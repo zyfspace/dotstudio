@@ -47,6 +47,27 @@ export const dt = (s?: string): string => {
   });
 };
 
+export const numShort = (n?: number): string => {
+  const val = n || 0;
+  if (Math.abs(val) >= 1_000_000_000) {
+    const formatted = (val / 1_000_000_000).toFixed(1).replace(/\.0$/, '');
+    return `${formatted}M`;
+  }
+  if (Math.abs(val) >= 1_000_000) {
+    const formatted = (val / 1_000_000).toFixed(1).replace(/\.0$/, '');
+    return `${formatted}jt`;
+  }
+  if (Math.abs(val) >= 1_000) {
+    const formatted = (val / 1_000).toFixed(0);
+    return `${formatted}rb`;
+  }
+  return String(val);
+};
+
+export const rpShort = (n?: number): string => {
+  return 'Rp ' + numShort(n);
+};
+
 export const pad = (n: number | string): string => String(n).padStart(3, '0');
 
 export const isOverdue = (due?: string, paid?: boolean): boolean => {
