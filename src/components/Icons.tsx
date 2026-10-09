@@ -246,6 +246,20 @@ const paths: Record<string, React.ReactNode> = {
       <path d="M13 6l6 6" />
     </>
   ),
+  external: (
+    <>
+      <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />
+      <path d="M11 13l9 -9" />
+      <path d="M15 4h5v5" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+      <path d="M7 11l5 5l5 -5" />
+      <path d="M12 4l0 12" />
+    </>
+  ),
 };
 
 export const Icon: React.FC<IconProps> = ({

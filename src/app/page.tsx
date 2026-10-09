@@ -89,6 +89,18 @@ export default function DashboardPage() {
   const [confirmPinInput, setConfirmPinInput] = useState('');
   const [pinError, setPinError] = useState('');
   const [profileSavedFeedback, setProfileSavedFeedback] = useState(false);
+  const [previewProof, setPreviewProof] = useState<{ name: string; url: string } | null>(null);
+
+  useEffect(() => {
+    if (!previewProof) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setPreviewProof(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [previewProof]);
 
   // Overview Chart & Stat Cards Filter state
   const [chartMode, setChartMode] = useState<ChartMode>('6m');
@@ -3528,9 +3540,40 @@ export default function DashboardPage() {
                                   <span className="mut">{x.i.pct}%</span>
                                 </td>
                                 <td className="mut">
-                                  {x.i.proof && x.i.proof.n
-                                    ? x.i.proof.n
-                                    : '—'}
+                                  {x.i.proof && x.i.proof.n ? (
+                                    x.i.proof.d ? (
+                                      <button
+                                        type="button"
+                                        style={{
+                                          background: 'none',
+                                          border: 'none',
+                                          padding: 0,
+                                          color: 'var(--fg)',
+                                          cursor: 'pointer',
+                                          fontSize: 'inherit',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '5px',
+                                          textAlign: 'left',
+                                        }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setPreviewProof({
+                                            name: x.i.proof!.n,
+                                            url: x.i.proof!.d,
+                                          });
+                                        }}
+                                        title="Lihat bukti pembayaran"
+                                      >
+                                        <Icon name="file" size={13} />
+                                        <span style={{ textDecoration: 'underline' }}>{x.i.proof.n}</span>
+                                      </button>
+                                    ) : (
+                                      x.i.proof.n
+                                    )
+                                  ) : (
+                                    '—'
+                                  )}
                                 </td>
                                 <td className="r">{rp(x.i.a)}</td>
                               </tr>
@@ -4317,16 +4360,20 @@ export default function DashboardPage() {
                               <>
                                 {item.proof && item.proof.n ? (
                                   item.proof.d ? (
-                                    <a
+                                    <button
+                                      type="button"
                                       className="btn sm"
-                                      href={item.proof.d}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
                                       title={item.proof.n}
+                                      onClick={() =>
+                                        setPreviewProof({
+                                          name: item.proof!.n,
+                                          url: item.proof!.d,
+                                        })
+                                      }
                                     >
                                       <Icon name="file" size={14} />
                                       Proof
-                                    </a>
+                                    </button>
                                   ) : (
                                     <span className="mut" style={{ fontSize: '12px' }}>{item.proof.n}</span>
                                   )
@@ -5024,6 +5071,118 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Proof Preview Modal */}
+      {previewProof && (
+        <div
+          className="proof-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setPreviewProof(null);
+            }
+          }}
+        >
+          <div className="proof-modal-card" role="dialog" aria-modal="true" aria-labelledby="proof-modal-title">
+            <div className="proof-modal-header">
+              <div className="proof-modal-title-wrap">
+                <div className="proof-modal-icon">
+                  <Icon name="file" size={16} />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <h3 id="proof-modal-title" className="proof-modal-title">
+                    Bukti Pembayaran
+                  </h3>
+                  <p className="proof-modal-filename" title={previewProof.name}>
+                    {previewProof.name}
+                  </p>
+                </div>
+              </div>
+
+              <div className="proof-modal-actions">
+                <a
+                  href={previewProof.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn sm out"
+                  title="Buka di tab baru"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Icon name="external" size={14} />
+                  <span className="hide-mobile">Tab baru</span>
+                </a>
+                <button
+                  type="button"
+                  className="btn sm out icon-only"
+                  onClick={() => setPreviewProof(null)}
+                  aria-label="Tutup preview"
+                  title="Tutup (Esc)"
+                >
+                  <Icon name="x" size={16} />
+                </button>
+              </div>
+            </div>
+
+            <div className="proof-modal-body">
+              {(() => {
+                const isPdf =
+                  previewProof.name.toLowerCase().endsWith('.pdf') ||
+                  previewProof.url.toLowerCase().includes('.pdf') ||
+                  previewProof.url.startsWith('data:application/pdf');
+
+                if (isPdf) {
+                  return (
+                    <div className="proof-modal-pdf-container">
+                      <iframe
+                        src={previewProof.url}
+                        title={previewProof.name}
+                        className="proof-modal-iframe"
+                      />
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="proof-modal-img-container">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={previewProof.url}
+                      alt={previewProof.name || 'Bukti Transfer'}
+                      className="proof-modal-img"
+                    />
+                  </div>
+                );
+              })()}
+            </div>
+
+            <div className="proof-modal-footer">
+              <span className="mut" style={{ fontSize: '12px' }}>
+                Tekan Esc atau klik di luar untuk menutup
+              </span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <a
+                  href={previewProof.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download={previewProof.name || 'bukti-transfer'}
+                  className="btn sm out"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Icon name="download" size={14} />
+                  Unduh
+                </a>
+                <button
+                  type="button"
+                  className="btn sm pri"
+                  onClick={() => setPreviewProof(null)}
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
