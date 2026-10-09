@@ -4,8 +4,8 @@ import { GeistMono } from 'geist/font/mono';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Studio — Projects, Payments & Documents',
-  description: 'Clean studio management dashboard for projects, payments, invoices, quotations, and clients.',
+  title: 'DotStudio — Projects, Payments & Documents',
+  description: 'Clean dashboard management for projects, payments, invoices, quotations, and clients.',
 };
 
 export const viewport: Viewport = {

@@ -11,12 +11,15 @@ export interface ChartBucket {
   k: string; // "YYYY-MM-DD" or "YYYY-MM"
   l: string; // short label
   fullLabel: string;
-  t: number;
+  t: number; // total project / deal value
+  paid: number; // actual received money
+  pending: number; // outstanding amount
   count: number;
   isCurrent?: boolean;
 }
 
 interface IncomeChartProps {
+  projects?: Project[];
   paidPayments: { i: PlanItem; p: Project }[];
   mode?: ChartMode;
   onModeChange?: (m: ChartMode) => void;
@@ -28,17 +31,17 @@ interface IncomeChartProps {
   onCustomRangePresetChange?: (preset: string | null) => void;
 }
 
-const MONTH_NAMES_ID = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+const MONTH_NAMES_EN = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-const MONTH_SHORT_ID = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-  'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+const MONTH_SHORT_EN = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
 
-const DAY_NAMES_ID = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+const DAY_NAMES_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function pad2(n: number) {
   return String(n).padStart(2, '0');
@@ -53,6 +56,7 @@ function formatDateYM(d: Date) {
 }
 
 export const IncomeChart: React.FC<IncomeChartProps> = ({
+  projects = [],
   paidPayments,
   mode: propMode,
   onModeChange,
@@ -176,31 +180,62 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
         const monthIdx = itemDate.getMonth();
         monthsList.push({
           k: ym,
-          l: MONTH_SHORT_ID[monthIdx],
-          fullLabel: `${MONTH_NAMES_ID[monthIdx]} ${itemDate.getFullYear()}`,
+          l: MONTH_SHORT_EN[monthIdx],
+          fullLabel: `${MONTH_NAMES_EN[monthIdx]} ${itemDate.getFullYear()}`,
           t: 0,
+          paid: 0,
+          pending: 0,
           count: 0,
           isCurrent,
         });
       }
 
+      // 1. Calculate actual paid amounts in each month
       paidPayments.forEach((x) => {
         const pdMonth = x.i.pd ? x.i.pd.slice(0, 7) : '';
         const match = monthsList.find((b) => b.k === pdMonth);
         if (match) {
-          match.t += x.i.a;
+          match.paid += x.i.a;
           match.count += 1;
         }
       });
 
+      // 2. Calculate outstanding / deal pipeline for projects in each month
+      monthsList.forEach((b) => {
+        const ym = b.k;
+        let monthPending = 0;
+
+        projects.forEach((p) => {
+          const isCreatedInMonth = p.id > 1000000000000 && formatDateYM(new Date(p.id)) === ym;
+          const hasActivityInMonth = p.plan.some(
+            (it) =>
+              (it.pd && it.pd.startsWith(ym)) ||
+              (it.due && it.due.startsWith(ym)) ||
+              (it.inv?.date && it.inv.date.startsWith(ym))
+          ) || (p.due && p.due.startsWith(ym));
+
+          if (isCreatedInMonth || hasActivityInMonth) {
+            const projectUnpaid = p.plan
+              .filter((it) => !it.paid)
+              .reduce((sum, it) => sum + it.a, 0);
+
+            // Add unpaid amount from this project
+            monthPending += projectUnpaid;
+          }
+        });
+
+        b.pending = monthPending;
+        b.t = b.paid + b.pending;
+      });
+
       resultBuckets = monthsList;
       pLabel = `${monthsList[0].fullLabel} – ${monthsList[5].fullLabel}`;
-      btnLabel = 'Filter Periode';
+      btnLabel = 'Filter period';
     } else if (mode === 'month') {
       const [refY, refM] = selectedMonth.split('-').map(Number);
       const daysInMonth = new Date(refY, refM, 0).getDate();
       const daysList: ChartBucket[] = [];
-      const mName = MONTH_NAMES_ID[refM - 1];
+      const mName = MONTH_NAMES_EN[refM - 1];
 
       for (let day = 1; day <= daysInMonth; day++) {
         const d = new Date(refY, refM - 1, day);
@@ -212,19 +247,38 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
           l: `${day}`,
           fullLabel: `${day} ${mName} ${refY}`,
           t: 0,
+          paid: 0,
+          pending: 0,
           count: 0,
           isCurrent: isToday,
         });
       }
 
+      // Paid on specific day
       paidPayments.forEach((x) => {
         if (x.i.pd && x.i.pd.startsWith(selectedMonth)) {
           const match = daysList.find((b) => b.k === x.i.pd);
           if (match) {
-            match.t += x.i.a;
+            match.paid += x.i.a;
             match.count += 1;
           }
         }
+      });
+
+      // Pending on specific due dates or project creation dates
+      projects.forEach((p) => {
+        p.plan.forEach((it) => {
+          if (!it.paid && it.due && it.due.startsWith(selectedMonth)) {
+            const match = daysList.find((b) => b.k === it.due);
+            if (match) {
+              match.pending += it.a;
+            }
+          }
+        });
+      });
+
+      daysList.forEach((b) => {
+        b.t = b.paid + b.pending;
       });
 
       resultBuckets = daysList;
@@ -250,9 +304,11 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
 
           daysList.push({
             k: ymd,
-            l: diffDays <= 14 ? `${d.getDate()} ${MONTH_SHORT_ID[monthIdx]}` : `${d.getDate()}`,
-            fullLabel: `${d.getDate()} ${MONTH_NAMES_ID[monthIdx]} ${d.getFullYear()}`,
+            l: diffDays <= 14 ? `${d.getDate()} ${MONTH_SHORT_EN[monthIdx]}` : `${d.getDate()}`,
+            fullLabel: `${d.getDate()} ${MONTH_NAMES_EN[monthIdx]} ${d.getFullYear()}`,
             t: 0,
+            paid: 0,
+            pending: 0,
             count: 0,
             isCurrent: isToday,
           });
@@ -262,9 +318,24 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
           const pdDate = x.i.pd || '';
           const match = daysList.find((b) => b.k === pdDate);
           if (match) {
-            match.t += x.i.a;
+            match.paid += x.i.a;
             match.count += 1;
           }
+        });
+
+        projects.forEach((p) => {
+          p.plan.forEach((it) => {
+            if (!it.paid && it.due && it.due >= start && it.due <= end) {
+              const match = daysList.find((b) => b.k === it.due);
+              if (match) {
+                match.pending += it.a;
+              }
+            }
+          });
+        });
+
+        daysList.forEach((b) => {
+          b.t = b.paid + b.pending;
         });
 
         resultBuckets = daysList;
@@ -278,9 +349,11 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
           const monthIdx = curr.getMonth();
           monthsMap.set(ym, {
             k: ym,
-            l: MONTH_SHORT_ID[monthIdx],
-            fullLabel: `${MONTH_NAMES_ID[monthIdx]} ${curr.getFullYear()}`,
+            l: MONTH_SHORT_EN[monthIdx],
+            fullLabel: `${MONTH_NAMES_EN[monthIdx]} ${curr.getFullYear()}`,
             t: 0,
+            paid: 0,
+            pending: 0,
             count: 0,
             isCurrent: ym === currentYearMonth,
           });
@@ -292,10 +365,22 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
             const ym = x.i.pd.slice(0, 7);
             const match = monthsMap.get(ym);
             if (match) {
-              match.t += x.i.a;
+              match.paid += x.i.a;
               match.count += 1;
             }
           }
+        });
+
+        monthsMap.forEach((b, ym) => {
+          let monthPending = 0;
+          projects.forEach((p) => {
+            const isCreatedInMonth = p.id > 1000000000000 && formatDateYM(new Date(p.id)) === ym;
+            if (isCreatedInMonth) {
+              monthPending += p.plan.filter((it) => !it.paid).reduce((s, it) => s + it.a, 0);
+            }
+          });
+          b.pending = monthPending;
+          b.t = b.paid + b.pending;
         });
 
         resultBuckets = Array.from(monthsMap.values());
@@ -305,31 +390,26 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
       btnLabel = customRangePreset || `${dt(start)} – ${dt(end)}`;
     }
 
-    const totalInPeriod = resultBuckets.reduce((sum, b) => sum + b.t, 0);
+    const totalInPeriod = resultBuckets.reduce((sum, b) => sum + b.paid, 0);
     const countInPeriod = resultBuckets.reduce((sum, b) => sum + b.count, 0);
 
     return { buckets: resultBuckets, periodLabel: pLabel, filterButtonLabel: btnLabel, totalInPeriod, countInPeriod };
-  }, [mode, selectedMonth, customRange, customRangePreset, paidPayments, currentYearMonth]);
+  }, [mode, selectedMonth, customRange, customRangePreset, paidPayments, projects, currentYearMonth]);
 
-  const rawMax = Math.max(...buckets.map((m) => m.t), 1);
+  const maxBucketVal = Math.max(...buckets.map((m) => m.t), 0);
 
   // Clean, round Y-axis ticks
   const { yMax, yTicks } = useMemo(() => {
-    if (rawMax <= 0) {
+    if (maxBucketVal <= 0) {
       return {
-        yMax: 15000000,
-        yTicks: [
-          { pct: 100, val: 15000000 },
-          { pct: 66.666, val: 10000000 },
-          { pct: 33.333, val: 5000000 },
-          { pct: 0, val: 0 },
-        ],
+        yMax: 0,
+        yTicks: [{ pct: 0, val: 0 }],
       };
     }
 
-    const exponent = Math.floor(Math.log10(rawMax));
+    const exponent = Math.floor(Math.log10(maxBucketVal));
     const power = Math.pow(10, exponent);
-    const fraction = rawMax / power;
+    const fraction = maxBucketVal / power;
 
     let step: number;
     if (fraction <= 1.5) {
@@ -342,11 +422,11 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
       step = 5 * power;
     }
 
-    if (rawMax >= 1000000 && step < 1000000) {
+    if (maxBucketVal >= 1000000 && step < 1000000) {
       step = 1000000;
     }
 
-    const numSteps = Math.max(2, Math.ceil(rawMax / step));
+    const numSteps = Math.max(2, Math.ceil(maxBucketVal / step));
     const computedMax = numSteps * step;
 
     const ticks: { pct: number; val: number }[] = [];
@@ -358,7 +438,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     }
 
     return { yMax: computedMax, yTicks: ticks };
-  }, [rawMax]);
+  }, [maxBucketVal]);
 
   // Month navigation in Single Month mode
   const shiftSingleMonth = (delta: number) => {
@@ -526,7 +606,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                 className="btn sm income-reset-btn"
                 onClick={resetToDefault}
                 type="button"
-                title="Reset ke 6 Bulan Terakhir"
+                title="Reset to last 6 months"
               >
                 <Icon name="refresh" size={13} />
                 <span>Default</span>
@@ -547,7 +627,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
             >
               <Icon name="cal" size={13} />
               <span className="income-filter-label">
-                {isDefaultView ? 'Pilih Periode' : filterButtonLabel}
+                {isDefaultView ? 'Select period' : filterButtonLabel}
               </span>
               <Icon name="chevron" size={12} className={`income-dropdown-chevron ${dropdownOpen ? 'open' : ''}`} />
             </button>
@@ -563,32 +643,32 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                   className="income-preset-chip"
                   onClick={() => applyPreset('this_month')}
                 >
-                  Bulan Ini
+                  This month
                 </button>
                 <button
                   type="button"
                   className="income-preset-chip"
                   onClick={() => applyPreset('7d')}
                 >
-                  7 Hari
+                  7 Days
                 </button>
                 <button
                   type="button"
                   className="income-preset-chip"
                   onClick={() => applyPreset('30d')}
                 >
-                  30 Hari
+                  30 Days
                 </button>
                 <button
                   type="button"
                   className="income-preset-chip"
                   onClick={() => applyPreset('last_month')}
                 >
-                  Bulan Lalu
+                  Last month
                 </button>
               </div>
 
-              {/* Mode Tabs inside Popover: Rentang Tanggal vs Pilih Bulan */}
+              {/* Mode Tabs inside Popover: Date Range vs Select Month */}
               <div className="income-popover-tabs">
                 <button
                   type="button"
@@ -596,7 +676,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                   onClick={() => setActiveTab('calendar')}
                 >
                   <Icon name="cal" size={13} />
-                  <span>Rentang Tanggal</span>
+                  <span>Date range</span>
                 </button>
                 <button
                   type="button"
@@ -604,7 +684,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                   onClick={() => setActiveTab('months')}
                 >
                   <Icon name="filter" size={13} />
-                  <span>Pilih Bulan</span>
+                  <span>Select month</span>
                 </button>
               </div>
 
@@ -621,12 +701,12 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                         d.setMonth(d.getMonth() - 1);
                         setCalendarDate(d);
                       }}
-                      title="Bulan sebelumnya"
+                      title="Previous month"
                     >
                       <Icon name="chevron-left" size={14} />
                     </button>
                     <span className="calendar-month-title">
-                      {MONTH_NAMES_ID[calendarDate.getMonth()]} {calendarDate.getFullYear()}
+                      {MONTH_NAMES_EN[calendarDate.getMonth()]} {calendarDate.getFullYear()}
                     </span>
                     <button
                       type="button"
@@ -636,7 +716,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                         d.setMonth(d.getMonth() + 1);
                         setCalendarDate(d);
                       }}
-                      title="Bulan berikutnya"
+                      title="Next month"
                     >
                       <Icon name="chevron-right" size={14} />
                     </button>
@@ -644,7 +724,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
 
                   {/* Day Names Header */}
                   <div className="calendar-day-names">
-                    {DAY_NAMES_ID.map((dName) => (
+                    {DAY_NAMES_EN.map((dName) => (
                       <span key={dName} className="calendar-day-name-cell">
                         {dName}
                       </span>
@@ -689,10 +769,10 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                     <div className="calendar-selected-text">
                       {tempStart ? (
                         <span>
-                          {dt(tempStart)} {tempEnd ? `– ${dt(tempEnd)}` : '(Pilih tanggal akhir)'}
+                          {dt(tempStart)} {tempEnd ? `– ${dt(tempEnd)}` : '(Select end date)'}
                         </span>
                       ) : (
-                        <span className="mut">Klik tanggal awal & akhir</span>
+                        <span className="mut">Select start & end date</span>
                       )}
                     </div>
                     <div className="calendar-actions">
@@ -712,7 +792,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                         disabled={!tempStart}
                         onClick={applyCustomRange}
                       >
-                        Terapkan
+                        Apply
                       </button>
                     </div>
                   </div>
@@ -727,7 +807,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                       type="button"
                       className="ib sm-ib"
                       onClick={() => setMonthPickerYear((y) => y - 1)}
-                      title="Tahun sebelumnya"
+                      title="Previous year"
                     >
                       <Icon name="chevron-left" size={14} />
                     </button>
@@ -736,14 +816,14 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                       type="button"
                       className="ib sm-ib"
                       onClick={() => setMonthPickerYear((y) => y + 1)}
-                      title="Tahun berikutnya"
+                      title="Next year"
                     >
                       <Icon name="chevron-right" size={14} />
                     </button>
                   </div>
 
                   <div className="month-grid">
-                    {MONTH_NAMES_ID.map((name, idx) => {
+                    {MONTH_NAMES_EN.map((name, idx) => {
                       const ym = `${monthPickerYear}-${pad2(idx + 1)}`;
                       const isSelected = mode === 'month' && selectedMonth === ym;
                       const isCurrent = ym === currentYearMonth;
@@ -755,7 +835,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                           className={`month-grid-cell ${isSelected ? 'selected' : ''} ${isCurrent ? 'current' : ''}`}
                           onClick={() => handleSelectMonth(ym)}
                         >
-                          <span className="month-grid-name">{MONTH_SHORT_ID[idx]}</span>
+                          <span className="month-grid-name">{MONTH_SHORT_EN[idx]}</span>
                           {isCurrent && <span className="month-grid-dot" />}
                         </button>
                       );
@@ -778,7 +858,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
               <button
                 className="ib sm-ib"
                 onClick={() => shiftSingleMonth(-1)}
-                title="Bulan sebelumnya"
+                title="Previous month"
                 type="button"
               >
                 <Icon name="chevron-left" size={13} />
@@ -786,7 +866,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
               <button
                 className="ib sm-ib"
                 onClick={() => shiftSingleMonth(1)}
-                title="Bulan berikutnya"
+                title="Next month"
                 type="button"
               >
                 <Icon name="chevron-right" size={13} />
@@ -800,7 +880,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
               onClick={resetToDefault}
               type="button"
             >
-              Kembali ke 6 Bulan
+              Back to 6 months
             </button>
           )}
         </div>
@@ -816,8 +896,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
               className="y-tick-left"
               style={{ bottom: `${tick.pct}%` }}
             >
-              <span className="y-tick-desktop">{num(tick.val)}</span>
-              <span className="y-tick-mobile">{numShort(tick.val)}</span>
+              <span>{numShort(tick.val)}</span>
             </div>
           ))}
         </div>
@@ -845,6 +924,9 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
               const heightPct = yMax > 0 ? (b.t / yMax) * 85 : 0;
               const safeHeight = b.t > 0 ? Math.max(heightPct, 4) : 1.5;
 
+              const paidPct = b.t > 0 ? (b.paid / b.t) * 100 : 0;
+              const pendingPct = b.t > 0 ? (b.pending / b.t) * 100 : 0;
+
               return (
                 <div
                   key={b.k}
@@ -855,19 +937,58 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                   onClick={() => handleBarClick(b.k)}
                   style={{ cursor: mode === '6m' ? 'pointer' : 'default' }}
                 >
-                  {/* Full number above bar only on hover / tap */}
-                  <span className={`bar-value-label ${isHovered ? 'active' : ''}`}>
-                    {b.t ? num(b.t) : ''}
-                  </span>
+                  {/* Floating Multi-row Detail Tooltip (only when there are deals/transactions) */}
+                  {b.t > 0 && (
+                    <div className={`bar-tooltip ${isHovered ? 'active' : ''}`}>
+                      <div className="bar-tt-header">{b.fullLabel}</div>
+                      <div className="bar-tt-content">
+                        {b.paid > 0 && (
+                          <div className="bar-tt-row">
+                            <span className="bar-tt-dot paid" />
+                            <span className="bar-tt-label">
+                              {b.pending > 0 ? 'DP / Diterima' : 'Diterima'}
+                            </span>
+                            <span className="bar-tt-val">{rp(b.paid)}</span>
+                          </div>
+                        )}
+                        {b.pending > 0 && (
+                          <div className="bar-tt-row">
+                            <span className="bar-tt-dot pending" />
+                            <span className="bar-tt-label">Sisa tagihan</span>
+                            <span className="bar-tt-val">{rp(b.pending)}</span>
+                          </div>
+                        )}
+                        {b.paid > 0 && b.pending > 0 && (
+                          <div className="bar-tt-divider">
+                            <span>Total deal:</span>
+                            <b>{rp(b.t)}</b>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
-                  {/* Pillar */}
+                  {/* Segmented Stacked Pillar */}
                   <div
                     className="bar-pillar"
                     style={{
                       height: `${safeHeight}%`,
                       ...(buckets.length > 20 ? { borderRadius: '3px 3px 0 0' } : {}),
                     }}
-                  />
+                  >
+                    {b.paid > 0 && (
+                      <div
+                        className="bar-segment-paid"
+                        style={{ height: `${paidPct}%` }}
+                      />
+                    )}
+                    {b.pending > 0 && (
+                      <div
+                        className="bar-segment-pending"
+                        style={{ height: `${pendingPct}%` }}
+                      />
+                    )}
+                  </div>
                 </div>
               );
             })}

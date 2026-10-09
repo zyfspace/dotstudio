@@ -646,7 +646,7 @@ export function LandingPage({
                 }}
                 aria-invalid={!!emailError}
               />
-              <button type="submit" className="lp-btn lp-pri" style={{ height: '46px' }}>
+              <button type="submit" className="lp-btn lp-pri">
                 Get started
               </button>
             </form>

@@ -757,31 +757,70 @@
 
 .lp-root .lp-mail {
   display: flex;
-  gap: 8px;
+  align-items: center;
   max-width: 420px;
   margin: 0 auto;
+  width: 100%;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+.lp-root .lp-mail:focus-within {
+  border-color: var(--fg);
+  box-shadow: 0 0 0 1px var(--fg);
+  background: var(--bg);
+}
+
+.lp-root .lp-mail:has(input[aria-invalid="true"]) {
+  border-color: var(--ac);
 }
 
 .lp-root .lp-mail input {
   flex: 1;
-  height: 46px;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--bg);
+  height: 38px;
+  padding: 0 12px;
+  border: none !important;
+  background: transparent !important;
   color: var(--fg);
-  outline: 0;
-  transition: border-color 0.15s;
+  outline: 0 !important;
   min-width: 0;
   font-size: 14px;
+  font-family: inherit;
+  box-shadow: none !important;
+  text-align: left;
 }
 
-.lp-root .lp-mail input:focus {
-  border-color: var(--fg);
+.lp-root .lp-mail input::placeholder {
+  color: color-mix(in srgb, var(--fg) 42%, var(--bg));
+  font-size: 13.5px;
+  font-weight: 400;
+  opacity: 1;
 }
 
-.lp-root .lp-mail input[aria-invalid="true"] {
-  border-color: var(--ac);
+.lp-root .lp-mail .lp-btn {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 7px;
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: var(--fg);
+  color: var(--bg);
+  border: none;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lp-root .lp-mail .lp-btn:hover {
+  background: var(--ac);
+  color: #fff;
 }
 
 .lp-root .lp-er {
@@ -893,10 +932,51 @@
     grid-row: span 2;
   }
   .lp-root .lp-end {
-    padding: 48px 22px;
+    padding: 38px 18px;
+    border-radius: 14px;
+  }
+  .lp-root .lp-end h2 {
+    font-size: 22px;
+    line-height: 1.25;
+  }
+  .lp-root .lp-end .lp-sub {
+    margin: 12px auto 22px;
+    font-size: 13.5px;
   }
   .lp-root .lp-mail {
-    flex-direction: column;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+    padding: 3px 3px 3px 8px;
+    background: var(--soft);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-sizing: border-box;
+  }
+  .lp-root .lp-mail input {
+    height: 38px;
+    font-size: 14px;
+    padding: 0 6px;
+    text-align: left;
+    border: none !important;
+    background: transparent !important;
+    flex: 1;
+    min-width: 0;
+  }
+  .lp-root .lp-mail input::placeholder {
+    font-size: 13px;
+    text-align: left;
+  }
+  .lp-root .lp-mail .lp-btn {
+    height: 38px !important;
+    padding: 0 14px;
+    border-radius: 7px;
+    font-size: 13px;
+    flex-shrink: 0;
   }
   .lp-root .lp-stage {
     transform: scale(0.8);

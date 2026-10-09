@@ -49,16 +49,17 @@ export const dt = (s?: string): string => {
 
 export const numShort = (n?: number): string => {
   const val = n || 0;
+  if (val === 0) return '0';
   if (Math.abs(val) >= 1_000_000_000) {
-    const formatted = (val / 1_000_000_000).toFixed(1).replace(/\.0$/, '');
+    const formatted = (val / 1_000_000_000).toFixed(1).replace(/\.0$/, '').replace('.', ',');
     return `${formatted}M`;
   }
   if (Math.abs(val) >= 1_000_000) {
-    const formatted = (val / 1_000_000).toFixed(1).replace(/\.0$/, '');
+    const formatted = (val / 1_000_000).toFixed(1).replace(/\.0$/, '').replace('.', ',');
     return `${formatted}jt`;
   }
   if (Math.abs(val) >= 1_000) {
-    const formatted = (val / 1_000).toFixed(0);
+    const formatted = (val / 1_000).toFixed(1).replace(/\.0$/, '').replace('.', ',');
     return `${formatted}rb`;
   }
   return String(val);
