@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DotStudio — Verification Code Email</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 40px 16px;
+      background-color: #0c0d10;
+      font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      color: #111827;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 90vh;
+    }
+    .preview-banner {
+      color: #9ca3af;
+      font-size: 13px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .preview-badge {
+      background: rgba(241, 104, 24, 0.15);
+      color: #f16818;
+      border: 1px solid rgba(241, 104, 24, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .email-container {
+      width: 100%;
+      max-width: 500px;
+      background: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      position: relative;
+    }
+    
+    /* Exact Paper Watermark */
+    .email-watermark-wrap {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      opacity: 0.08;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .email-watermark-paper {
+      position: relative;
+      width: 150px;
+      height: 52px;
+    }
+    .watermark-dot-orange {
+      position: absolute;
+      left: 0;
+      top: 14px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: #F16818;
+    }
+    .watermark-sub {
+      position: absolute;
+      left: 40px;
+      top: 0;
+      font-family: 'Geist', sans-serif;
+      font-size: 10px;
+      line-height: 12px;
+      letter-spacing: -0.06em;
+      color: #000000;
+    }
+    .watermark-title {
+      position: absolute;
+      left: 38px;
+      top: 6px;
+      font-family: 'Geist', sans-serif;
+      font-size: 38px;
+      font-weight: 500;
+      line-height: 44px;
+      letter-spacing: -0.06em;
+      color: #000000;
+    }
+    .watermark-dot-black {
+      position: absolute;
+      left: 148px;
+      top: 36px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background-color: #000000;
+    }
+
+    .email-header {
+      padding: 30px 32px 22px;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Exact DotStudio Logo */
+    .exact-dotstudio-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      user-select: none;
+      text-decoration: none;
+    }
+    .exact-logo-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background-color: #F16818;
+      flex-shrink: 0;
+    }
+    .exact-logo-text {
+      font-family: 'Geist', system-ui, -apple-system, sans-serif;
+      font-size: 21px;
+      font-weight: 500;
+      color: #000000;
+      letter-spacing: -0.06em;
+      line-height: 1;
+    }
+
+    .email-body {
+      padding: 32px 32px 28px;
+      position: relative;
+      z-index: 1;
+    }
+    .email-title {
+      font-size: 21px;
+      font-weight: 600;
+      color: #111827;
+      letter-spacing: -0.02em;
+      margin: 0 0 10px;
+    }
+    .email-desc {
+      font-size: 14px;
+      line-height: 1.55;
+      color: #4b5563;
+      margin: 0 0 24px;
+    }
+    .otp-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 22px;
+      text-align: center;
+      margin: 0 0 24px;
+      position: relative;
+    }
+    .otp-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    .otp-code {
+      font-family: 'Geist Mono', monospace, sans-serif;
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: 0.32em;
+      color: #0f172a;
+      padding-left: 0.32em;
+      margin: 0;
+      line-height: 1.2;
+    }
+    .otp-expiry {
+      font-size: 11.5px;
+      color: #94a3b8;
+      margin-top: 8px;
+    }
+    .btn-verify {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      background: #111827;
+      color: #ffffff;
+      text-align: center;
+      padding: 13px 24px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.15s ease;
+      margin-bottom: 22px;
+    }
+    .btn-verify:hover {
+      background: #1f2937;
+    }
+    .email-security-note {
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.5;
+      padding-top: 18px;
+      border-top: 1px solid #f3f4f6;
+    }
+    .email-footer {
+      background: #fafafa;
+      border-top: 1px solid #f3f4f6;
+      padding: 18px 32px;
+      font-size: 11.5px;
+      color: #9ca3af;
+      text-align: center;
+      line-height: 1.5;
+      position: relative;
+      z-index: 1;
+    }
+    .email-footer a {
+      color: #6b7280;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="preview-banner">
+    <span class="preview-badge">TEMPLAT RESMI</span>
+    <span>Pratinjau Email Verifikasi Sign Up DotStudio</span>
+  </div>
+
+  <div class="email-container">
+    
+    <!-- Exact Paper Watermark -->
+    <div class="email-watermark-wrap" aria-hidden="true">
+      <div class="email-watermark-paper">
+        <div class="watermark-dot-orange"></div>
+        <div class="watermark-sub">made by</div>
+        <div class="watermark-title">DotStd</div>
+        <div class="watermark-dot-black"></div>
+      </div>
+    </div>
+
+    <!-- Header with Exact DotStudio Logo -->
+    <div class="email-header">
+      <div class="exact-dotstudio-logo">
+        <div class="exact-logo-dot"></div>
+        <span class="exact-logo-text">DotStudio</span>
+      </div>
+      <span style="font-size: 11.5px; color: #9ca3af; font-weight: 500;">Security Verification</span>
+    </div>
+
+    <!-- Body -->
+    <div class="email-body">
+      <h1 class="email-title">Verify your email address</h1>
+      <p class="email-desc">
+        Welcome to DotStudio! Please enter the 6-digit confirmation code below on the signup screen to verify your email and activate your workspace.
+      </p>
+
+      <!-- OTP Card -->
+      <div class="otp-card">
+        <div class="otp-label">Verification Code</div>
+        <div class="otp-code">849201</div>
+        <div class="otp-expiry">This code will expire in 10 minutes.</div>
+      </div>
+
+      <!-- Magic Link Button -->
+      <a href="https://dotstd.vercel.app" class="btn-verify">
+        Confirm Email Address Directly
+      </a>
+
+      <!-- Security Note -->
+      <div class="email-security-note">
+        If you did not sign up for DotStudio, you can safely disregard this email. Never share this code with anyone.
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="email-footer">
+      <div>&copy; 2026 DotStudio. All rights reserved.</div>
+      <div style="margin-top: 3px;">
+        <a href="https://dotstd.vercel.app">dotstd.vercel.app</a> &bull; Studio Management Platform
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

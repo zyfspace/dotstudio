@@ -35,10 +35,15 @@ Defined via CSS variables and dynamic `color-mix`:
 - Standard size: 16px - 18px (small: 14px).
 
 ## Motion & Transitions
-- Transition speeds: 150ms for hover states, 250ms for drawer slides (`cubic-bezier(0.2, 0.8, 0.2, 1)`).
-- `prefers-reduced-motion` respected.
+- Page & View Transitions: 240ms cubic-bezier(0.16, 1, 0.3, 1) (`pageFadeIn`) for page switches (Landing <-> Auth <-> Dashboard), 200ms cubic-bezier(0.16, 1, 0.3, 1) (`dashViewIn`) for in-dashboard tab switching.
+- Modal & Overlay: 180ms ease-out backdrop fade, 220ms cubic-bezier(0.16, 1, 0.3, 1) scale & translateY entrance.
+- Form Mode Switch: 220ms cubic-bezier(0.16, 1, 0.3, 1) subtle slide.
+- Micro-interactions & Buttons: 150ms for hover states.
+- Drawer slides: 250ms (`cubic-bezier(0.2, 0.8, 0.2, 1)`).
+- `prefers-reduced-motion` strictly respected across all views and modals.
 
 ## Antislop Dials
 - **ENERGY**: 1 (Calm, highly focused studio management tool)
 - **RHYTHM**: 2 (Structured tables, modular detail drawers, clean invoice/quotation printable sheets)
 - **MOTION**: 1 (Fast transitions, strictly functional feedback)
+

@@ -13,6 +13,19 @@ export const getProfileKey = (email?: string) => {
 };
 
 export const DEFAULT_STUDIO_PROFILE: StudioProfile = {
+  studioName: '',
+  ownerName: '',
+  tagline: '',
+  email: '',
+  phone: '',
+  bankName: '',
+  accountNumber: '',
+  accountHolder: '',
+  defaultPaymentTerms: '',
+  defaultNotes: '',
+};
+
+export const MASTER_STUDIO_PROFILE: StudioProfile = {
   studioName: 'Zyf.Space',
   ownerName: 'Faiz Dawami',
   tagline: 'Your digital partner solution.',
@@ -28,13 +41,17 @@ export const DEFAULT_STUDIO_PROFILE: StudioProfile = {
 export const loadStudioProfile = (userEmail?: string): StudioProfile => {
   if (typeof window === 'undefined') return DEFAULT_STUDIO_PROFILE;
   try {
+    const isMaster = userEmail?.toLowerCase() === 'zyfxspace@gmail.com';
     const key = getProfileKey(userEmail);
-    const raw = localStorage.getItem(key) || (userEmail?.toLowerCase() === 'zyfxspace@gmail.com' ? localStorage.getItem('zyf-studio-profile-v1') : null);
+    const raw = localStorage.getItem(key) || (isMaster ? localStorage.getItem('zyf-studio-profile-v1') : null);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
         return { ...DEFAULT_STUDIO_PROFILE, ...parsed };
       }
+    }
+    if (isMaster) {
+      return MASTER_STUDIO_PROFILE;
     }
   } catch (e) {
     console.error('Failed to load studio profile', e);

@@ -3,12 +3,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Icon } from '@/components/Icons';
 import { DotStudioPaperLogo } from '@/components/Logo';
+import { AuthUser } from '@/lib/auth';
 import '@/app/landing.css';
 
 interface LandingPageProps {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onOpenAuth: (mode: 'login' | 'signup', prefillEmail?: string) => void;
+  authUser?: AuthUser | null;
+  onOpenDashboard?: () => void;
 }
 
 const PRESET_SCHEMES: Record<string, [string, number][]> = {
@@ -80,7 +83,13 @@ const FLOW_STEPS = [
   },
 ];
 
-export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPageProps) {
+export function LandingPage({
+  theme,
+  onToggleTheme,
+  onOpenAuth,
+  authUser,
+  onOpenDashboard,
+}: LandingPageProps) {
   const TOTAL_VALUE = 12000000;
   const [currentScheme, setCurrentScheme] = useState<string>('DP 50 / 50');
   const [paidInstallments, setPaidInstallments] = useState<Record<number, boolean>>({});
@@ -319,12 +328,24 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
             >
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
             </button>
-            <button className="lp-btn lp-gh" onClick={() => onOpenAuth('login')}>
-              Log in
-            </button>
-            <button className="lp-btn lp-pri" onClick={() => onOpenAuth('signup')}>
-              Get started
-            </button>
+            {authUser ? (
+              <button
+                className="lp-btn lp-pri"
+                onClick={onOpenDashboard}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                Go to Dashboard <Icon name="arrow" size={14} />
+              </button>
+            ) : (
+              <>
+                <button className="lp-btn lp-gh" onClick={() => onOpenAuth('login')}>
+                  Log in
+                </button>
+                <button className="lp-btn lp-pri" onClick={() => onOpenAuth('signup')}>
+                  Get started
+                </button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -344,9 +365,15 @@ export function LandingPage({ theme, onToggleTheme, onOpenAuth }: LandingPagePro
               DotStudio keeps your projects, clients and payments in one quiet place. Mark a payment received and the project status updates itself.
             </p>
             <div className="lp-cta lp-rv" style={{ transitionDelay: '.2s' }}>
-              <button className="lp-btn lp-pri lp-lg" onClick={() => onOpenAuth('signup')}>
-                Get started <Icon name="arrow" size={16} />
-              </button>
+              {authUser ? (
+                <button className="lp-btn lp-pri lp-lg" onClick={onOpenDashboard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  Open Dashboard <Icon name="arrow" size={16} />
+                </button>
+              ) : (
+                <button className="lp-btn lp-pri lp-lg" onClick={() => onOpenAuth('signup')}>
+                  Get started <Icon name="arrow" size={16} />
+                </button>
+              )}
               <a className="lp-btn lp-lg" href="#demo">
                 Try it live
               </a>

@@ -41,6 +41,7 @@ import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { LandingPage } from '@/components/LandingPage';
 import { AuthScreen } from '@/components/AuthScreen';
 import { DotStudioPaperLogo } from '@/components/Logo';
+import { PinInput } from '@/components/PinInput';
 import { AuthUser, getActiveSession, setAuthSession } from '@/lib/auth';
 import { uploadFiles } from '@/lib/uploadthing';
 
@@ -90,6 +91,23 @@ export default function DashboardPage() {
   const [pinError, setPinError] = useState('');
   const [profileSavedFeedback, setProfileSavedFeedback] = useState(false);
   const [previewProof, setPreviewProof] = useState<{ name: string; url: string } | null>(null);
+  const [profileRequiredModal, setProfileRequiredModal] = useState<'project' | 'invoice' | 'quote' | null>(null);
+
+  const isProfileComplete = Boolean(
+    studioProfile.studioName?.trim() &&
+    studioProfile.bankName?.trim() &&
+    studioProfile.accountNumber?.trim()
+  );
+
+  const handleOpenSettingsToCompleteProfile = () => {
+    setProfileRequiredModal(null);
+    setCurrentView('settings');
+    if (!studioProfile.securityPin) {
+      setPinModalMode('set');
+    } else if (!isSettingsUnlocked) {
+      setPinModalMode('unlock');
+    }
+  };
 
   useEffect(() => {
     if (!previewProof) return;
@@ -132,6 +150,7 @@ export default function DashboardPage() {
   // Sidebar & Theme
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [isViewingLanding, setIsViewingLanding] = useState(false);
 
   // Form states
   const [projectClientMode, setProjectClientMode] = useState<'existing' | 'new'>('existing');
@@ -267,6 +286,41 @@ export default function DashboardPage() {
       loadData();
     }
 
+    // Check Supabase session (handles Google OAuth redirects)
+    import('@/lib/supabase').then(({ supabase }) => {
+      supabase.auth.getSession().then(({ data: { session: sbSession } }) => {
+        if (sbSession?.user) {
+          const userEmail = sbSession.user.email || '';
+          const userName =
+            sbSession.user.user_metadata?.full_name ||
+            sbSession.user.user_metadata?.name ||
+            'Studio Owner';
+          const userStudio = sbSession.user.user_metadata?.studio_name || '';
+          const userObj: AuthUser = {
+            id: sbSession.user.id,
+            name: userName,
+            studioName: userStudio,
+            email: userEmail,
+            createdAt: sbSession.user.created_at || new Date().toISOString(),
+          };
+          setAuthSession(userObj);
+          setAuthUser(userObj);
+          loadData(userEmail);
+
+          const currentProfile = loadStudioProfile(userEmail);
+          const updatedProfile = {
+            ...currentProfile,
+            ownerName: userEmail.toLowerCase() === 'zyfxspace@gmail.com' ? (userObj.name || currentProfile.ownerName) : (currentProfile.ownerName || userObj.name || ''),
+            studioName: userEmail.toLowerCase() === 'zyfxspace@gmail.com' ? (userObj.studioName || currentProfile.studioName) : (currentProfile.studioName || userObj.studioName || ''),
+            email: currentProfile.email || userObj.email || '',
+          };
+          setStudioProfile(updatedProfile);
+          setProfileDraft(updatedProfile);
+          saveStudioProfile(updatedProfile, userEmail);
+        }
+      });
+    });
+
     try {
       const savedSb = localStorage.getItem('studio-sb');
       if (savedSb === '1') setIsSidebarCollapsed(true);
@@ -303,11 +357,12 @@ export default function DashboardPage() {
   };
 
   const handleVerifyUnlockPin = () => {
-    if (!pinInput.trim()) {
-      setPinError('Masukkan PIN Anda.');
+    const clean = pinInput.replace(/\D/g, '').slice(0, 4);
+    if (clean.length !== 4) {
+      setPinError('Masukkan 4 digit PIN.');
       return;
     }
-    if (pinInput === studioProfile.securityPin) {
+    if (clean === studioProfile.securityPin) {
       setIsSettingsUnlocked(true);
       setProfileDraft({ ...studioProfile });
       setPinModalMode('none');
@@ -319,15 +374,17 @@ export default function DashboardPage() {
   };
 
   const handleSetNewPin = () => {
-    if (newPinInput.length < 4) {
-      setPinError('PIN minimal 4 karakter/angka.');
+    const cleanNew = newPinInput.replace(/\D/g, '').slice(0, 4);
+    const cleanConfirm = confirmPinInput.replace(/\D/g, '').slice(0, 4);
+    if (cleanNew.length !== 4) {
+      setPinError('PIN harus tepat 4 angka.');
       return;
     }
-    if (newPinInput !== confirmPinInput) {
+    if (cleanNew !== cleanConfirm) {
       setPinError('Konfirmasi PIN tidak cocok.');
       return;
     }
-    const updated = { ...studioProfile, securityPin: newPinInput };
+    const updated = { ...studioProfile, securityPin: cleanNew };
     setStudioProfile(updated);
     saveStudioProfile(updated);
     setProfileDraft(updated);
@@ -339,19 +396,22 @@ export default function DashboardPage() {
   };
 
   const handleChangePin = () => {
-    if (pinInput !== studioProfile.securityPin) {
+    const cleanOld = pinInput.replace(/\D/g, '').slice(0, 4);
+    const cleanNew = newPinInput.replace(/\D/g, '').slice(0, 4);
+    const cleanConfirm = confirmPinInput.replace(/\D/g, '').slice(0, 4);
+    if (cleanOld !== studioProfile.securityPin) {
       setPinError('PIN saat ini salah.');
       return;
     }
-    if (newPinInput.length < 4) {
-      setPinError('PIN baru minimal 4 karakter/angka.');
+    if (cleanNew.length !== 4) {
+      setPinError('PIN baru harus tepat 4 angka.');
       return;
     }
-    if (newPinInput !== confirmPinInput) {
+    if (cleanNew !== cleanConfirm) {
       setPinError('Konfirmasi PIN baru tidak cocok.');
       return;
     }
-    const updated = { ...studioProfile, securityPin: newPinInput };
+    const updated = { ...studioProfile, securityPin: cleanNew };
     setStudioProfile(updated);
     saveStudioProfile(updated);
     setProfileDraft(updated);
@@ -492,7 +552,7 @@ export default function DashboardPage() {
   };
 
   const getBrandInitials = (name?: string): string => {
-    const raw = name || studioProfile.studioName || 'Zyf.Space';
+    const raw = name || studioProfile.studioName || 'ST';
     const clean = raw.trim().replace(/[^a-zA-Z0-9\s.-]/g, '');
     const parts = clean.split(/[\s.-]+/).filter(Boolean);
     if (parts.length >= 2) {
@@ -501,7 +561,7 @@ export default function DashboardPage() {
     if (parts.length === 1 && parts[0].length >= 2) {
       return parts[0].substring(0, 2).toUpperCase();
     }
-    return (parts[0]?.[0] || 'Z') + 'S';
+    return ((parts[0]?.[0] || 'S') + 'T').toUpperCase();
   };
 
   const getNextInvoiceNo = (targetDate?: string): string => {
@@ -598,6 +658,10 @@ export default function DashboardPage() {
 
   // Start creating new project
   const handleStartNewProject = () => {
+    if (!isProfileComplete) {
+      setProfileRequiredModal('project');
+      return;
+    }
     const defaultMode = clients.length > 0 ? 'existing' : 'new';
     const firstClient = clients[0];
     setProjectClientMode(defaultMode);
@@ -621,6 +685,10 @@ export default function DashboardPage() {
 
   // Start creating new quotation
   const handleStartNewQuote = () => {
+    if (!isProfileComplete) {
+      setProfileRequiredModal('quote');
+      return;
+    }
     const defaultMode = clients.length > 0 ? 'existing' : 'new';
     const firstClient = clients[0];
     setQuoteClientMode(defaultMode);
@@ -778,6 +846,10 @@ export default function DashboardPage() {
 
   // Convert quote to project
   const handleConvertQuoteToProject = (q: Quotation) => {
+    if (!isProfileComplete) {
+      setProfileRequiredModal('project');
+      return;
+    }
     const c = ensureClient({
       cn: q.cn,
       co: q.co,
@@ -945,6 +1017,12 @@ export default function DashboardPage() {
 
   // Invoice creation / view
   const handleCreateOrViewInvoice = (projectId: number, planItemId: number) => {
+    const targetProject = projects.find((p) => p.id === projectId);
+    const targetItem = targetProject?.plan.find((it) => it.id === planItemId);
+    if (!targetItem?.inv && !isProfileComplete) {
+      setProfileRequiredModal('invoice');
+      return;
+    }
     let invNo = '';
     setProjects((prev) =>
       prev.map((p) => {
@@ -1127,65 +1205,95 @@ export default function DashboardPage() {
 
   if (!isMounted) return null;
 
-  if (!authUser) {
-    if (guestView === 'landing') {
+  if (!authUser || isViewingLanding) {
+    if (guestView === 'landing' || isViewingLanding) {
       return (
-        <LandingPage
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          onOpenAuth={(mode, email) => {
-            setAuthInitialMode(mode);
-            if (email) setAuthInitialEmail(email);
-            setGuestView('auth');
-          }}
-        />
+        <div key="page-landing" className="page-view-transition">
+          <LandingPage
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            onOpenAuth={(mode, email) => {
+              setAuthInitialMode(mode);
+              if (email) setAuthInitialEmail(email);
+              setGuestView('auth');
+              setIsViewingLanding(false);
+            }}
+            authUser={authUser}
+            onOpenDashboard={() => setIsViewingLanding(false)}
+          />
+        </div>
       );
     }
 
     return (
-      <AuthScreen
-        onSuccess={(user) => {
-          setAuthUser(user);
-          loadData(user.email);
-          if (user.studioName || user.name) {
-            const currentProfile = loadStudioProfile(user.email);
-            const updatedProfile = {
-              ...currentProfile,
-              ownerName: user.name || currentProfile.ownerName,
-              studioName: user.studioName || currentProfile.studioName,
-              email: user.email || currentProfile.email,
-            };
-            setStudioProfile(updatedProfile);
-            setProfileDraft(updatedProfile);
-            saveStudioProfile(updatedProfile, user.email);
-          }
-        }}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        initialMode={authInitialMode}
-        initialEmail={authInitialEmail}
-        onBackToLanding={() => setGuestView('landing')}
-      />
+      <div key="page-auth" className="page-view-transition">
+        <AuthScreen
+          onSuccess={(user) => {
+            setAuthUser(user);
+            loadData(user.email);
+            if (user.email?.toLowerCase() === 'zyfxspace@gmail.com') {
+              const currentProfile = loadStudioProfile(user.email);
+              const updatedProfile = {
+                ...currentProfile,
+                ownerName: user.name || currentProfile.ownerName,
+                studioName: user.studioName || currentProfile.studioName,
+                email: user.email || currentProfile.email,
+              };
+              setStudioProfile(updatedProfile);
+              setProfileDraft(updatedProfile);
+              saveStudioProfile(updatedProfile, user.email);
+            } else {
+              const currentProfile = loadStudioProfile(user.email);
+              const updatedProfile = {
+                ...currentProfile,
+                ownerName: currentProfile.ownerName || user.name || '',
+                studioName: currentProfile.studioName || user.studioName || '',
+                email: currentProfile.email || user.email || '',
+              };
+              setStudioProfile(updatedProfile);
+              setProfileDraft(updatedProfile);
+              saveStudioProfile(updatedProfile, user.email);
+            }
+          }}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          initialMode={authInitialMode}
+          initialEmail={authInitialEmail}
+          onBackToLanding={() => setGuestView('landing')}
+        />
+      </div>
     );
   }
 
   return (
-    <div className={`app ${isSidebarCollapsed ? 'c' : ''}`}>
+    <div key="page-dashboard" className={`app page-view-transition ${isSidebarCollapsed ? 'c' : ''}`}>
       {/* Sidebar */}
       <aside>
         <div className="brand">
           {!isSidebarCollapsed && <DotStudioPaperLogo height={20} />}
-          <button
-            className="ib"
-            id="tg"
-            onClick={toggleSidebar}
-            aria-label="Toggle sidebar"
-          >
-            <Icon name="side" size={17} />
-            <span className="sidebar-tooltip">
-              {isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            </span>
-          </button>
+          <div className="brand-actions">
+            <button
+              className="ib"
+              id="hl"
+              onClick={() => setIsViewingLanding(true)}
+              title="Lihat Landing Page (Home)"
+              aria-label="Lihat Landing Page"
+            >
+              <Icon name="world" size={17} />
+              <span className="sidebar-tooltip">Landing page</span>
+            </button>
+            <button
+              className="ib"
+              id="tg"
+              onClick={toggleSidebar}
+              aria-label="Toggle sidebar"
+            >
+              <Icon name="side" size={17} />
+              <span className="sidebar-tooltip">
+                {isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              </span>
+            </button>
+          </div>
         </div>
 
         <button
@@ -1273,6 +1381,7 @@ export default function DashboardPage() {
               setAuthSession(null);
               setAuthUser(null);
               setGuestView('landing');
+              setIsViewingLanding(false);
             }}
             title="Log out"
           >
@@ -1284,7 +1393,11 @@ export default function DashboardPage() {
       </aside>
 
       {/* Main Content View */}
-      <main id="main">
+      <main
+        id="main"
+        key={currentView + (docState ? `-${docState.t}-${docState.a}-${docState.b ?? ''}` : '')}
+        className="dash-view-transition"
+      >
         {/* NEW PROJECT VIEW */}
         {currentView === 'new' && (
           <div>
@@ -1789,7 +1902,9 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div className="docx-h-title">{studioProfile.studioName || 'Studio'}</div>
+                          <div className="docx-h-title">
+                            {studioProfile.studioName || <span style={{ color: '#888', fontStyle: 'italic', fontWeight: 400 }}>[Nama Studio Belum Diatur]</span>}
+                          </div>
                           {studioProfile.tagline && <div className="docx-h-sub" style={{ marginTop: '4px' }}>{studioProfile.tagline}</div>}
                           {(studioProfile.email || studioProfile.phone) && (
                             <div className="docx-h-sub">
@@ -1812,7 +1927,7 @@ export default function DashboardPage() {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div>
-                            <b>Dari:</b> {studioProfile.studioName || 'Studio'}
+                            <b>Dari:</b> {studioProfile.studioName || <span style={{ color: '#888', fontStyle: 'italic' }}>[Atur di Settings]</span>}
                           </div>
                         </div>
                       </div>
@@ -1868,9 +1983,17 @@ export default function DashboardPage() {
                       <div className="docx-payment-summary-grid">
                         <div className="docx-payment-method-box">
                           <div style={{ fontWeight: 700, marginBottom: '4px' }}>Payment Method</div>
-                          <div><b>Bank:</b> {studioProfile.bankName || 'BCA / Mandiri Transfer'}</div>
-                          <div><b>Account Number:</b> {studioProfile.accountNumber || '123-456-7890'}</div>
-                          <div><b>Account Holder:</b> {studioProfile.accountHolder || studioProfile.ownerName || studioProfile.studioName || 'Faiz Dawami'}</div>
+                          {studioProfile.bankName || studioProfile.accountNumber ? (
+                            <>
+                              <div><b>Bank:</b> {studioProfile.bankName || '—'}</div>
+                              <div><b>Account Number:</b> {studioProfile.accountNumber || '—'}</div>
+                              <div><b>Account Holder:</b> {studioProfile.accountHolder || studioProfile.ownerName || studioProfile.studioName || '—'}</div>
+                            </>
+                          ) : (
+                            <div style={{ color: '#71717a', fontSize: '12px', fontStyle: 'italic', lineHeight: 1.4, marginTop: '4px' }}>
+                              Rekening pembayaran belum diatur di Settings.
+                            </div>
+                          )}
                         </div>
                         <div className="docx-calc-box">
                           <div className="docx-calc-row">
@@ -1912,7 +2035,9 @@ export default function DashboardPage() {
                         <div style={{ marginBottom: '16px' }}>Terima kasih atas kepercayaannya.</div>
                         <div>Hormat Kami</div>
                         <div style={{ height: '36px' }} />
-                        <div style={{ fontWeight: 700 }}>{studioProfile.studioName || 'Studio'}</div>
+                        <div style={{ fontWeight: 700 }}>
+                          {studioProfile.studioName || <span style={{ color: '#888', fontStyle: 'italic' }}>[Nama Studio / Brand]</span>}
+                        </div>
                         {studioProfile.tagline && <div style={{ fontSize: '13px' }}>{studioProfile.tagline}</div>}
                       </div>
 
@@ -2526,7 +2651,9 @@ export default function DashboardPage() {
                           <div className="docx-h-sub">Valid until {newQuoteData.valid ? dt(newQuoteData.valid) : '—'}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div className="docx-h-title">{newQuoteData.senderName || studioProfile.studioName || 'Studio'}</div>
+                          <div className="docx-h-title">
+                            {(newQuoteData.senderName || studioProfile.studioName) || <span style={{ color: '#888', fontStyle: 'italic', fontWeight: 400 }}>[Nama Studio Belum Diatur]</span>}
+                          </div>
                           {(newQuoteData.senderTagline || studioProfile.tagline) && (
                             <div className="docx-h-sub" style={{ marginTop: '4px' }}>
                               {newQuoteData.senderTagline || studioProfile.tagline}
@@ -2553,7 +2680,7 @@ export default function DashboardPage() {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div>
-                            <b>Dari:</b> {newQuoteData.senderName || studioProfile.studioName || 'Studio'}
+                            <b>Dari:</b> {(newQuoteData.senderName || studioProfile.studioName) || <span style={{ color: '#888', fontStyle: 'italic' }}>[Atur di Settings]</span>}
                           </div>
                         </div>
                       </div>
@@ -2702,7 +2829,9 @@ export default function DashboardPage() {
                             <div className="docx-h-sub">Due Date: {dt(i.due)}</div>
                           </div>
                           <div style={{ textAlign: 'right' }}>
-                            <div className="docx-h-title">{brandName}</div>
+                            <div className="docx-h-title">
+                              {brandName || <span style={{ color: '#888', fontStyle: 'italic', fontWeight: 400 }}>[Nama Studio Belum Diatur]</span>}
+                            </div>
                             {brandTagline && <div className="docx-h-sub" style={{ marginTop: '4px' }}>{brandTagline}</div>}
                             {(brandEmail || brandPhone) && (
                               <div className="docx-h-sub">
@@ -2725,7 +2854,7 @@ export default function DashboardPage() {
                           </div>
                           <div style={{ textAlign: 'right' }}>
                             <div>
-                              <b>Dari:</b> {brandName}
+                              <b>Dari:</b> {brandName || <span style={{ color: '#888', fontStyle: 'italic' }}>[Atur di Settings]</span>}
                             </div>
                           </div>
                         </div>
@@ -2780,9 +2909,17 @@ export default function DashboardPage() {
                         <div className="docx-payment-summary-grid">
                           <div className="docx-payment-method-box">
                             <div style={{ fontWeight: 700, marginBottom: '4px' }}>Payment Method</div>
-                            <div><b>Bank:</b> {studioProfile.bankName || 'BCA / Mandiri Transfer'}</div>
-                            <div><b>Account Number:</b> {studioProfile.accountNumber || '123-456-7890'}</div>
-                            <div><b>Account Holder:</b> {studioProfile.accountHolder || studioProfile.ownerName || brandName || 'Faiz Dawami'}</div>
+                            {studioProfile.bankName || studioProfile.accountNumber ? (
+                              <>
+                                <div><b>Bank:</b> {studioProfile.bankName || '—'}</div>
+                                <div><b>Account Number:</b> {studioProfile.accountNumber || '—'}</div>
+                                <div><b>Account Holder:</b> {studioProfile.accountHolder || studioProfile.ownerName || brandName || '—'}</div>
+                              </>
+                            ) : (
+                              <div style={{ color: '#71717a', fontSize: '12px', fontStyle: 'italic', lineHeight: 1.4, marginTop: '4px' }}>
+                                Rekening pembayaran belum diatur di Settings.
+                              </div>
+                            )}
                           </div>
                           {(() => {
                             const itemIndex = p.plan.findIndex((x) => x.id === i.id);
@@ -2839,7 +2976,9 @@ export default function DashboardPage() {
                           <div style={{ marginBottom: '16px' }}>Terima kasih atas kepercayaannya.</div>
                           <div>Hormat Kami</div>
                           <div style={{ height: '36px' }} />
-                          <div style={{ fontWeight: 700 }}>{brandName}</div>
+                          <div style={{ fontWeight: 700 }}>
+                            {brandName || <span style={{ color: '#888', fontStyle: 'italic' }}>[Nama Studio / Brand]</span>}
+                          </div>
                           {brandTagline && <div style={{ fontSize: '13px' }}>{brandTagline}</div>}
                         </div>
 
@@ -2933,7 +3072,9 @@ export default function DashboardPage() {
                           <div className="docx-h-sub">Valid until {dt(q.valid)}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div className="docx-h-title">{qSenderName}</div>
+                          <div className="docx-h-title">
+                            {qSenderName || <span style={{ color: '#888', fontStyle: 'italic', fontWeight: 400 }}>[Nama Studio Belum Diatur]</span>}
+                          </div>
                           {qSenderTagline && <div className="docx-h-sub" style={{ marginTop: '4px' }}>{qSenderTagline}</div>}
                           {(qSenderEmail || qSenderPhone) && (
                             <div className="docx-h-sub">
@@ -2956,7 +3097,7 @@ export default function DashboardPage() {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div>
-                            <b>Dari:</b> {qSenderName}
+                            <b>Dari:</b> {qSenderName || <span style={{ color: '#888', fontStyle: 'italic' }}>[Atur di Settings]</span>}
                           </div>
                         </div>
                       </div>
@@ -3084,6 +3225,29 @@ export default function DashboardPage() {
             {/* OVERVIEW CONTENT */}
             {currentView === 'overview' && (
               <div>
+                {!isProfileComplete && (
+                  <div className="profile-setup-banner">
+                    <div className="profile-setup-icon">
+                      <Icon name="settings" size={18} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--fg)' }}>
+                        Lengkapi Profil &amp; Rekening Studio
+                      </div>
+                      <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '2px 0 0', lineHeight: 1.4 }}>
+                        Isi nama studio, kontak, dan nomor rekening pembayaran di menu Settings untuk mulai membuat project, quotation, dan invoice resmi.
+                      </p>
+                    </div>
+                    <button
+                      className="btn sm pri"
+                      onClick={handleOpenSettingsToCompleteProfile}
+                    >
+                      <Icon name="settings" size={14} style={{ marginRight: '4px' }} />
+                      Lengkapi Sekarang
+                    </button>
+                  </div>
+                )}
+
                 {/* Stats 4-cols */}
                 <div className="stats">
                   <div className="stat">
@@ -4073,7 +4237,7 @@ export default function DashboardPage() {
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. Zyf.Space"
+                          placeholder="e.g. Acme Studio / Studio Name"
                           value={profileDraft.studioName}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, studioName: e.target.value }))
@@ -4087,7 +4251,7 @@ export default function DashboardPage() {
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. Your digital partner solution."
+                          placeholder="e.g. Design & Development Studio"
                           value={profileDraft.tagline}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, tagline: e.target.value }))
@@ -4104,7 +4268,7 @@ export default function DashboardPage() {
                           type="email"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. zyfxspace@gmail.com"
+                          placeholder="e.g. hello@yourstudio.com"
                           value={profileDraft.email}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, email: e.target.value }))
@@ -4118,7 +4282,7 @@ export default function DashboardPage() {
                           type="tel"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. 0851-5637-9510"
+                          placeholder="e.g. 0812-3456-7890"
                           value={profileDraft.phone}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, phone: e.target.value }))
@@ -4145,7 +4309,7 @@ export default function DashboardPage() {
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="Your Name"
+                          placeholder="e.g. John Doe"
                           value={profileDraft.accountHolder}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, accountHolder: e.target.value }))
@@ -4159,7 +4323,7 @@ export default function DashboardPage() {
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="BCA"
+                          placeholder="e.g. BCA / Bank Mandiri / PayPal"
                           value={profileDraft.bankName}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, bankName: e.target.value }))
@@ -4176,7 +4340,7 @@ export default function DashboardPage() {
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. 123-456-7890"
+                          placeholder="e.g. 1234567890"
                           value={profileDraft.accountNumber}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, accountNumber: e.target.value }))
@@ -4190,7 +4354,7 @@ export default function DashboardPage() {
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="Account Holder Name"
+                          placeholder="e.g. John Doe"
                           value={profileDraft.ownerName}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, ownerName: e.target.value }))
@@ -4205,7 +4369,7 @@ export default function DashboardPage() {
                         id="st-terms"
                         disabled={!isSettingsUnlocked}
                         className="settings-input"
-                        placeholder="Put your default payment terms here"
+                        placeholder="e.g. 50% di awal sebelum pengerjaan, 50% pelunasan setelah selesai"
                         value={profileDraft.defaultPaymentTerms}
                         onChange={(e) =>
                           setProfileDraft((prev) => ({ ...prev, defaultPaymentTerms: e.target.value }))
@@ -4219,7 +4383,7 @@ export default function DashboardPage() {
                         id="st-notes"
                         disabled={!isSettingsUnlocked}
                         className="settings-input"
-                        placeholder="Quotation Terms"
+                        placeholder="e.g. Quotation berlaku selama 14 hari sejak diterbitkan."
                         value={profileDraft.defaultNotes}
                         onChange={(e) =>
                           setProfileDraft((prev) => ({ ...prev, defaultNotes: e.target.value }))
@@ -4824,27 +4988,23 @@ export default function DashboardPage() {
                       Masukkan Security PIN
                     </h3>
                     <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '2px 0 0' }}>
-                      Masukkan PIN untuk membuka pengaturan.
+                      Masukkan 4 digit PIN untuk membuka pengaturan.
                     </p>
                   </div>
                 </div>
 
-                <div className="f" style={{ margin: '6px 0 0' }}>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    autoFocus
-                    maxLength={12}
-                    placeholder="••••"
-                    className="pin-input-field"
+                <div className="f" style={{ margin: '4px 0 0' }}>
+                  <PinInput
                     value={pinInput}
-                    onChange={(e) => {
-                      setPinInput(e.target.value);
+                    onChange={(val) => {
+                      setPinInput(val);
                       if (pinError) setPinError('');
                     }}
+                    autoFocus
+                    hasError={Boolean(pinError)}
                   />
                   {pinError && (
-                    <span style={{ fontSize: '12px', color: 'var(--ac)', marginTop: '4px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--ac)', marginTop: '6px', textAlign: 'center', display: 'block' }}>
                       {pinError}
                     </span>
                   )}
@@ -4897,46 +5057,40 @@ export default function DashboardPage() {
                       Buat Security PIN
                     </h3>
                     <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '2px 0 0' }}>
-                      Buat PIN minimal 4 angka untuk keamanan.
+                      Tentukan 4 digit angka untuk mengamankan menu Settings.
                     </p>
                   </div>
                 </div>
 
                 <div className="f" style={{ margin: 0 }}>
-                  <label htmlFor="new-pin">PIN Baru</label>
-                  <input
-                    id="new-pin"
-                    type="password"
-                    inputMode="numeric"
-                    autoFocus
-                    maxLength={12}
-                    placeholder="Minimal 4 digit"
-                    className="pin-input-field"
+                  <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
+                    PIN Baru (4 Angka)
+                  </label>
+                  <PinInput
                     value={newPinInput}
-                    onChange={(e) => {
-                      setNewPinInput(e.target.value);
+                    onChange={(val) => {
+                      setNewPinInput(val);
                       if (pinError) setPinError('');
                     }}
+                    autoFocus
+                    hasError={Boolean(pinError && newPinInput.length !== 4)}
                   />
                 </div>
 
                 <div className="f" style={{ margin: 0 }}>
-                  <label htmlFor="confirm-pin">Konfirmasi PIN</label>
-                  <input
-                    id="confirm-pin"
-                    type="password"
-                    inputMode="numeric"
-                    maxLength={12}
-                    placeholder="Ulangi PIN baru"
-                    className="pin-input-field"
+                  <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
+                    Konfirmasi PIN (4 Angka)
+                  </label>
+                  <PinInput
                     value={confirmPinInput}
-                    onChange={(e) => {
-                      setConfirmPinInput(e.target.value);
+                    onChange={(val) => {
+                      setConfirmPinInput(val);
                       if (pinError) setPinError('');
                     }}
+                    hasError={Boolean(pinError)}
                   />
                   {pinError && (
-                    <span style={{ fontSize: '12px', color: 'var(--ac)', marginTop: '4px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--ac)', marginTop: '6px', textAlign: 'center', display: 'block' }}>
                       {pinError}
                     </span>
                   )}
@@ -4989,63 +5143,54 @@ export default function DashboardPage() {
                       Ganti Security PIN
                     </h3>
                     <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '2px 0 0' }}>
-                      Masukkan PIN lama dan tentukan PIN baru.
+                      Masukkan PIN lama dan tentukan 4 digit PIN baru.
                     </p>
                   </div>
                 </div>
 
                 <div className="f" style={{ margin: 0 }}>
-                  <label htmlFor="old-pin">PIN Lama</label>
-                  <input
-                    id="old-pin"
-                    type="password"
-                    inputMode="numeric"
-                    autoFocus
-                    maxLength={12}
-                    placeholder="••••"
-                    className="pin-input-field"
+                  <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
+                    PIN Lama
+                  </label>
+                  <PinInput
                     value={pinInput}
-                    onChange={(e) => {
-                      setPinInput(e.target.value);
+                    onChange={(val) => {
+                      setPinInput(val);
                       if (pinError) setPinError('');
                     }}
+                    autoFocus
+                    hasError={Boolean(pinError && pinInput.length !== 4)}
                   />
                 </div>
 
                 <div className="f" style={{ margin: 0 }}>
-                  <label htmlFor="chg-new-pin">PIN Baru</label>
-                  <input
-                    id="chg-new-pin"
-                    type="password"
-                    inputMode="numeric"
-                    maxLength={12}
-                    placeholder="Minimal 4 digit"
-                    className="pin-input-field"
+                  <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
+                    PIN Baru (4 Angka)
+                  </label>
+                  <PinInput
                     value={newPinInput}
-                    onChange={(e) => {
-                      setNewPinInput(e.target.value);
+                    onChange={(val) => {
+                      setNewPinInput(val);
                       if (pinError) setPinError('');
                     }}
+                    hasError={Boolean(pinError && newPinInput.length !== 4)}
                   />
                 </div>
 
                 <div className="f" style={{ margin: 0 }}>
-                  <label htmlFor="chg-confirm-pin">Konfirmasi PIN Baru</label>
-                  <input
-                    id="chg-confirm-pin"
-                    type="password"
-                    inputMode="numeric"
-                    maxLength={12}
-                    placeholder="Ulangi PIN baru"
-                    className="pin-input-field"
+                  <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
+                    Konfirmasi PIN Baru
+                  </label>
+                  <PinInput
                     value={confirmPinInput}
-                    onChange={(e) => {
-                      setConfirmPinInput(e.target.value);
+                    onChange={(val) => {
+                      setConfirmPinInput(val);
                       if (pinError) setPinError('');
                     }}
+                    hasError={Boolean(pinError)}
                   />
                   {pinError && (
-                    <span style={{ fontSize: '12px', color: 'var(--ac)', marginTop: '4px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--ac)', marginTop: '6px', textAlign: 'center', display: 'block' }}>
                       {pinError}
                     </span>
                   )}
@@ -5178,6 +5323,68 @@ export default function DashboardPage() {
                   Tutup
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Required Modal */}
+      {profileRequiredModal && (
+        <div
+          className="pin-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setProfileRequiredModal(null);
+            }
+          }}
+        >
+          <div className="pin-modal-card" role="dialog" aria-modal="true" style={{ maxWidth: '440px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  background: 'color-mix(in srgb, var(--ac) 12%, transparent)',
+                  border: '1px solid var(--line)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: 'var(--ac)',
+                  flexShrink: 0,
+                }}
+              >
+                <Icon name="settings" size={18} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 600, margin: 0, color: 'var(--fg)' }}>
+                  Lengkapi Profil &amp; Rekening Studio
+                </h3>
+                <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '4px 0 0', lineHeight: 1.45 }}>
+                  {profileRequiredModal === 'project'
+                    ? 'Sebelum membuat project baru, Anda perlu melengkapi nama brand/studio dan nomor rekening di Settings agar data invoice dan dokumen terisi otomatis.'
+                    : profileRequiredModal === 'invoice'
+                    ? 'Sebelum membuat invoice resmi, Anda perlu melengkapi nama studio dan nomor rekening pembayaran di Settings agar data tercantum pada invoice.'
+                    : 'Sebelum membuat quotation, Anda perlu melengkapi profil studio di Settings agar identitas pengirim tercantum pada dokumen.'}
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+              <button
+                type="button"
+                className="btn out"
+                onClick={() => setProfileRequiredModal(null)}
+              >
+                Nanti saja
+              </button>
+              <button
+                type="button"
+                className="btn pri"
+                onClick={handleOpenSettingsToCompleteProfile}
+              >
+                <Icon name="settings" size={14} style={{ marginRight: '4px' }} />
+                Lengkapi di Settings
+              </button>
             </div>
           </div>
         </div>

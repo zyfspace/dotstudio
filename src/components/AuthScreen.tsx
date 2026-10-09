@@ -1,19 +1,31 @@
-import React, { useState } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { Icon } from '@/components/Icons';
 import { DotStudioPaperLogo } from '@/components/Logo';
-import { AuthUser, verifyLogin, registerUser, setAuthSession } from '@/lib/auth';
+import { OtpInput } from '@/components/OtpInput';
+import {
+  AuthUser,
+  verifyLogin,
+  registerUser,
+  setAuthSession,
+  signInWithGoogle,
+  signUpWithSupabase,
+  verifyOtpWithSupabase,
+  resendOtpWithSupabase,
+} from '@/lib/auth';
 import { InteractiveAuthBg } from '@/components/InteractiveAuthBg';
 
 interface AuthScreenProps {
   onSuccess: (user: AuthUser) => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
-  initialMode?: 'login' | 'signup' | 'forgot';
+  initialMode?: 'login' | 'signup' | 'forgot' | 'otp';
   initialEmail?: string;
   onBackToLanding?: () => void;
 }
 
-type AuthMode = 'login' | 'signup' | 'forgot';
+type AuthMode = 'login' | 'signup' | 'forgot' | 'otp';
 
 export function AuthScreen({
   onSuccess,
@@ -30,12 +42,28 @@ export function AuthScreen({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  
+
+  // OTP state
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [otpCooldown, setOtpCooldown] = useState(0);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
+
   const [errorName, setErrorName] = useState('');
   const [errorEmail, setErrorEmail] = useState('');
   const [errorPassword, setErrorPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successInfo, setSuccessInfo] = useState<{ title: string; desc: string } | null>(null);
+
+  // OTP cooldown timer
+  useEffect(() => {
+    if (otpCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setOtpCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [otpCooldown]);
 
   const calculatePasswordScore = (v: string): number => {
     let score = 0;
@@ -53,6 +81,7 @@ export function AuthScreen({
     setErrorName('');
     setErrorEmail('');
     setErrorPassword('');
+    setOtpError('');
   };
 
   const switchMode = (m: AuthMode) => {
@@ -61,7 +90,47 @@ export function AuthScreen({
     setSuccessInfo(null);
   };
 
-  const handleSubmit = (e?: React.FormEvent) => {
+  const handleGoogleLogin = async () => {
+    setIsSubmitting(true);
+    clearErrors();
+    const res = await signInWithGoogle();
+    if (!res.success) {
+      setIsSubmitting(false);
+      setErrorEmail(res.error || 'Failed to initialize Google login.');
+    }
+  };
+
+  const handleVerifyOtp = async (codeToVerify?: string) => {
+    const code = (codeToVerify || otpCode).trim();
+    if (code.length !== 6) {
+      setOtpError('Please enter all 6 digits of the verification code.');
+      return;
+    }
+    setIsVerifyingOtp(true);
+    setOtpError('');
+    const res = await verifyOtpWithSupabase(email, code, name, studioName, password);
+    setIsVerifyingOtp(false);
+    if (res.success && res.user) {
+      onSuccess(res.user);
+    } else {
+      setOtpError(res.error || 'Invalid or expired verification code.');
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (otpCooldown > 0 || isResendingOtp) return;
+    setIsResendingOtp(true);
+    setOtpError('');
+    const res = await resendOtpWithSupabase(email);
+    setIsResendingOtp(false);
+    if (res.success) {
+      setOtpCooldown(30);
+    } else {
+      setOtpError(res.error || 'Failed to resend code. Please try again.');
+    }
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     clearErrors();
 
@@ -79,7 +148,7 @@ export function AuthScreen({
       valid = false;
     }
 
-    if (mode !== 'forgot') {
+    if (mode !== 'forgot' && mode !== 'otp') {
       if (!password) {
         setErrorPassword('Enter your password.');
         valid = false;
@@ -94,27 +163,28 @@ export function AuthScreen({
     setIsSubmitting(true);
 
     if (mode === 'login') {
-      setTimeout(() => {
-        const res = verifyLogin(cleanEmail, password);
-        setIsSubmitting(false);
-        if (res.success && res.user) {
-          setAuthSession(res.user, rememberMe);
-          onSuccess(res.user);
-        } else {
-          setErrorPassword(res.error || 'Email or password incorrect.');
-        }
-      }, 400);
+      const res = verifyLogin(cleanEmail, password);
+      setIsSubmitting(false);
+      if (res.success && res.user) {
+        setAuthSession(res.user, rememberMe);
+        onSuccess(res.user);
+      } else {
+        setErrorPassword(res.error || 'Email or password incorrect.');
+      }
     } else if (mode === 'signup') {
-      setTimeout(() => {
-        const res = registerUser(cleanName, cleanEmail, password, studioName);
-        setIsSubmitting(false);
-        if (res.success && res.user) {
-          setAuthSession(res.user, rememberMe);
-          onSuccess(res.user);
-        } else {
-          setErrorEmail(res.error || 'Registration failed.');
-        }
-      }, 400);
+      const res = await signUpWithSupabase(cleanName, cleanEmail, password, studioName);
+      setIsSubmitting(false);
+      if (!res.success) {
+        setErrorEmail(res.error || 'Registration failed.');
+        return;
+      }
+      if (res.requiresOtp) {
+        setMode('otp');
+        setOtpCooldown(30);
+      } else if (res.user) {
+        setAuthSession(res.user, rememberMe);
+        onSuccess(res.user);
+      }
     } else if (mode === 'forgot') {
       setTimeout(() => {
         setIsSubmitting(false);
@@ -169,7 +239,85 @@ export function AuthScreen({
               >
                 Back to log in
               </button>
-              <p className="fine">Demo mode — enter your registered password to log in.</p>
+            </div>
+          ) : mode === 'otp' ? (
+            <div key="otp-mode" className="auth-form-anim">
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <div
+                  style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--line)',
+                    background: 'var(--soft)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    margin: '0 auto 12px',
+                    color: 'var(--fg)',
+                  }}
+                >
+                  <Icon name="mail" size={20} />
+                </div>
+                <h1 style={{ fontSize: '22px' }}>Verify your email</h1>
+                <p className="sub" style={{ margin: '4px 0 0', fontSize: '13.5px' }}>
+                  Enter the 6-digit code sent to<br />
+                  <b style={{ color: 'var(--fg)' }}>{email}</b>
+                </p>
+              </div>
+
+              <OtpInput
+                value={otpCode}
+                onChange={(val) => {
+                  setOtpCode(val);
+                  if (otpError) setOtpError('');
+                  if (val.length === 6) {
+                    handleVerifyOtp(val);
+                  }
+                }}
+                autoFocus
+                disabled={isVerifyingOtp}
+                hasError={Boolean(otpError)}
+              />
+
+              {otpError && (
+                <div className="er" style={{ textAlign: 'center', margin: '-8px 0 14px' }}>
+                  {otpError}
+                </div>
+              )}
+
+              <button
+                type="button"
+                className="btn pri"
+                onClick={() => handleVerifyOtp()}
+                disabled={isVerifyingOtp || otpCode.length !== 6}
+                style={{ marginTop: '8px' }}
+              >
+                {isVerifyingOtp ? 'Verifying…' : 'Verify & Continue'}
+              </button>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '18px', fontSize: '13px' }}>
+                <button
+                  type="button"
+                  className="lk"
+                  onClick={() => {
+                    setMode('signup');
+                    setOtpCode('');
+                    setOtpError('');
+                  }}
+                >
+                  Change email
+                </button>
+
+                <button
+                  type="button"
+                  className="lk"
+                  onClick={handleResendOtp}
+                  disabled={otpCooldown > 0 || isResendingOtp}
+                  style={{ opacity: otpCooldown > 0 ? 0.6 : 1, cursor: otpCooldown > 0 ? 'default' : 'pointer' }}
+                >
+                  {isResendingOtp ? 'Sending…' : otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Resend code'}
+                </button>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} noValidate>
@@ -178,253 +326,245 @@ export function AuthScreen({
                   {mode === 'login'
                     ? 'Welcome back'
                     : mode === 'signup'
-                    ? 'Create your account'
-                    : 'Reset password'}
+                      ? 'Create your account'
+                      : 'Reset password'}
                 </h1>
                 <p className="sub">
                   {mode === 'login'
                     ? 'Log in to manage your projects and payments.'
                     : mode === 'signup'
-                    ? 'Start tracking projects, clients and payments.'
-                    : 'Enter your email and we’ll send you a reset link.'}
+                      ? 'Start tracking projects, clients and payments.'
+                      : 'Enter your email and we’ll send you a reset link.'}
                 </p>
 
-              {/* Segmented Mode Selector */}
-              {mode !== 'forgot' && (
-                <div className="seg">
-                  <button
-                    type="button"
-                    className={mode === 'login' ? 'on' : ''}
-                    onClick={() => switchMode('login')}
-                  >
-                    Log in
-                  </button>
-                  <button
-                    type="button"
-                    className={mode === 'signup' ? 'on' : ''}
-                    onClick={() => switchMode('signup')}
-                  >
-                    Sign up
-                  </button>
-                </div>
-              )}
-
-              {/* Full Name field (Sign up only) */}
-              {mode === 'signup' && (
-                <div className="f">
-                  <div className="lbl">
-                    <label htmlFor="nm">Full name</label>
-                  </div>
-                  <div className="fi">
-                    <span className="ic">
-                      <Icon name="user" size={16} />
-                    </span>
-                    <input
-                      className="in"
-                      id="nm"
-                      type="text"
-                      autoComplete="name"
-                      placeholder="Your name"
-                      value={name}
-                      onChange={(e) => {
-                        setName(e.target.value);
-                        if (errorName) setErrorName('');
-                      }}
-                      aria-invalid={!!errorName}
-                    />
-                  </div>
-                  {errorName && <div className="er">{errorName}</div>}
-                </div>
-              )}
-
-              {/* Email field */}
-              <div className="f">
-                <div className="lbl">
-                  <label htmlFor="em">Email</label>
-                </div>
-                <div className="fi">
-                  <span className="ic">
-                    <Icon name="mail" size={16} />
-                  </span>
-                  <input
-                    className="in"
-                    id="em"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (errorEmail) setErrorEmail('');
-                    }}
-                    aria-invalid={!!errorEmail}
-                  />
-                </div>
-                {errorEmail && <div className="er">{errorEmail}</div>}
-              </div>
-
-              {/* Password field */}
-              {mode !== 'forgot' && (
-                <div className="f">
-                  <div className="lbl">
-                    <label htmlFor="pw">Password</label>
-                    {mode === 'login' && (
-                      <button
-                        type="button"
-                        className="lk"
-                        onClick={() => switchMode('forgot')}
-                      >
-                        Forgot password?
-                      </button>
-                    )}
-                  </div>
-                  <div className="fi">
-                    <span className="ic">
-                      <Icon name="lock" size={16} />
-                    </span>
-                    <input
-                      className="in"
-                      id="pw"
-                      type={showPassword ? 'text' : 'password'}
-                      autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                      placeholder="••••••••"
-                      style={{ paddingRight: '42px' }}
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        if (errorPassword) setErrorPassword('');
-                      }}
-                      aria-invalid={!!errorPassword}
-                    />
+                {/* Segmented Mode Selector */}
+                {mode !== 'forgot' && (
+                  <div className="seg">
                     <button
-                      className="eye"
                       type="button"
-                      title={showPassword ? 'Hide password' : 'Show password'}
-                      onClick={() => setShowPassword(!showPassword)}
+                      className={mode === 'login' ? 'on' : ''}
+                      onClick={() => switchMode('login')}
                     >
-                      <Icon name={showPassword ? 'eyeoff' : 'eye'} size={16} />
+                      Log in
+                    </button>
+                    <button
+                      type="button"
+                      className={mode === 'signup' ? 'on' : ''}
+                      onClick={() => switchMode('signup')}
+                    >
+                      Sign up
                     </button>
                   </div>
-                  {errorPassword && <div className="er">{errorPassword}</div>}
+                )}
 
-                  {/* Password strength meter */}
-                  {mode === 'signup' && (
-                    <>
-                      <div className="meter">
-                        <i className={passwordScore >= 1 ? 'on' : ''} />
-                        <i className={passwordScore >= 2 ? 'on' : ''} />
-                        <i className={passwordScore >= 3 ? 'on' : ''} />
-                        <i className={passwordScore >= 4 ? 'on' : ''} />
-                      </div>
-                      <div className="mt">
-                        {password
-                          ? `Password strength: ${strengthLabels[Math.max(passwordScore, 1)]}`
-                          : 'Use 8+ characters with a mix of letters, numbers and symbols.'}
-                      </div>
-                    </>
-                  )}
+                {/* Full Name field (Sign up only) */}
+                {mode === 'signup' && (
+                  <div className="f">
+                    <div className="lbl">
+                      <label htmlFor="nm">Full name</label>
+                    </div>
+                    <div className="fi">
+                      <span className="ic">
+                        <Icon name="user" size={16} />
+                      </span>
+                      <input
+                        className="in"
+                        id="nm"
+                        type="text"
+                        autoComplete="name"
+                        placeholder="Your name"
+                        value={name}
+                        onChange={(e) => {
+                          setName(e.target.value);
+                          if (errorName) setErrorName('');
+                        }}
+                        aria-invalid={!!errorName}
+                      />
+                    </div>
+                    {errorName && <div className="er">{errorName}</div>}
+                  </div>
+                )}
+
+                {/* Email field */}
+                <div className="f">
+                  <div className="lbl">
+                    <label htmlFor="em">Email</label>
+                  </div>
+                  <div className="fi">
+                    <span className="ic">
+                      <Icon name="mail" size={16} />
+                    </span>
+                    <input
+                      className="in"
+                      id="em"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="name@example.com"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (errorEmail) setErrorEmail('');
+                      }}
+                      aria-invalid={!!errorEmail}
+                    />
+                  </div>
+                  {errorEmail && <div className="er">{errorEmail}</div>}
                 </div>
-              )}
 
-              {/* Remember me checkbox */}
-              {mode === 'login' && (
-                <label className="ck">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                  />
-                  <i>
-                    <Icon name="check" size={12} className="i" />
-                  </i>
-                  <span>Remember me on this device</span>
-                </label>
-              )}
+                {/* Password field */}
+                {mode !== 'forgot' && (
+                  <div className="f">
+                    <div className="lbl">
+                      <label htmlFor="pw">Password</label>
+                      {mode === 'login' && (
+                        <button
+                          type="button"
+                          className="lk"
+                          onClick={() => switchMode('forgot')}
+                        >
+                          Forgot?
+                        </button>
+                      )}
+                    </div>
+                    <div className="fi">
+                      <span className="ic">
+                        <Icon name="lock" size={16} />
+                      </span>
+                      <input
+                        className="in"
+                        id="pw"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                        placeholder={mode === 'login' ? 'Enter password' : 'At least 8 characters'}
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (errorPassword) setErrorPassword('');
+                        }}
+                        aria-invalid={!!errorPassword}
+                      />
+                      <button
+                        type="button"
+                        className="eye"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        <Icon name={showPassword ? 'eyeOff' : 'eye'} size={15} />
+                      </button>
+                    </div>
 
-              {/* Submit button */}
-              <button
-                type="submit"
-                className="btn pri"
-                style={{ marginTop: '6px' }}
-                disabled={isSubmitting}
-              >
-                {isSubmitting
-                  ? 'Please wait…'
-                  : mode === 'login'
-                  ? 'Log in'
-                  : mode === 'signup'
-                  ? 'Create account'
-                  : 'Send reset link'}
-              </button>
+                    {/* Password Strength Meter (Sign up only) */}
+                    {mode === 'signup' && password.length > 0 && (
+                      <>
+                        <div className="meter" aria-hidden="true">
+                          {[1, 2, 3, 4].map((step) => (
+                            <i
+                              key={step}
+                              className={passwordScore >= step ? 'on' : ''}
+                            />
+                          ))}
+                        </div>
+                        <div className="mt">
+                          {strengthLabels[passwordScore] ? `Strength: ${strengthLabels[passwordScore]}` : ''}
+                        </div>
+                      </>
+                    )}
 
-              {mode === 'signup' && (
-                <p className="fine">
-                  By creating an account you agree to the Terms and Privacy Policy.
-                </p>
-              )}
+                    {errorPassword && <div className="er">{errorPassword}</div>}
+                  </div>
+                )}
 
-              {mode !== 'forgot' && (
-                <>
-                  <div className="or">or</div>
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      // Google login pre-populates with default registered user
-                      setEmail('zyfxspace@gmail.com');
-                      setPassword('11januari');
-                      const res = verifyLogin('zyfxspace@gmail.com', '11januari');
-                      if (res.success && res.user) {
-                        setAuthSession(res.user, true);
-                        onSuccess(res.user);
-                      }
-                    }}
-                  >
-                    <Icon name="google" size={16} />
-                    <span>Continue with Google</span>
-                  </button>
-                </>
-              )}
+                {/* Remember Me */}
+                {mode === 'login' && (
+                  <label className="ck">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                    />
+                    <i>
+                      <Icon name="check" size={12} />
+                    </i>
+                    <span>Remember me</span>
+                  </label>
+                )}
 
-              {/* Footer Switcher */}
-              {mode === 'login' && (
-                <p className="ft">
-                  Don’t have an account?
-                  <button
-                    type="button"
-                    className="lk"
-                    onClick={() => switchMode('signup')}
-                  >
-                    Sign up
-                  </button>
-                </p>
-              )}
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="btn pri"
+                  disabled={isSubmitting}
+                  style={{ marginTop: mode === 'signup' ? '12px' : '0' }}
+                >
+                  {isSubmitting
+                    ? 'Please wait…'
+                    : mode === 'login'
+                      ? 'Log in'
+                      : mode === 'signup'
+                        ? 'Create account'
+                        : 'Send reset link'}
+                </button>
 
-              {mode === 'signup' && (
-                <p className="ft">
-                  Already have an account?
-                  <button
-                    type="button"
-                    className="lk"
-                    onClick={() => switchMode('login')}
-                  >
-                    Log in
-                  </button>
-                </p>
-              )}
+                {mode === 'signup' && (
+                  <p className="fine">
+                    By creating an account you agree to the Terms and Privacy Policy.
+                  </p>
+                )}
 
-              {mode === 'forgot' && (
-                <p className="ft">
-                  <button
-                    type="button"
-                    className="lk"
-                    style={{ margin: 0 }}
-                    onClick={() => switchMode('login')}
-                  >
-                    Back to log in
-                  </button>
-                </p>
-              )}
+                {mode !== 'forgot' && (
+                  <>
+                    <div className="or">or</div>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={handleGoogleLogin}
+                      disabled={isSubmitting}
+                    >
+                      <Icon name="google" size={16} />
+                      <span>Continue with Google</span>
+                    </button>
+                  </>
+                )}
+
+                {/* Footer Switcher */}
+                {mode === 'login' && (
+                  <p className="ft">
+                    Don’t have an account?
+                    <button
+                      type="button"
+                      className="lk"
+                      onClick={() => switchMode('signup')}
+                    >
+                      Sign up
+                    </button>
+                  </p>
+                )}
+
+                {mode === 'signup' && (
+                  <p className="ft">
+                    Already have an account?
+                    <button
+                      type="button"
+                      className="lk"
+                      onClick={() => switchMode('login')}
+                    >
+                      Log in
+                    </button>
+                  </p>
+                )}
+
+                {mode === 'forgot' && (
+                  <p className="ft">
+                    <button
+                      type="button"
+                      className="lk"
+                      style={{ margin: 0 }}
+                      onClick={() => switchMode('login')}
+                    >
+                      Back to log in
+                    </button>
+                  </p>
+                )}
               </div>
             </form>
           )}

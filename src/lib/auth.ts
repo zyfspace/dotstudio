@@ -142,3 +142,137 @@ export const registerUser = (
 
   return { success: true, user: newUser };
 };
+
+// Supabase Google OAuth Sign-in
+export const signInWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const { supabase } = await import('./supabase');
+    const redirectUrl = typeof window !== 'undefined' ? window.location.origin : undefined;
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+      },
+    });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Failed to initialize Google Sign-in.' };
+  }
+};
+
+// Supabase Sign Up with Email & OTP
+export const signUpWithSupabase = async (
+  name: string,
+  email: string,
+  pass: string,
+  studioName?: string
+): Promise<{ success: boolean; requiresOtp?: boolean; user?: AuthUser; error?: string }> => {
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanName = name.trim();
+  const cleanStudioName = (studioName || '').trim();
+
+  try {
+    const { supabase } = await import('./supabase');
+    const { data, error } = await supabase.auth.signUp({
+      email: cleanEmail,
+      password: pass,
+      options: {
+        data: {
+          full_name: cleanName,
+          studio_name: cleanStudioName,
+        },
+      },
+    });
+
+    if (error) {
+      // If user already registered in Supabase
+      return { success: false, error: error.message };
+    }
+
+    if (data.session && data.user) {
+      const authUser: AuthUser = {
+        id: data.user.id,
+        name: data.user.user_metadata?.full_name || cleanName || 'Studio Owner',
+        studioName: data.user.user_metadata?.studio_name || cleanStudioName || '',
+        email: cleanEmail,
+        createdAt: data.user.created_at || new Date().toISOString(),
+      };
+      registerUser(authUser.name, authUser.email, pass, authUser.studioName);
+      setAuthSession(authUser);
+      return { success: true, requiresOtp: false, user: authUser };
+    }
+
+    // Requires OTP verification
+    return { success: true, requiresOtp: true };
+  } catch (e: any) {
+    // Local fallback in case network / mock
+    const res = registerUser(cleanName, cleanEmail, pass, cleanStudioName);
+    return { ...res, requiresOtp: false };
+  }
+};
+
+// Supabase Verify OTP 6-Digit Code
+export const verifyOtpWithSupabase = async (
+  email: string,
+  token: string,
+  name?: string,
+  studioName?: string,
+  pass?: string
+): Promise<{ success: boolean; user?: AuthUser; error?: string }> => {
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanToken = token.trim();
+
+  try {
+    const { supabase } = await import('./supabase');
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: cleanEmail,
+      token: cleanToken,
+      type: 'signup',
+    });
+
+    if (error) {
+      return { success: false, error: error.message || 'Kode verifikasi salah atau kedaluwarsa.' };
+    }
+
+    const sbUser = data.user;
+    const authUser: AuthUser = {
+      id: sbUser?.id || `usr_${Date.now()}`,
+      name: sbUser?.user_metadata?.full_name || name || 'Studio Owner',
+      studioName: sbUser?.user_metadata?.studio_name || studioName || '',
+      email: cleanEmail,
+      createdAt: sbUser?.created_at || new Date().toISOString(),
+    };
+
+    if (pass) {
+      registerUser(authUser.name, authUser.email, pass, authUser.studioName);
+    }
+    setAuthSession(authUser);
+    return { success: true, user: authUser };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Gagal memverifikasi kode.' };
+  }
+};
+
+// Supabase Resend OTP Code
+export const resendOtpWithSupabase = async (
+  email: string
+): Promise<{ success: boolean; error?: string }> => {
+  const cleanEmail = email.trim().toLowerCase();
+  try {
+    const { supabase } = await import('./supabase');
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: cleanEmail,
+    });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Gagal mengirim ulang kode.' };
+  }
+};
+
