@@ -107,7 +107,7 @@ export function BrandAndTechStack({ theme }: BrandAndTechStackProps) {
           {/* RIGHT COLUMN: Stack We Use (9 Tech Logos in 1 Line) */}
           <div className="lp-marquee-col">
             <div className="lp-marquee-col-header">
-              <span className="lp-marquee-col-title">Engineered with Best Technologies</span>
+              <span className="lp-marquee-col-title">Engineered with the right stack</span>
               <span className="lp-marquee-col-sub">Built on battle-tested infrastructure, security & speed</span>
             </div>
 
