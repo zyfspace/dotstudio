@@ -4390,19 +4390,34 @@ input[type="file"] {
     width: 32px !important;
   }
 
-  .bars-area {
+  .bars-area:not(.dense) {
     gap: 5px !important;
     padding-right: 2px;
   }
 
-  .x-axis-months {
+  .x-axis-months:not(.dense) {
     gap: 5px !important;
+    padding-right: 2px;
+  }
+
+  .bars-area.dense {
+    gap: 2px !important;
+    padding-right: 2px;
+  }
+
+  .x-axis-months.dense {
+    gap: 2px !important;
     padding-right: 2px;
   }
 
   .x-month-label {
     font-size: 11px !important;
     padding: 3px 0 !important;
+  }
+
+  .x-axis-months.dense .x-month-label {
+    font-size: 9.5px !important;
+    padding: 2px 0 !important;
   }
 
   .tw-desktop-only {

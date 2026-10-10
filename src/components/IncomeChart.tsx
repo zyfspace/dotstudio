@@ -594,7 +594,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
         <div className="income-title-group">
           <h3>Income</h3>
           <span className="income-period-summary">
-            {rp(totalInPeriod)} · {countInPeriod} transaksi
+            {rp(totalInPeriod)} · {countInPeriod} Transaction
           </span>
         </div>
 
@@ -916,8 +916,8 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
 
           {/* Bars */}
           <div
-            className="bars-area"
-            style={buckets.length > 20 ? { gap: '4px' } : undefined}
+            className={`bars-area ${buckets.length > 15 ? 'dense' : ''}`}
+            style={buckets.length > 20 ? { gap: '2px' } : undefined}
           >
             {buckets.map((b, i) => {
               const isHovered = hoveredIdx === i;
@@ -973,7 +973,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                     className="bar-pillar"
                     style={{
                       height: `${safeHeight}%`,
-                      ...(buckets.length > 20 ? { borderRadius: '3px 3px 0 0' } : {}),
+                      ...(buckets.length > 20 ? { borderRadius: '2px 2px 0 0' } : {}),
                     }}
                   >
                     {b.paid > 0 && (
@@ -1000,11 +1000,42 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
       <div className="x-axis-wrapper">
         <div className="x-axis-spacer-left" />
         <div
-          className="x-axis-months"
-          style={buckets.length > 20 ? { gap: '4px' } : undefined}
+          className={`x-axis-months ${buckets.length > 15 ? 'dense' : ''}`}
+          style={buckets.length > 20 ? { gap: '2px' } : undefined}
         >
           {buckets.map((b, i) => {
             const isHovered = hoveredIdx === i;
+            const total = buckets.length;
+            let showLabelText = true;
+
+            if (total > 20) {
+              const dayNum = parseInt(b.l, 10);
+              if (!isNaN(dayNum)) {
+                const isLast = dayNum === total;
+                const isNearLast = total - dayNum <= 1 && dayNum % 5 === 0 && !isLast;
+                showLabelText =
+                  dayNum === 1 ||
+                  (dayNum % 5 === 0 && !isNearLast) ||
+                  isLast ||
+                  isHovered ||
+                  Boolean(b.isCurrent);
+              } else {
+                showLabelText = i === 0 || (i + 1) % 5 === 0 || i === total - 1 || isHovered || Boolean(b.isCurrent);
+              }
+            } else if (total > 12) {
+              const dayNum = parseInt(b.l, 10);
+              if (!isNaN(dayNum)) {
+                const isLast = dayNum === total;
+                const isNearLast = total - dayNum <= 1 && dayNum % 2 === 1 && !isLast;
+                showLabelText =
+                  dayNum === 1 ||
+                  (dayNum % 2 === 1 && !isNearLast) ||
+                  isLast ||
+                  isHovered ||
+                  Boolean(b.isCurrent);
+              }
+            }
+
             return (
               <button
                 key={b.k}
@@ -1014,9 +1045,10 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                 onClick={() => handleBarClick(b.k)}
                 type="button"
                 style={{
-                  fontSize: buckets.length > 20 ? '10px' : '11px',
-                  padding: buckets.length > 20 ? '2px 0' : '4px 0',
+                  fontSize: total > 20 ? '10px' : '11px',
+                  padding: total > 20 ? '2px 0' : '4px 0',
                   cursor: mode === '6m' ? 'pointer' : 'default',
+                  visibility: showLabelText ? 'visible' : 'hidden',
                 }}
               >
                 {b.l}

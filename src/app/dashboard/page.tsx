@@ -744,16 +744,16 @@ export default function DashboardPage() {
 
     const quoteItems = fromQuote && fromQuote.items.length > 0
       ? fromQuote.items.map((it) => ({
-          d: it.d,
-          type: it.type || 'One-time',
-          p: it.p,
-        }))
+        d: it.d,
+        type: it.type || 'One-time',
+        p: it.p,
+      }))
       : [{ d: '', type: 'One-time', p: '' }];
 
     const quoteScopeDesc = fromQuote
       ? (fromQuote.scope && fromQuote.scope.filter((s) => s.trim()).length
-          ? fromQuote.scope.filter((s) => s.trim()).join('\n')
-          : '')
+        ? fromQuote.scope.filter((s) => s.trim()).join('\n')
+        : '')
       : '';
 
     setNewProjectData({
@@ -1408,12 +1408,12 @@ export default function DashboardPage() {
             {currentView === 'overview'
               ? 'Dashboard'
               : currentView === 'new'
-              ? 'New Project'
-              : currentView === 'quote'
-              ? 'New Quote'
-              : currentView === 'doc'
-              ? (docState?.t === 'inv' ? 'Invoice' : 'Quotation')
-              : currentView.charAt(0).toUpperCase() + currentView.slice(1)}
+                ? 'New Project'
+                : currentView === 'quote'
+                  ? 'New Quote'
+                  : currentView === 'doc'
+                    ? (docState?.t === 'inv' ? 'Invoice' : 'Quotation')
+                    : currentView.charAt(0).toUpperCase() + currentView.slice(1)}
           </span>
         </div>
         <div className="mob-header-right">
@@ -2225,7 +2225,7 @@ export default function DashboardPage() {
                             </>
                           ) : (
                             <div style={{ color: '#71717a', fontSize: '12px', fontStyle: 'italic', lineHeight: 1.4, marginTop: '4px' }}>
-                              Rekening pembayaran belum diatur di Settings.
+                              Payment method not set in Settings.
                             </div>
                           )}
                         </div>
@@ -3213,7 +3213,7 @@ export default function DashboardPage() {
                               </>
                             ) : (
                               <div style={{ color: '#71717a', fontSize: '12px', fontStyle: 'italic', lineHeight: 1.4, marginTop: '4px' }}>
-                                Rekening pembayaran belum diatur di Settings.
+                                Payment method not yet set in Settings.
                               </div>
                             )}
                           </div>
@@ -6108,8 +6108,8 @@ export default function DashboardPage() {
                   {profileRequiredModal === 'project'
                     ? 'Before creating a new project, complete your studio profile and bank details in Settings so invoices and documents populate automatically.'
                     : profileRequiredModal === 'invoice'
-                    ? 'Before creating an invoice, complete your studio profile and payment bank details in Settings so they appear on the document.'
-                    : 'Before creating a quotation, complete your studio profile in Settings so sender details appear on documents.'}
+                      ? 'Before creating an invoice, complete your studio profile and payment bank details in Settings so they appear on the document.'
+                      : 'Before creating a quotation, complete your studio profile in Settings so sender details appear on documents.'}
                 </p>
               </div>
             </div>
@@ -6200,7 +6200,7 @@ export default function DashboardPage() {
         <div className="mob-menu-handle" />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--fg)' }}>Menu Lainnya</div>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--fg)' }}>Others</div>
             <div style={{ fontSize: '12px', color: 'var(--mut)' }}>{authUser?.email || 'Freelance Workspace'}</div>
           </div>
           <button
@@ -6297,7 +6297,7 @@ export default function DashboardPage() {
 
             <div style={{ position: 'relative', background: 'var(--soft)', border: '1px solid var(--line)', borderRadius: '6px', padding: '12px', maxHeight: '220px', overflowY: 'auto', fontSize: '11.5px', fontFamily: 'var(--mono)', lineHeight: 1.5, color: 'var(--fg)' }}>
               <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-{`-- Jalankan ini di Supabase Dashboard -> SQL Editor -> New Query
+                {`-- Jalankan ini di Supabase Dashboard -> SQL Editor -> New Query
 CREATE TABLE IF NOT EXISTS public.clients (
   id BIGINT PRIMARY KEY,
   name TEXT NOT NULL,
