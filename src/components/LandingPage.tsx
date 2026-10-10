@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Icon } from '@/components/Icons';
 import { DotStudioPaperLogo } from '@/components/Logo';
+import { BrandAndTechStack } from '@/components/BrandAndTechStack';
 import { AuthUser } from '@/lib/auth';
 import '@/app/landing.css';
 
@@ -35,8 +36,8 @@ const FEATURES = [
   },
   {
     icon: 'cal',
-    title: 'Payment schedules',
-    desc: 'DP 50/50, three installments or custom. Always totals exactly 100%.',
+    title: 'Payment type',
+    desc: 'Choose the payments that fit on you, 50/50, three installments, or custom.',
   },
   {
     icon: 'upload',
@@ -350,119 +351,125 @@ export function LandingPage({
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="lp-hero">
-        <div className="lp-wrap">
-          <div>
-            <div className="lp-tagl lp-rv">
-              <i />
-              Not just track, we help you manage.
+      {/* Hero & Ecosystem Fold (100dvh First Impression) */}
+      <div className="lp-hero-fold">
+        {/* Hero Section */}
+        <section className="lp-hero">
+          <div className="lp-wrap">
+            <div>
+              <div className="lp-tagl lp-rv">
+                <i />
+                Not just track, we help you manage.
+              </div>
+              <h1 className="lp-big lp-rv" style={{ transitionDelay: '.05s' }}>
+                Know exactly what you’re owed<em>.</em>
+              </h1>
+              <p className="lp-lead lp-rv" style={{ transitionDelay: '.12s' }}>
+                DotStudio keeps your projects, clients and payments in one quiet place. Mark a payment received and the project status updates itself.
+              </p>
+              <div className="lp-cta lp-rv" style={{ transitionDelay: '.2s' }}>
+                {authUser ? (
+                  <button className="lp-btn lp-pri lp-lg" onClick={onOpenDashboard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    Open Dashboard <Icon name="arrow" size={16} />
+                  </button>
+                ) : (
+                  <button className="lp-btn lp-pri lp-lg" onClick={() => onOpenAuth('signup')}>
+                    Get started <Icon name="arrow" size={16} />
+                  </button>
+                )}
+                <a className="lp-btn lp-lg" href="#demo">
+                  Try it live
+                </a>
+              </div>
             </div>
-            <h1 className="lp-big lp-rv" style={{ transitionDelay: '.05s' }}>
-              Know exactly what you’re owed<em>.</em>
-            </h1>
-            <p className="lp-lead lp-rv" style={{ transitionDelay: '.12s' }}>
-              DotStudio keeps your projects, clients and payments in one quiet place. Mark a payment received and the project status updates itself.
-            </p>
-            <div className="lp-cta lp-rv" style={{ transitionDelay: '.2s' }}>
-              {authUser ? (
-                <button className="lp-btn lp-pri lp-lg" onClick={onOpenDashboard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  Open Dashboard <Icon name="arrow" size={16} />
-                </button>
-              ) : (
-                <button className="lp-btn lp-pri lp-lg" onClick={() => onOpenAuth('signup')}>
-                  Get started <Icon name="arrow" size={16} />
-                </button>
-              )}
-              <a className="lp-btn lp-lg" href="#demo">
-                Try it live
-              </a>
-            </div>
-          </div>
 
-          {/* 3D Stage */}
-          <div className="lp-stage" id="lp-stage" ref={stageRef}>
-            <div className="lp-rig" id="lp-rig" ref={rigRef}>
-              <div className="lp-floor" />
+            {/* 3D Stage */}
+            <div className="lp-stage" id="lp-stage" ref={stageRef}>
+              <div className="lp-rig" id="lp-rig" ref={rigRef}>
+                <div className="lp-floor" />
 
-              {/* Layer 1: Main Project Card */}
-              <div className="lp-mc lp-ly" data-x="20" data-y="80" data-z="0" style={{ width: '350px' }}>
-                <div className="lp-row">
-                  <div>
-                    <b>Website redesign</b>
-                    <div className="lp-mut">Nadia Pratama · Lumen Studio</div>
+                {/* Layer 1: Main Project Card */}
+                <div className="lp-mc lp-ly" data-x="16" data-y="35" data-z="0" style={{ width: '350px' }}>
+                  <div className="lp-row">
+                    <div>
+                      <b>Website redesign</b>
+                      <div className="lp-mut">Nadia Pratama · Lumen Studio</div>
+                    </div>
+                    <span className="lp-st lp-Progress">In progress</span>
                   </div>
-                  <span className="lp-st lp-Progress">In progress</span>
-                </div>
-                <div className="lp-amt">
-                  Rp 9.250.000 <span>of Rp 18.500.000</span>
-                </div>
-                <div className="lp-prog">
-                  <i ref={heroProgressRef} />
-                </div>
-                <div className="lp-ins" style={{ marginTop: '16px' }}>
-                  <span>
-                    <span className="lp-chk">
-                      <Icon name="check" size={10} />
+                  <div className="lp-amt">
+                    Rp 9.250.000 <span>of Rp 18.500.000</span>
+                  </div>
+                  <div className="lp-prog">
+                    <i ref={heroProgressRef} />
+                  </div>
+                  <div className="lp-ins" style={{ marginTop: '16px' }}>
+                    <span>
+                      <span className="lp-chk">
+                        <Icon name="check" size={10} />
+                      </span>
+                      DP · 50%
                     </span>
-                    DP · 50%
-                  </span>
-                  <span className="lp-mut">Paid 12 Sep</span>
+                    <span className="lp-mut">Paid 12 Sep</span>
+                  </div>
+                  <div className="lp-ins">
+                    <span>Final payment · 50%</span>
+                    <span className="lp-mut">Due 21 Oct</span>
+                  </div>
                 </div>
-                <div className="lp-ins">
-                  <span>Final payment · 50%</span>
-                  <span className="lp-mut">Due 21 Oct</span>
-                </div>
-              </div>
 
-              {/* Layer 2: Upcoming payments */}
-              <div className="lp-mc lp-ly" data-x="250" data-y="-6" data-z="70" style={{ width: '250px' }}>
-                <div className="lp-mut" style={{ marginBottom: '8px' }}>Upcoming payments</div>
-                <div className="lp-row" style={{ padding: '7px 0', borderTop: '1px solid var(--line)' }}>
-                  <span>
-                    Booking automation
-                    <div className="lp-mut">Final · due 12 Nov</div>
-                  </span>
-                  <b>Rp 7 jt</b>
+                {/* Layer 2: Upcoming payments */}
+                <div className="lp-mc lp-ly" data-x="240" data-y="-36" data-z="70" style={{ width: '250px' }}>
+                  <div className="lp-mut" style={{ marginBottom: '8px' }}>Upcoming payments</div>
+                  <div className="lp-row" style={{ padding: '7px 0', borderTop: '1px solid var(--line)' }}>
+                    <span>
+                      Booking automation
+                      <div className="lp-mut">Final · due 12 Nov</div>
+                    </span>
+                    <b>Rp 7 jt</b>
+                  </div>
+                  <div className="lp-row" style={{ padding: '7px 0', borderTop: '1px solid var(--line)' }}>
+                    <span>
+                      SEO content plan
+                      <div className="lp-mut" style={{ color: 'var(--ac)' }}>Final · overdue</div>
+                    </span>
+                    <b>Rp 3,6 jt</b>
+                  </div>
                 </div>
-                <div className="lp-row" style={{ padding: '7px 0', borderTop: '1px solid var(--line)' }}>
-                  <span>
-                    SEO content plan
-                    <div className="lp-mut" style={{ color: 'var(--ac)' }}>Final · overdue</div>
-                  </span>
-                  <b>Rp 3,6 jt</b>
-                </div>
-              </div>
 
-              {/* Layer 3: Invoice preview */}
-              <div className="lp-mc lp-ly" data-x="0" data-y="330" data-z="115" style={{ width: '240px' }}>
-                <div className="lp-row">
-                  <span className="lp-mut">INV-2026-001</span>
-                  <span className="lp-st">Unpaid</span>
+                {/* Layer 3: Invoice preview */}
+                <div className="lp-mc lp-ly" data-x="0" data-y="260" data-z="115" style={{ width: '240px' }}>
+                  <div className="lp-row">
+                    <span className="lp-mut">INV-2026-001</span>
+                    <span className="lp-st">Unpaid</span>
+                  </div>
+                  <div style={{ margin: '10px 0 2px' }}>
+                    <b>Final payment · 50%</b>
+                  </div>
+                  <div className="lp-mut">Website redesign</div>
+                  <div className="lp-amt" style={{ fontSize: '18px', margin: '10px 0 0' }}>
+                    Rp 9.250.000
+                  </div>
                 </div>
-                <div style={{ margin: '10px 0 2px' }}>
-                  <b>Final payment · 50%</b>
-                </div>
-                <div className="lp-mut">Website redesign</div>
-                <div className="lp-amt" style={{ fontSize: '18px', margin: '10px 0 0' }}>
-                  Rp 9.250.000
-                </div>
-              </div>
 
-              {/* Layer 4: Toast notification */}
-              <div className="lp-mc lp-ly lp-toast" id="lp-toast" ref={toastRef} data-x="238" data-y="392" data-z="170" style={{ width: '236px' }}>
-                <span className="lp-ring">
-                  <Icon name="upload" size={13} />
-                </span>
-                <div>
-                  <b>Proof uploaded</b>
-                  <div className="lp-mut">Final payment · just now</div>
+                {/* Layer 4: Toast notification */}
+                <div className="lp-mc lp-ly lp-toast" id="lp-toast" ref={toastRef} data-x="226" data-y="315" data-z="170" style={{ width: '236px' }}>
+                  <span className="lp-ring">
+                    <Icon name="upload" size={13} />
+                  </span>
+                  <div>
+                    <b>Proof uploaded</b>
+                    <div className="lp-mut">Final payment · just now</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* Ecosystem & Tech Stack Section */}
+        <BrandAndTechStack />
+      </div>
 
       {/* Interactive Demo Section */}
       <section id="demo" className="lp-sec">

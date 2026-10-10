@@ -28,6 +28,8 @@
 html {
   scroll-padding-top: calc(72px + env(safe-area-inset-top, 0px));
   scroll-behavior: smooth;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 * {
@@ -88,6 +90,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  touch-action: pan-y;
 }
 
 h1 {
@@ -1553,7 +1556,7 @@ tbody tr:hover {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 16px;
   max-width: 1200px;
   width: 100%;
@@ -1570,6 +1573,8 @@ tbody tr:hover {
   gap: 12px;
   background: var(--bg);
   min-height: 156px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .card:hover {
