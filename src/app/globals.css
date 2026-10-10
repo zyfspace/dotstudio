@@ -4483,8 +4483,82 @@ input[type="file"] {
     font-variant-numeric: tabular-nums;
   }
 
-  input, select, textarea, input.in, select.in, textarea.in, .app .in {
-    font-size: 16px !important;
+  .app .in,
+  .f input,
+  .f select,
+  .f textarea,
+  .modal input,
+  .modal select,
+  .modal textarea,
+  .dr input,
+  .dr select,
+  .dr textarea,
+  .settings-input {
+    font-size: 13.5px !important;
+    height: 38px !important;
+    padding: 0 11px !important;
+    border-radius: 8px !important;
+  }
+
+  .f textarea,
+  textarea.in,
+  textarea.settings-input,
+  textarea.auto-textarea {
+    height: auto !important;
+    min-height: 48px !important;
+    padding: 8px 11px !important;
+    line-height: 1.45 !important;
+    font-size: 13.5px !important;
+  }
+
+  /* Responsive Cost Items / Quotation Items on Mobile */
+  .pl.hd {
+    display: none !important;
+  }
+
+  .pl {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    background: var(--soft);
+    padding: 10px 12px !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--line) !important;
+    margin-bottom: 10px !important;
+    align-items: center !important;
+  }
+
+  .pl > input:first-child {
+    width: calc(100% - 38px) !important;
+    flex: 1 1 auto !important;
+    background: var(--bg) !important;
+  }
+
+  .pl > .ib,
+  .pl > button:last-child {
+    flex-shrink: 0 !important;
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .pl > select.in,
+  .pl > input[type="number"],
+  .pl > input.in:not(:first-child) {
+    flex: 1 1 120px !important;
+    min-width: 0 !important;
+    width: auto !important;
+    background: var(--bg) !important;
+  }
+
+  .pl > .amt {
+    width: 100% !important;
+    text-align: right !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--fg) !important;
+    padding-top: 6px;
+    border-top: 1px dashed var(--line);
+    margin-top: 2px;
   }
 
   input::placeholder,
@@ -4493,7 +4567,7 @@ input[type="file"] {
   .settings-input::placeholder,
   .search input::placeholder,
   .custom-datepicker-val.placeholder {
-    font-size: 13px !important;
+    font-size: 12.5px !important;
     font-weight: 400 !important;
     color: color-mix(in srgb, var(--fg) 42%, var(--bg)) !important;
   }
@@ -4572,10 +4646,17 @@ input[type="file"] {
     min-height: 44px !important;
   }
 
+  .income-filter-container {
+    width: 100%;
+    position: relative;
+  }
+
   .income-filter-popover {
-    max-width: calc(100vw - 24px) !important;
-    width: 270px !important;
-    right: 0 !important;
+    left: 0 !important;
+    right: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    z-index: 100 !important;
   }
 
   .accordion-header {

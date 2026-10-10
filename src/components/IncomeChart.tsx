@@ -946,7 +946,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                           <div className="bar-tt-row">
                             <span className="bar-tt-dot paid" />
                             <span className="bar-tt-label">
-                              {b.pending > 0 ? 'DP / Diterima' : 'Diterima'}
+                              {b.pending > 0 ? 'Deposit / Received' : 'Received'}
                             </span>
                             <span className="bar-tt-val">{rp(b.paid)}</span>
                           </div>
@@ -954,13 +954,13 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                         {b.pending > 0 && (
                           <div className="bar-tt-row">
                             <span className="bar-tt-dot pending" />
-                            <span className="bar-tt-label">Sisa tagihan</span>
+                            <span className="bar-tt-label">Outstanding</span>
                             <span className="bar-tt-val">{rp(b.pending)}</span>
                           </div>
                         )}
                         {b.paid > 0 && b.pending > 0 && (
                           <div className="bar-tt-divider">
-                            <span>Total deal:</span>
+                            <span>Total:</span>
                             <b>{rp(b.t)}</b>
                           </div>
                         )}

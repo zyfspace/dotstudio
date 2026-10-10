@@ -406,7 +406,7 @@ export default function DashboardPage() {
   const handleVerifyUnlockPin = () => {
     const clean = pinInput.replace(/\D/g, '').slice(0, 4);
     if (clean.length !== 4) {
-      setPinError('Masukkan 4 digit PIN.');
+      setPinError('Please enter a 4-digit PIN.');
       return;
     }
     if (clean === studioProfile.securityPin) {
@@ -1404,6 +1404,7 @@ export default function DashboardPage() {
       <header className="mob-header">
         <div className="mob-header-left">
           <DotStudioPaperLogo height={18} />
+          <span className="mob-header-sep" style={{ color: 'var(--mut)', opacity: 0.4, margin: '0 2px 0 6px', fontSize: '13px' }}>/</span>
           <span className="mob-header-title">
             {currentView === 'overview'
               ? 'Dashboard'
@@ -3544,10 +3545,10 @@ export default function DashboardPage() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--fg)' }}>
-                        Lengkapi Profil &amp; Rekening Studio
+                        Complete Studio Profile &amp; Bank Details
                       </div>
                       <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '2px 0 0', lineHeight: 1.4 }}>
-                        Isi nama studio, kontak, dan nomor rekening pembayaran di menu Settings untuk mulai membuat project, quotation, dan invoice resmi.
+                        Set up your studio name, contact info, and bank account in Settings to generate official invoices and quotations.
                       </p>
                     </div>
                     <button
@@ -3555,7 +3556,7 @@ export default function DashboardPage() {
                       onClick={handleOpenSettingsToCompleteProfile}
                     >
                       <Icon name="settings" size={14} style={{ marginRight: '4px' }} />
-                      Lengkapi Sekarang
+                      Set up now
                     </button>
                   </div>
                 )}
@@ -3636,16 +3637,19 @@ export default function DashboardPage() {
                             key={x.i.id}
                             className="lr"
                             onClick={() => setActiveProjectDrawerId(x.p.id)}
+                            style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'stretch' }}
                           >
-                            <div>
-                              <div>{x.p.name}</div>
-                              <div className={overdue ? 'od' : 'mut'}>
-                                {c.name} ·{' '}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
+                              <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{x.p.name}</span>
+                              <b style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(x.i.a)}</b>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                              <span className="mut">{c.name || '—'}</span>
+                              <span className={overdue ? 'od' : 'mut'} style={{ flexShrink: 0 }}>
                                 {overdue ? 'overdue ' : 'due '}
                                 {dt(x.i.due)}
-                              </div>
+                              </span>
                             </div>
-                            <b>{sh(x.i.a)}</b>
                           </div>
                         );
                       })
@@ -3669,30 +3673,35 @@ export default function DashboardPage() {
                         return (
                           <div
                             key={p.id}
-                            className="lr"
+                            className="lr project-lr-item"
                             onClick={() => setActiveProjectDrawerId(p.id)}
+                            style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'stretch' }}
                           >
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
-                                <span style={{ fontWeight: 500 }}>{p.name}</span>
-                                {c.name && <span className="mut" style={{ fontSize: '13px' }}>· {c.name}</span>}
-                              </div>
-                              <div className="pg" style={{ marginTop: '7px' }}>
-                                <div className="prog">
-                                  <i style={{ width: `${progress}%` }} />
-                                </div>
-                                <span className="mut">{progress}%</span>
-                              </div>
+                            {/* Line 1: Title and Value */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
+                              <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{p.name}</span>
+                              <b style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(p.v)}</b>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <b>{sh(p.v)}</b>
+
+                            {/* Line 2: Client name on left, Next due date on right */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                              <span className="mut" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {c.name || '—'}
+                              </span>
                               {n && (
-                                <div className={overdue ? 'od' : 'mut'}>
-                                  {n.l} ·{' '}
-                                  {overdue ? 'overdue ' : 'due '}
+                                <span className={overdue ? 'od' : 'mut'} style={{ flexShrink: 0 }}>
+                                  {n.l} · {overdue ? 'overdue ' : 'due '}
                                   {dt(n.due).replace(/ \d{4}$/, '')}
-                                </div>
+                                </span>
                               )}
+                            </div>
+
+                            {/* Line 3: Full-width progress track */}
+                            <div className="pg" style={{ marginTop: '2px' }}>
+                              <div className="prog" style={{ height: '4px' }}>
+                                <i style={{ width: `${progress}%` }} />
+                              </div>
+                              <span className="mut" style={{ fontSize: '11.5px', fontVariantNumeric: 'tabular-nums' }}>{progress}%</span>
                             </div>
                           </div>
                         );
@@ -3717,19 +3726,20 @@ export default function DashboardPage() {
                             key={x.id}
                             className="lr"
                             onClick={() => openDoc('quo', x.id)}
+                            style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'stretch' }}
                           >
-                            <div>
-                              {x.title}
-                              <div className="mut">
-                                {x.cn} · {x.s}
-                              </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
+                              <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{x.title}</span>
+                              <b style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(quoteTotal)}</b>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <b>{sh(quoteTotal)}</b>
-                              <div className={expired ? 'od' : 'mut'}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                              <span className="mut">
+                                {x.cn || '—'} · <span style={{ textTransform: 'capitalize' }}>{x.s}</span>
+                              </span>
+                              <span className={expired ? 'od' : 'mut'} style={{ flexShrink: 0 }}>
                                 {expired ? 'expired ' : 'until '}
                                 {dt(x.valid).replace(/ \d{4}$/, '')}
-                              </div>
+                              </span>
                             </div>
                           </div>
                         );
@@ -4685,13 +4695,14 @@ export default function DashboardPage() {
                         borderRadius: '8px',
                         padding: '12px 16px',
                         gap: '12px',
+                        flexWrap: 'wrap',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '220px', flex: 1 }}>
                         <div
                           style={{
-                            width: '28px',
-                            height: '28px',
+                            width: '32px',
+                            height: '32px',
                             borderRadius: '6px',
                             background: 'var(--bg)',
                             border: '1px solid var(--line)',
@@ -4701,14 +4712,14 @@ export default function DashboardPage() {
                             flexShrink: 0,
                           }}
                         >
-                          <Icon name="lock" size={14} />
+                          <Icon name="lock" size={15} />
                         </div>
                         <div>
-                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--fg)' }}>
-                            Pengaturan Terkunci
+                          <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--fg)' }}>
+                            Settings Locked
                           </div>
                           <div style={{ fontSize: '12px', color: 'var(--mut)', lineHeight: 1.4 }}>
-                            Informasi rekening dan profil studio dilindungi PIN untuk mencegah perubahan tidak disengaja.
+                            Studio profile and payment details are PIN-protected to prevent accidental changes.
                           </div>
                         </div>
                       </div>
@@ -4718,7 +4729,7 @@ export default function DashboardPage() {
                         style={{ height: '32px', fontSize: '12.5px', padding: '0 14px', flexShrink: 0 }}
                       >
                         <Icon name="lock-open" size={13} style={{ marginRight: '6px' }} />
-                        Buka Kunci
+                        Unlock
                       </button>
                     </div>
                   ) : (
@@ -4732,13 +4743,14 @@ export default function DashboardPage() {
                         borderRadius: '8px',
                         padding: '12px 16px',
                         gap: '12px',
+                        flexWrap: 'wrap',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '220px', flex: 1 }}>
                         <div
                           style={{
-                            width: '28px',
-                            height: '28px',
+                            width: '32px',
+                            height: '32px',
                             borderRadius: '6px',
                             background: 'var(--bg)',
                             border: '1px solid rgba(22, 163, 74, 0.3)',
@@ -4748,14 +4760,14 @@ export default function DashboardPage() {
                             flexShrink: 0,
                           }}
                         >
-                          <Icon name="lock-open" size={14} />
+                          <Icon name="lock-open" size={15} />
                         </div>
                         <div>
-                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--fg)' }}>
-                            Mode Edit Aktif
+                          <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--fg)' }}>
+                            Editing Mode Active
                           </div>
                           <div style={{ fontSize: '12px', color: 'var(--mut)', lineHeight: 1.4 }}>
-                            Perbarui identitas studio atau detail rekening di bawah, lalu klik Simpan Pengaturan.
+                            Update your studio profile or payment details below, then click Save Changes.
                           </div>
                         </div>
                       </div>
@@ -4771,29 +4783,29 @@ export default function DashboardPage() {
                         style={{ height: '32px', fontSize: '12px', padding: '0 12px', flexShrink: 0 }}
                       >
                         <Icon name="key" size={13} style={{ marginRight: '6px' }} />
-                        Ubah PIN
+                        Change PIN
                       </button>
                     </div>
                   )}
 
                   {/* Studio / Agency Branding */}
                   <div className="panel">
-                    <h3 style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--fg)', marginBottom: '3px' }}>
-                      Identitas Studio &amp; Profil
+                    <h3 style={{ fontSize: '14.5px', fontWeight: 600, color: 'var(--fg)', marginBottom: '3px' }}>
+                      Studio Profile &amp; Branding
                     </h3>
-                    <p style={{ fontSize: '12px', color: 'var(--mut)', margin: '0 0 16px 0', lineHeight: 1.45 }}>
-                      Identitas bisnis yang akan ditampilkan pada kop surat invoice, penawaran harga (quotation), dan dokumen resmi.
+                    <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '0 0 16px 0', lineHeight: 1.45 }}>
+                      Business identity displayed on invoices, quotations, and official documents.
                     </p>
 
                     <div className="two">
                       <div className="f">
-                        <label htmlFor="st-name">Nama Studio / Brand</label>
+                        <label htmlFor="st-name">Studio / Brand Name</label>
                         <input
                           id="st-name"
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="contoh: Zyf Studio"
+                          placeholder="e.g. Zyf Studio"
                           value={profileDraft.studioName}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, studioName: e.target.value }))
@@ -4807,7 +4819,7 @@ export default function DashboardPage() {
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="contoh: Digital Design & Development"
+                          placeholder="e.g. Digital Design & Development"
                           value={profileDraft.tagline}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, tagline: e.target.value }))
@@ -4818,13 +4830,13 @@ export default function DashboardPage() {
 
                     <div className="two">
                       <div className="f">
-                        <label htmlFor="st-mail">Email Kontak Resmi</label>
+                        <label htmlFor="st-mail">Official Contact Email</label>
                         <input
                           id="st-mail"
                           type="email"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="contoh: studio@email.com"
+                          placeholder="e.g. studio@email.com"
                           value={profileDraft.email}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, email: e.target.value }))
@@ -4832,13 +4844,13 @@ export default function DashboardPage() {
                         />
                       </div>
                       <div className="f">
-                        <label htmlFor="st-phone">Nomor WhatsApp / Telepon</label>
+                        <label htmlFor="st-phone">WhatsApp / Phone Number</label>
                         <input
                           id="st-phone"
                           type="tel"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="contoh: 0812-3456-7890"
+                          placeholder="e.g. +62 812-3456-7890"
                           value={profileDraft.phone}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, phone: e.target.value }))
@@ -4850,22 +4862,22 @@ export default function DashboardPage() {
 
                   {/* Rekening & Detail Pembayaran Freelancer */}
                   <div className="panel">
-                    <h3 style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--fg)', marginBottom: '3px' }}>
-                      Rekening Bank &amp; Ketentuan Pembayaran
+                    <h3 style={{ fontSize: '14.5px', fontWeight: 600, color: 'var(--fg)', marginBottom: '3px' }}>
+                      Bank Account &amp; Payment Terms
                     </h3>
-                    <p style={{ fontSize: '12px', color: 'var(--mut)', margin: '0 0 16px 0', lineHeight: 1.45 }}>
-                      Informasi rekening tujuan pembayaran untuk invoice dan catatan standar penawaran.
+                    <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '0 0 16px 0', lineHeight: 1.45 }}>
+                      Destination account for invoice payments and default quotation notes.
                     </p>
 
                     <div className="two">
                       <div className="f">
-                        <label htmlFor="st-holder">Nama Pemilik Rekening</label>
+                        <label htmlFor="st-holder">Account Holder Name</label>
                         <input
                           id="st-holder"
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="contoh: Faiz Dawami"
+                          placeholder="e.g. Faiz Dawami"
                           value={profileDraft.accountHolder}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, accountHolder: e.target.value }))
@@ -4873,13 +4885,13 @@ export default function DashboardPage() {
                         />
                       </div>
                       <div className="f">
-                        <label htmlFor="st-bank">Bank / Metode Pembayaran</label>
+                        <label htmlFor="st-bank">Bank / Payment Method</label>
                         <input
                           id="st-bank"
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="contoh: BCA / Mandiri Transfer"
+                          placeholder="e.g. BCA / Bank Transfer"
                           value={profileDraft.bankName}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, bankName: e.target.value }))
@@ -4890,13 +4902,13 @@ export default function DashboardPage() {
 
                     <div className="two">
                       <div className="f">
-                        <label htmlFor="st-num">Nomor Rekening</label>
+                        <label htmlFor="st-num">Account Number</label>
                         <input
                           id="st-num"
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="contoh: 1234567890"
+                          placeholder="e.g. 1234567890"
                           value={profileDraft.accountNumber}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, accountNumber: e.target.value }))
@@ -4904,13 +4916,13 @@ export default function DashboardPage() {
                         />
                       </div>
                       <div className="f">
-                        <label htmlFor="st-owner">Nama Lengkap Pemilik (Opsional)</label>
+                        <label htmlFor="st-owner">Owner Full Name (Optional)</label>
                         <input
                           id="st-owner"
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="contoh: Faiz Dawami"
+                          placeholder="e.g. Faiz Dawami"
                           value={profileDraft.ownerName}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, ownerName: e.target.value }))
@@ -4920,12 +4932,12 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="f">
-                      <label htmlFor="st-terms">Ketentuan Pembayaran Standar (Invoice / Quotation)</label>
+                      <label htmlFor="st-terms">Default Payment Terms (Invoice / Quotation)</label>
                       <AutoTextarea
                         id="st-terms"
                         disabled={!isSettingsUnlocked}
                         className="settings-input"
-                        placeholder="contoh: DP 50% di awal sebelum pengerjaan, pelunasan 50% saat selesai"
+                        placeholder="e.g. 50% deposit upfront, 50% final payment upon completion"
                         value={profileDraft.defaultPaymentTerms}
                         onChange={(e) =>
                           setProfileDraft((prev) => ({ ...prev, defaultPaymentTerms: e.target.value }))
@@ -4934,12 +4946,12 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="f" style={{ margin: 0 }}>
-                      <label htmlFor="st-notes">Catatan Tambahan Standar</label>
+                      <label htmlFor="st-notes">Default Additional Notes</label>
                       <AutoTextarea
                         id="st-notes"
                         disabled={!isSettingsUnlocked}
                         className="settings-input"
-                        placeholder="contoh: Penawaran berlaku selama 14 hari sejak tanggal diterbitkan."
+                        placeholder="e.g. Quotation is valid for 14 days from issue date."
                         value={profileDraft.defaultNotes}
                         onChange={(e) =>
                           setProfileDraft((prev) => ({ ...prev, defaultNotes: e.target.value }))
@@ -4956,13 +4968,13 @@ export default function DashboardPage() {
                           className="btn pri"
                           onClick={handleSaveUnlockedSettings}
                         >
-                          Simpan Pengaturan
+                          Save Changes
                         </button>
                         <button
                           className="btn out"
                           onClick={handleCancelEditSettings}
                         >
-                          Batal
+                          Cancel
                         </button>
                       </>
                     ) : (
@@ -4971,12 +4983,12 @@ export default function DashboardPage() {
                         onClick={handleStartEditSettings}
                       >
                         <Icon name="edit" size={14} style={{ marginRight: '6px' }} />
-                        Edit Pengaturan
+                        Edit Settings
                       </button>
                     )}
                     {profileSavedFeedback && (
                       <span style={{ fontSize: '12.5px', color: '#16a34a', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Icon name="check" size={14} /> Pengaturan berhasil disimpan dan dikunci
+                        <Icon name="check" size={14} /> Settings saved and locked successfully
                       </span>
                     )}
                   </div>
@@ -5730,10 +5742,10 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <h3 style={{ fontSize: '14px', fontWeight: 600, margin: 0, color: 'var(--fg)' }}>
-                      Masukkan PIN Keamanan
+                      Enter Security PIN
                     </h3>
                     <p style={{ fontSize: '12px', color: 'var(--mut)', margin: '2px 0 0' }}>
-                      Masukkan 4 digit PIN untuk membuka kunci pengaturan.
+                      Enter your 4-digit PIN to unlock settings.
                     </p>
                   </div>
                 </div>
@@ -5764,10 +5776,10 @@ export default function DashboardPage() {
                       setPinError('');
                     }}
                   >
-                    Batal
+                    Cancel
                   </button>
                   <button type="submit" className="btn pri">
-                    Buka Kunci
+                    Unlock
                   </button>
                 </div>
               </form>
@@ -5799,17 +5811,17 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <h3 style={{ fontSize: '14px', fontWeight: 600, margin: 0, color: 'var(--fg)' }}>
-                      Buat PIN Keamanan
+                      Create Security PIN
                     </h3>
                     <p style={{ fontSize: '12px', color: 'var(--mut)', margin: '2px 0 0' }}>
-                      Tentukan 4 digit PIN untuk mengamankan data rekening dan studio.
+                      Set a 4-digit PIN to protect your bank and studio profile.
                     </p>
                   </div>
                 </div>
 
                 <div className="f" style={{ margin: 0 }}>
                   <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
-                    PIN Baru (4 digit)
+                    New PIN (4 digits)
                   </label>
                   <PinInput
                     value={newPinInput}
@@ -5824,7 +5836,7 @@ export default function DashboardPage() {
 
                 <div className="f" style={{ margin: 0 }}>
                   <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
-                    Konfirmasi PIN Baru (4 digit)
+                    Confirm New PIN (4 digits)
                   </label>
                   <PinInput
                     value={confirmPinInput}
@@ -5850,10 +5862,10 @@ export default function DashboardPage() {
                       setPinError('');
                     }}
                   >
-                    Batal
+                    Cancel
                   </button>
                   <button type="submit" className="btn pri">
-                    Simpan PIN
+                    Save PIN
                   </button>
                 </div>
               </form>
@@ -5885,17 +5897,17 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <h3 style={{ fontSize: '14px', fontWeight: 600, margin: 0, color: 'var(--fg)' }}>
-                      Ubah PIN Keamanan
+                      Change Security PIN
                     </h3>
                     <p style={{ fontSize: '12px', color: 'var(--mut)', margin: '2px 0 0' }}>
-                      Masukkan PIN lama, lalu tentukan 4 digit PIN baru.
+                      Enter your current PIN, then choose a new 4-digit PIN.
                     </p>
                   </div>
                 </div>
 
                 <div className="f" style={{ margin: 0 }}>
                   <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
-                    PIN Saat Ini
+                    Current PIN
                   </label>
                   <PinInput
                     value={pinInput}
@@ -5910,7 +5922,7 @@ export default function DashboardPage() {
 
                 <div className="f" style={{ margin: 0 }}>
                   <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
-                    PIN Baru (4 digit)
+                    New PIN (4 digits)
                   </label>
                   <PinInput
                     value={newPinInput}
@@ -5924,7 +5936,7 @@ export default function DashboardPage() {
 
                 <div className="f" style={{ margin: 0 }}>
                   <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
-                    Konfirmasi PIN Baru
+                    Confirm New PIN
                   </label>
                   <PinInput
                     value={confirmPinInput}
@@ -5950,10 +5962,10 @@ export default function DashboardPage() {
                       setPinError('');
                     }}
                   >
-                    Batal
+                    Cancel
                   </button>
                   <button type="submit" className="btn pri">
-                    Perbarui PIN
+                    Update PIN
                   </button>
                 </div>
               </form>
@@ -6207,7 +6219,7 @@ export default function DashboardPage() {
             type="button"
             className="ib"
             onClick={() => setIsMobileMenuOpen(false)}
-            aria-label="Tutup menu"
+            aria-label="Close menu"
           >
             <Icon name="x" size={16} />
           </button>
@@ -6297,7 +6309,7 @@ export default function DashboardPage() {
 
             <div style={{ position: 'relative', background: 'var(--soft)', border: '1px solid var(--line)', borderRadius: '6px', padding: '12px', maxHeight: '220px', overflowY: 'auto', fontSize: '11.5px', fontFamily: 'var(--mono)', lineHeight: 1.5, color: 'var(--fg)' }}>
               <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                {`-- Jalankan ini di Supabase Dashboard -> SQL Editor -> New Query
+                {`-- Run this in Supabase Dashboard -> SQL Editor -> New Query
 CREATE TABLE IF NOT EXISTS public.clients (
   id BIGINT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -6356,7 +6368,7 @@ CREATE TABLE IF NOT EXISTS public.studio_profiles (
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px' }}>
               <span style={{ fontSize: '12px', color: schemaCopied ? '#16a34a' : 'var(--mut)' }}>
-                {schemaCopied ? 'Berhasil disalin ke clipboard!' : 'Buka Supabase -> SQL Editor -> Run'}
+                {schemaCopied ? 'Copied to clipboard!' : 'Open Supabase -> SQL Editor -> Run'}
               </span>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
