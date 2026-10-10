@@ -6,8 +6,6 @@
   --line: color-mix(in srgb, var(--fg) 11%, var(--bg));
   --soft: color-mix(in srgb, var(--fg) 4%, var(--bg));
   box-sizing: border-box;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -3958,24 +3956,20 @@ input[type="file"] {
 @keyframes pageFadeIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 @keyframes dashViewIn {
   from {
     opacity: 0;
-    transform: translateY(4px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -4014,9 +4008,8 @@ input[type="file"] {
 }
 
 .page-view-transition {
-  animation: pageFadeIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: pageFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
   width: 100%;
-  min-height: 100vh;
 }
 
 .dash-view-transition {
@@ -4120,11 +4113,23 @@ input[type="file"] {
 }
 
 @media (max-width: 768px) {
+  html,
+  body {
+    height: 100% !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+
   .app {
     display: flex !important;
     flex-direction: column !important;
+    height: 100% !important;
     height: 100dvh !important;
+    width: 100% !important;
     overflow: hidden !important;
+    position: relative !important;
   }
 
   aside {
@@ -4164,7 +4169,8 @@ input[type="file"] {
 
   .app main,
   .app #main {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 14px 14px calc(76px + env(safe-area-inset-bottom, 0px)) !important;
@@ -4189,17 +4195,22 @@ input[type="file"] {
   }
 
   .mob-bottom-nav {
-    display: grid;
+    display: grid !important;
     grid-template-columns: repeat(5, 1fr);
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
     background: var(--bg);
     border-top: 1px solid var(--line);
     padding: 5px 4px calc(5px + env(safe-area-inset-bottom, 0px));
-    z-index: 900;
-    backdrop-filter: blur(8px);
+    z-index: 950 !important;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    will-change: transform;
   }
 
   .mob-menu-overlay {

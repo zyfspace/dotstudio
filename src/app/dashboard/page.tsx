@@ -559,6 +559,16 @@ export default function DashboardPage() {
     setDeleteArmed(false);
   };
 
+  const scrollContentToTop = () => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const mainEl = document.querySelector('.app main') || document.getElementById('main');
+      if (mainEl) {
+        mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  };
+
   // Helper functions
   const getClient = (id: number): Client => {
     return (
@@ -4661,20 +4671,20 @@ export default function DashboardPage() {
                         </div>
                         <div>
                           <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--fg)' }}>
-                            Settings locked
+                            Pengaturan Terkunci
                           </div>
-                          <div style={{ fontSize: '12px', color: 'var(--mut)' }}>
-                            Banking and branding details are protected with a PIN to prevent accidental changes.
+                          <div style={{ fontSize: '12px', color: 'var(--mut)', lineHeight: 1.4 }}>
+                            Informasi rekening dan profil studio dilindungi PIN untuk mencegah perubahan tidak disengaja.
                           </div>
                         </div>
                       </div>
                       <button
                         className="btn pri"
                         onClick={handleStartEditSettings}
-                        style={{ height: '32px', fontSize: '13px', padding: '0 14px', flexShrink: 0 }}
+                        style={{ height: '32px', fontSize: '12.5px', padding: '0 14px', flexShrink: 0 }}
                       >
                         <Icon name="lock-open" size={13} style={{ marginRight: '6px' }} />
-                        Edit settings
+                        Buka Kunci
                       </button>
                     </div>
                   ) : (
@@ -4708,10 +4718,10 @@ export default function DashboardPage() {
                         </div>
                         <div>
                           <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--fg)' }}>
-                            Editing mode active
+                            Mode Edit Aktif
                           </div>
-                          <div style={{ fontSize: '12px', color: 'var(--mut)' }}>
-                            Update your branding or banking information below, then click Save.
+                          <div style={{ fontSize: '12px', color: 'var(--mut)', lineHeight: 1.4 }}>
+                            Perbarui identitas studio atau detail rekening di bawah, lalu klik Simpan Pengaturan.
                           </div>
                         </div>
                       </div>
@@ -4724,32 +4734,32 @@ export default function DashboardPage() {
                           setConfirmPinInput('');
                           setPinModalMode('change');
                         }}
-                        style={{ height: '32px', fontSize: '12.5px', padding: '0 12px', flexShrink: 0 }}
+                        style={{ height: '32px', fontSize: '12px', padding: '0 12px', flexShrink: 0 }}
                       >
                         <Icon name="key" size={13} style={{ marginRight: '6px' }} />
-                        Change PIN
+                        Ubah PIN
                       </button>
                     </div>
                   )}
 
                   {/* Studio / Agency Branding */}
                   <div className="panel">
-                    <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--fg)', marginBottom: '4px' }}>
-                      Studio / Agency Branding
+                    <h3 style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--fg)', marginBottom: '3px' }}>
+                      Identitas Studio &amp; Profil
                     </h3>
-                    <p style={{ fontSize: '13px', color: 'var(--mut)', margin: '0 0 16px 0', lineHeight: 1.45 }}>
-                      Brand or studio identity displayed on official invoice headers, quotation headers, and document signatures.
+                    <p style={{ fontSize: '12px', color: 'var(--mut)', margin: '0 0 16px 0', lineHeight: 1.45 }}>
+                      Identitas bisnis yang akan ditampilkan pada kop surat invoice, penawaran harga (quotation), dan dokumen resmi.
                     </p>
 
                     <div className="two">
                       <div className="f">
-                        <label htmlFor="st-name">Brand / Agency name</label>
+                        <label htmlFor="st-name">Nama Studio / Brand</label>
                         <input
                           id="st-name"
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. Acme Studio / Studio Name"
+                          placeholder="contoh: Zyf Studio"
                           value={profileDraft.studioName}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, studioName: e.target.value }))
@@ -4763,7 +4773,7 @@ export default function DashboardPage() {
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. Design & Development Studio"
+                          placeholder="contoh: Digital Design & Development"
                           value={profileDraft.tagline}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, tagline: e.target.value }))
@@ -4774,13 +4784,13 @@ export default function DashboardPage() {
 
                     <div className="two">
                       <div className="f">
-                        <label htmlFor="st-mail">Brand contact email</label>
+                        <label htmlFor="st-mail">Email Kontak Resmi</label>
                         <input
                           id="st-mail"
                           type="email"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. hello@yourstudio.com"
+                          placeholder="contoh: studio@email.com"
                           value={profileDraft.email}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, email: e.target.value }))
@@ -4788,13 +4798,13 @@ export default function DashboardPage() {
                         />
                       </div>
                       <div className="f">
-                        <label htmlFor="st-phone">Phone number / WhatsApp</label>
+                        <label htmlFor="st-phone">Nomor WhatsApp / Telepon</label>
                         <input
                           id="st-phone"
                           type="tel"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. 0812-3456-7890"
+                          placeholder="contoh: 0812-3456-7890"
                           value={profileDraft.phone}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, phone: e.target.value }))
@@ -4806,22 +4816,22 @@ export default function DashboardPage() {
 
                   {/* Rekening & Detail Pembayaran Freelancer */}
                   <div className="panel">
-                    <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--fg)', marginBottom: '4px' }}>
-                      Payment &amp; Bank Details
+                    <h3 style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--fg)', marginBottom: '3px' }}>
+                      Rekening Bank &amp; Ketentuan Pembayaran
                     </h3>
-                    <p style={{ fontSize: '13px', color: 'var(--mut)', margin: '0 0 16px 0', lineHeight: 1.45 }}>
-                      Beneficiary account details for invoice payments. Account holder uses personal legal name, separate from the brand name above.
+                    <p style={{ fontSize: '12px', color: 'var(--mut)', margin: '0 0 16px 0', lineHeight: 1.45 }}>
+                      Informasi rekening tujuan pembayaran untuk invoice dan catatan standar penawaran.
                     </p>
 
                     <div className="two">
                       <div className="f">
-                        <label htmlFor="st-holder">Account holder name (Legal name)</label>
+                        <label htmlFor="st-holder">Nama Pemilik Rekening</label>
                         <input
                           id="st-holder"
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. John Doe"
+                          placeholder="contoh: Faiz Dawami"
                           value={profileDraft.accountHolder}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, accountHolder: e.target.value }))
@@ -4829,13 +4839,13 @@ export default function DashboardPage() {
                         />
                       </div>
                       <div className="f">
-                        <label htmlFor="st-bank">Bank name / Payment method</label>
+                        <label htmlFor="st-bank">Bank / Metode Pembayaran</label>
                         <input
                           id="st-bank"
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. BCA / Bank Mandiri / PayPal"
+                          placeholder="contoh: BCA / Mandiri Transfer"
                           value={profileDraft.bankName}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, bankName: e.target.value }))
@@ -4846,13 +4856,13 @@ export default function DashboardPage() {
 
                     <div className="two">
                       <div className="f">
-                        <label htmlFor="st-num">Account number</label>
+                        <label htmlFor="st-num">Nomor Rekening</label>
                         <input
                           id="st-num"
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. 1234567890"
+                          placeholder="contoh: 1234567890"
                           value={profileDraft.accountNumber}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, accountNumber: e.target.value }))
@@ -4860,13 +4870,13 @@ export default function DashboardPage() {
                         />
                       </div>
                       <div className="f">
-                        <label htmlFor="st-owner">Account owner full name (Optional)</label>
+                        <label htmlFor="st-owner">Nama Lengkap Pemilik (Opsional)</label>
                         <input
                           id="st-owner"
                           type="text"
                           disabled={!isSettingsUnlocked}
                           className="settings-input"
-                          placeholder="e.g. John Doe"
+                          placeholder="contoh: Faiz Dawami"
                           value={profileDraft.ownerName}
                           onChange={(e) =>
                             setProfileDraft((prev) => ({ ...prev, ownerName: e.target.value }))
@@ -4876,12 +4886,12 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="f">
-                      <label htmlFor="st-terms">Default payment terms (Quotation/Invoice)</label>
+                      <label htmlFor="st-terms">Ketentuan Pembayaran Standar (Invoice / Quotation)</label>
                       <AutoTextarea
                         id="st-terms"
                         disabled={!isSettingsUnlocked}
                         className="settings-input"
-                        placeholder="e.g. 50% upfront, 50% upon completion"
+                        placeholder="contoh: DP 50% di awal sebelum pengerjaan, pelunasan 50% saat selesai"
                         value={profileDraft.defaultPaymentTerms}
                         onChange={(e) =>
                           setProfileDraft((prev) => ({ ...prev, defaultPaymentTerms: e.target.value }))
@@ -4890,12 +4900,12 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="f" style={{ margin: 0 }}>
-                      <label htmlFor="st-notes">Default notes / terms</label>
+                      <label htmlFor="st-notes">Catatan Tambahan Standar</label>
                       <AutoTextarea
                         id="st-notes"
                         disabled={!isSettingsUnlocked}
                         className="settings-input"
-                        placeholder="e.g. Quotation is valid for 14 days from issue date."
+                        placeholder="contoh: Penawaran berlaku selama 14 hari sejak tanggal diterbitkan."
                         value={profileDraft.defaultNotes}
                         onChange={(e) =>
                           setProfileDraft((prev) => ({ ...prev, defaultNotes: e.target.value }))
@@ -4912,13 +4922,13 @@ export default function DashboardPage() {
                           className="btn pri"
                           onClick={handleSaveUnlockedSettings}
                         >
-                          Save settings
+                          Simpan Pengaturan
                         </button>
                         <button
                           className="btn out"
                           onClick={handleCancelEditSettings}
                         >
-                          Cancel
+                          Batal
                         </button>
                       </>
                     ) : (
@@ -4927,12 +4937,12 @@ export default function DashboardPage() {
                         onClick={handleStartEditSettings}
                       >
                         <Icon name="edit" size={14} style={{ marginRight: '6px' }} />
-                        Edit settings
+                        Edit Pengaturan
                       </button>
                     )}
                     {profileSavedFeedback && (
-                      <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Icon name="check" size={14} /> Settings saved &amp; locked
+                      <span style={{ fontSize: '12.5px', color: '#16a34a', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Icon name="check" size={14} /> Pengaturan berhasil disimpan dan dikunci
                       </span>
                     )}
                   </div>
@@ -5685,11 +5695,11 @@ export default function DashboardPage() {
                     <Icon name="lock" size={16} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 600, margin: 0, color: 'var(--fg)' }}>
-                      Enter security PIN
+                    <h3 style={{ fontSize: '14px', fontWeight: 600, margin: 0, color: 'var(--fg)' }}>
+                      Masukkan PIN Keamanan
                     </h3>
-                    <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '2px 0 0' }}>
-                      Enter your 4-digit PIN to unlock settings.
+                    <p style={{ fontSize: '12px', color: 'var(--mut)', margin: '2px 0 0' }}>
+                      Masukkan 4 digit PIN untuk membuka kunci pengaturan.
                     </p>
                   </div>
                 </div>
@@ -5720,10 +5730,10 @@ export default function DashboardPage() {
                       setPinError('');
                     }}
                   >
-                    Cancel
+                    Batal
                   </button>
                   <button type="submit" className="btn pri">
-                    Unlock
+                    Buka Kunci
                   </button>
                 </div>
               </form>
@@ -5754,18 +5764,18 @@ export default function DashboardPage() {
                     <Icon name="key" size={16} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 600, margin: 0, color: 'var(--fg)' }}>
-                      Create security PIN
+                    <h3 style={{ fontSize: '14px', fontWeight: 600, margin: 0, color: 'var(--fg)' }}>
+                      Buat PIN Keamanan
                     </h3>
-                    <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '2px 0 0' }}>
-                      Set a 4-digit PIN to protect your Settings.
+                    <p style={{ fontSize: '12px', color: 'var(--mut)', margin: '2px 0 0' }}>
+                      Tentukan 4 digit PIN untuk mengamankan data rekening dan studio.
                     </p>
                   </div>
                 </div>
 
                 <div className="f" style={{ margin: 0 }}>
                   <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
-                    New PIN (4 digits)
+                    PIN Baru (4 digit)
                   </label>
                   <PinInput
                     value={newPinInput}
@@ -5780,7 +5790,7 @@ export default function DashboardPage() {
 
                 <div className="f" style={{ margin: 0 }}>
                   <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
-                    Confirm PIN (4 digits)
+                    Konfirmasi PIN Baru (4 digit)
                   </label>
                   <PinInput
                     value={confirmPinInput}
@@ -5806,10 +5816,10 @@ export default function DashboardPage() {
                       setPinError('');
                     }}
                   >
-                    Cancel
+                    Batal
                   </button>
                   <button type="submit" className="btn pri">
-                    Save PIN
+                    Simpan PIN
                   </button>
                 </div>
               </form>
@@ -5840,18 +5850,18 @@ export default function DashboardPage() {
                     <Icon name="key" size={16} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 600, margin: 0, color: 'var(--fg)' }}>
-                      Change security PIN
+                    <h3 style={{ fontSize: '14px', fontWeight: 600, margin: 0, color: 'var(--fg)' }}>
+                      Ubah PIN Keamanan
                     </h3>
-                    <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '2px 0 0' }}>
-                      Enter your current PIN and set a new 4-digit PIN.
+                    <p style={{ fontSize: '12px', color: 'var(--mut)', margin: '2px 0 0' }}>
+                      Masukkan PIN lama, lalu tentukan 4 digit PIN baru.
                     </p>
                   </div>
                 </div>
 
                 <div className="f" style={{ margin: 0 }}>
                   <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
-                    Current PIN
+                    PIN Saat Ini
                   </label>
                   <PinInput
                     value={pinInput}
@@ -5866,7 +5876,7 @@ export default function DashboardPage() {
 
                 <div className="f" style={{ margin: 0 }}>
                   <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
-                    New PIN (4 digits)
+                    PIN Baru (4 digit)
                   </label>
                   <PinInput
                     value={newPinInput}
@@ -5880,7 +5890,7 @@ export default function DashboardPage() {
 
                 <div className="f" style={{ margin: 0 }}>
                   <label style={{ fontSize: '12px', color: 'var(--mut)', marginBottom: '4px', display: 'block' }}>
-                    Confirm new PIN
+                    Konfirmasi PIN Baru
                   </label>
                   <PinInput
                     value={confirmPinInput}
@@ -5906,10 +5916,10 @@ export default function DashboardPage() {
                       setPinError('');
                     }}
                   >
-                    Cancel
+                    Batal
                   </button>
                   <button type="submit" className="btn pri">
-                    Update PIN
+                    Perbarui PIN
                   </button>
                 </div>
               </form>
@@ -6098,7 +6108,7 @@ export default function DashboardPage() {
           className={`mob-nav-item ${currentView === 'overview' ? 'active' : ''}`}
           onClick={() => {
             setCurrentView('overview');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            scrollContentToTop();
           }}
         >
           <Icon name="chart" size={18} />
@@ -6109,7 +6119,7 @@ export default function DashboardPage() {
           className={`mob-nav-item ${currentView === 'projects' || currentView === 'new' ? 'active' : ''}`}
           onClick={() => {
             setCurrentView('projects');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            scrollContentToTop();
           }}
         >
           <Icon name="briefcase" size={18} />
@@ -6120,7 +6130,7 @@ export default function DashboardPage() {
           className={`mob-nav-item ${currentView === 'clients' ? 'active' : ''}`}
           onClick={() => {
             setCurrentView('clients');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            scrollContentToTop();
           }}
         >
           <Icon name="users" size={18} />
@@ -6131,7 +6141,7 @@ export default function DashboardPage() {
           className={`mob-nav-item ${currentView === 'invoices' ? 'active' : ''}`}
           onClick={() => {
             setCurrentView('invoices');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            scrollContentToTop();
           }}
         >
           <Icon name="file" size={18} />
@@ -6139,7 +6149,7 @@ export default function DashboardPage() {
         </button>
         <button
           type="button"
-          className={`mob-nav-item ${isMobileMenuOpen ? 'active' : ''}`}
+          className={`mob-nav-item ${isMobileMenuOpen || currentView === 'quotations' || currentView === 'payments' || currentView === 'settings' || currentView === 'quote' ? 'active' : ''}`}
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
           <Icon name="dots" size={18} />
@@ -6253,45 +6263,52 @@ export default function DashboardPage() {
 
             <div style={{ position: 'relative', background: 'var(--soft)', border: '1px solid var(--line)', borderRadius: '6px', padding: '12px', maxHeight: '220px', overflowY: 'auto', fontSize: '11.5px', fontFamily: 'var(--mono)', lineHeight: 1.5, color: 'var(--fg)' }}>
               <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-{`-- Run this in Supabase Dashboard -> SQL Editor -> New Query
+{`-- Jalankan ini di Supabase Dashboard -> SQL Editor -> New Query
 CREATE TABLE IF NOT EXISTS public.clients (
   id BIGINT PRIMARY KEY,
   name TEXT NOT NULL,
-  co TEXT,
+  company TEXT,
   email TEXT,
   phone TEXT,
+  address TEXT,
   owner_email TEXT
 );
 
 CREATE TABLE IF NOT EXISTS public.projects (
   id BIGINT PRIMARY KEY,
-  c BIGINT NOT NULL,
   name TEXT NOT NULL,
-  v BIGINT NOT NULL,
-  s TEXT,
-  d TEXT,
-  notes TEXT,
+  client_id BIGINT,
+  client_name TEXT,
+  client_company TEXT,
+  value BIGINT NOT NULL,
   billing_type TEXT,
-  scope JSONB,
-  services JSONB,
-  inv JSONB,
-  p JSONB,
+  items JSONB,
+  deadline TEXT,
+  notes TEXT,
+  plan JSONB,
   owner_email TEXT
 );
 
 CREATE TABLE IF NOT EXISTS public.quotes (
   id BIGINT PRIMARY KEY,
-  no BIGINT NOT NULL,
-  date TEXT NOT NULL,
-  valid TEXT NOT NULL,
-  cn TEXT NOT NULL,
-  co TEXT,
-  ce TEXT,
-  cp TEXT,
+  number TEXT NOT NULL,
   title TEXT NOT NULL,
-  items JSONB NOT NULL,
-  s TEXT NOT NULL,
-  notes TEXT,
+  client_id BIGINT,
+  client_name TEXT,
+  client_company TEXT,
+  scope JSONB,
+  items JSONB,
+  services JSONB,
+  payment_terms TEXT,
+  note TEXT,
+  total BIGINT,
+  status TEXT,
+  valid_until TEXT,
+  date TEXT,
+  sender_name TEXT,
+  sender_tagline TEXT,
+  sender_email TEXT,
+  sender_phone TEXT,
   owner_email TEXT
 );
 
@@ -6305,7 +6322,7 @@ CREATE TABLE IF NOT EXISTS public.studio_profiles (
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px' }}>
               <span style={{ fontSize: '12px', color: schemaCopied ? '#16a34a' : 'var(--mut)' }}>
-                {schemaCopied ? 'Copied to clipboard!' : 'Open supabase.com -> SQL Editor -> Run'}
+                {schemaCopied ? 'Berhasil disalin ke clipboard!' : 'Buka Supabase -> SQL Editor -> Run'}
               </span>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
@@ -6316,41 +6333,48 @@ CREATE TABLE IF NOT EXISTS public.studio_profiles (
 CREATE TABLE IF NOT EXISTS public.clients (
   id BIGINT PRIMARY KEY,
   name TEXT NOT NULL,
-  co TEXT,
+  company TEXT,
   email TEXT,
   phone TEXT,
+  address TEXT,
   owner_email TEXT
 );
 
 CREATE TABLE IF NOT EXISTS public.projects (
   id BIGINT PRIMARY KEY,
-  c BIGINT NOT NULL,
   name TEXT NOT NULL,
-  v BIGINT NOT NULL,
-  s TEXT,
-  d TEXT,
-  notes TEXT,
+  client_id BIGINT,
+  client_name TEXT,
+  client_company TEXT,
+  value BIGINT NOT NULL,
   billing_type TEXT,
-  scope JSONB,
-  services JSONB,
-  inv JSONB,
-  p JSONB,
+  items JSONB,
+  deadline TEXT,
+  notes TEXT,
+  plan JSONB,
   owner_email TEXT
 );
 
 CREATE TABLE IF NOT EXISTS public.quotes (
   id BIGINT PRIMARY KEY,
-  no BIGINT NOT NULL,
-  date TEXT NOT NULL,
-  valid TEXT NOT NULL,
-  cn TEXT NOT NULL,
-  co TEXT,
-  ce TEXT,
-  cp TEXT,
+  number TEXT NOT NULL,
   title TEXT NOT NULL,
-  items JSONB NOT NULL,
-  s TEXT NOT NULL,
-  notes TEXT,
+  client_id BIGINT,
+  client_name TEXT,
+  client_company TEXT,
+  scope JSONB,
+  items JSONB,
+  services JSONB,
+  payment_terms TEXT,
+  note TEXT,
+  total BIGINT,
+  status TEXT,
+  valid_until TEXT,
+  date TEXT,
+  sender_name TEXT,
+  sender_tagline TEXT,
+  sender_email TEXT,
+  sender_phone TEXT,
   owner_email TEXT
 );
 
