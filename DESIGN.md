@@ -48,6 +48,7 @@ Defined via CSS variables and dynamic `color-mix`:
 - Modal & Overlay: 180ms ease-out backdrop fade, 220ms cubic-bezier(0.16, 1, 0.3, 1) scale & translateY entrance.
 - Micro-interactions & Buttons: 150ms for hover states.
 - Drawer slides: 250ms (`cubic-bezier(0.2, 0.8, 0.2, 1)`).
+- Chart Bar Grow & Refresh: 450ms (`cubic-bezier(0.16, 1, 0.3, 1)`) staggered grow-up from baseline with outlined refresh trigger.
 - `prefers-reduced-motion` strictly respected across all views and modals.
 
 ## Antislop Dials

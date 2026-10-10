@@ -121,6 +121,16 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
   const [monthPickerYear, setMonthPickerYear] = useState<number>(() => new Date().getFullYear());
 
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [animationKey, setAnimationKey] = useState<number>(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setAnimationKey((k) => k + 1);
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 500);
+  };
 
   // Close dropdown on click outside or Escape
   useEffect(() => {
@@ -601,6 +611,16 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
         {/* Filter Dropdown Controls */}
         <div className="income-filter-container" ref={dropdownRef}>
           <div className="income-filter-trigger-group">
+            <button
+              className={`chart-refresh-btn ${isRefreshing ? 'spinning' : ''}`}
+              onClick={handleRefresh}
+              type="button"
+              title="Refresh chart animation"
+              aria-label="Refresh chart"
+            >
+              <Icon name="refresh" size={14} />
+            </button>
+
             {!isDefaultView && (
               <button
                 className="btn sm income-reset-btn"
@@ -970,9 +990,11 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
 
                   {/* Segmented Stacked Pillar */}
                   <div
-                    className="bar-pillar"
+                    key={`${animationKey}-${b.k}`}
+                    className="bar-pillar chart-bar-grow"
                     style={{
                       height: `${safeHeight}%`,
+                      animationDelay: `${Math.min(i * 22, 280)}ms`,
                       ...(buckets.length > 20 ? { borderRadius: '2px 2px 0 0' } : {}),
                     }}
                   >

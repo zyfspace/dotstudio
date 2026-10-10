@@ -721,6 +721,42 @@ aside #tg {
   gap: 6px;
 }
 
+.chart-refresh-btn {
+  background: transparent;
+  border: none;
+  color: var(--mut);
+  padding: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, opacity 0.15s ease;
+  line-height: 1;
+}
+
+.chart-refresh-btn:hover {
+  color: var(--fg);
+}
+
+.chart-refresh-btn:focus-visible {
+  outline: 2px solid var(--ac);
+  outline-offset: 1px;
+}
+
+.chart-refresh-btn.spinning svg {
+  animation: chartRefreshSpin 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes chartRefreshSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .income-reset-btn {
   height: 28px;
   padding: 0 8px;
@@ -1154,6 +1190,32 @@ aside #tg {
   overflow: hidden;
   position: relative;
   transition: height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.15s ease, filter 0.15s ease;
+}
+
+.chart-bar-grow {
+  transform-origin: bottom;
+  animation: chartBarGrow 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes chartBarGrow {
+  0% {
+    transform: scaleY(0);
+    opacity: 0.15;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-bar-grow {
+    animation: none !important;
+    transform: none !important;
+  }
 }
 
 .bar-segment-paid {
