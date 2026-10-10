@@ -468,7 +468,7 @@ export function LandingPage({
         </section>
 
         {/* Ecosystem & Tech Stack Section */}
-        <BrandAndTechStack />
+        <BrandAndTechStack theme={theme} />
       </div>
 
       {/* Interactive Demo Section */}

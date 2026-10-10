@@ -48,7 +48,23 @@ const TECH_LOGOS = [
   prisma,
 ];
 
-export function BrandAndTechStack() {
+interface BrandAndTechStackProps {
+  theme?: 'light' | 'dark';
+}
+
+function getLogoSvg(item: any, isLight: boolean) {
+  if (isLight && item.variants?.light) {
+    return item.variants.light;
+  }
+  if (!isLight && item.variants?.dark) {
+    return item.variants.dark;
+  }
+  return item.svg;
+}
+
+export function BrandAndTechStack({ theme }: BrandAndTechStackProps) {
+  const isLight = theme === 'light';
+
   return (
     <section className="lp-marquee-section">
       <div className="lp-wrap">
@@ -56,7 +72,7 @@ export function BrandAndTechStack() {
           {/* LEFT COLUMN: Trusted by Studios & Businesses (4 Indo + 5 Global in 1 Line) */}
           <div className="lp-marquee-col">
             <div className="lp-marquee-col-header">
-              <span className="lp-marquee-col-title">Trusted by studios & businesses</span>
+              <span className="lp-marquee-col-title">Trusted by Leading Companies</span>
               <span className="lp-marquee-col-sub">Powering client workflows across modern creative teams</span>
             </div>
 
@@ -66,17 +82,19 @@ export function BrandAndTechStack() {
                   <div
                     key={`c1-${idx}-${item.slug}`}
                     className="lp-marquee-item"
+                    data-slug={item.slug}
                     title={item.title}
-                    dangerouslySetInnerHTML={{ __html: item.svg }}
+                    dangerouslySetInnerHTML={{ __html: getLogoSvg(item, isLight) }}
                   />
                 ))}
                 {COMPANY_LOGOS.map((item, idx) => (
                   <div
                     key={`c2-${idx}-${item.slug}`}
                     className="lp-marquee-item"
+                    data-slug={item.slug}
                     title={item.title}
                     aria-hidden="true"
-                    dangerouslySetInnerHTML={{ __html: item.svg }}
+                    dangerouslySetInnerHTML={{ __html: getLogoSvg(item, isLight) }}
                   />
                 ))}
               </div>
@@ -89,7 +107,7 @@ export function BrandAndTechStack() {
           {/* RIGHT COLUMN: Stack We Use (9 Tech Logos in 1 Line) */}
           <div className="lp-marquee-col">
             <div className="lp-marquee-col-header">
-              <span className="lp-marquee-col-title">Engineered with a modern stack</span>
+              <span className="lp-marquee-col-title">Engineered with Best Technologies</span>
               <span className="lp-marquee-col-sub">Built on battle-tested infrastructure, security & speed</span>
             </div>
 
@@ -99,17 +117,19 @@ export function BrandAndTechStack() {
                   <div
                     key={`t1-${idx}-${item.slug}`}
                     className="lp-marquee-item"
+                    data-slug={item.slug}
                     title={item.title}
-                    dangerouslySetInnerHTML={{ __html: item.svg }}
+                    dangerouslySetInnerHTML={{ __html: getLogoSvg(item, isLight) }}
                   />
                 ))}
                 {TECH_LOGOS.map((item, idx) => (
                   <div
                     key={`t2-${idx}-${item.slug}`}
                     className="lp-marquee-item"
+                    data-slug={item.slug}
                     title={item.title}
                     aria-hidden="true"
-                    dangerouslySetInnerHTML={{ __html: item.svg }}
+                    dangerouslySetInnerHTML={{ __html: getLogoSvg(item, isLight) }}
                   />
                 ))}
               </div>

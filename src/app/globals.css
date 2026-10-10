@@ -4118,8 +4118,8 @@ input[type="file"] {
 }
 
 @media (max-width: 768px) {
-  html,
-  body {
+  html:has(.app),
+  body:has(.app) {
     height: 100% !important;
     height: 100dvh !important;
     overflow: hidden !important;
@@ -4468,7 +4468,7 @@ input[type="file"] {
     font-variant-numeric: tabular-nums;
   }
 
-  input, select, textarea, .in {
+  input, select, textarea, input.in, select.in, textarea.in, .app .in {
     font-size: 16px !important;
   }
 
