@@ -121,6 +121,10 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
   const [monthPickerYear, setMonthPickerYear] = useState<number>(() => new Date().getFullYear());
 
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  // Touch has no hover: the first tap on a bar shows its tooltip and a second
+  // tap on the same bar drills in. Mouse keeps hover-to-preview, click-to-drill.
+  const lastPointerRef = useRef<string>('mouse');
+  const armedIdxRef = useRef<number | null>(null);
   const [animationKey, setAnimationKey] = useState<number>(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -473,6 +477,45 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     setHoveredIdx(null);
     setDropdownOpen(false);
   };
+
+  useEffect(() => {
+    if (hoveredIdx === null) {
+      armedIdxRef.current = null;
+      return;
+    }
+    // A tap outside the bars closes the tooltip opened by touch
+    const onOutside = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse') return;
+      const target = e.target as Element | null;
+      if (!target?.closest('.bar-col, .x-month-label')) setHoveredIdx(null);
+    };
+    document.addEventListener('pointerdown', onOutside);
+    return () => document.removeEventListener('pointerdown', onOutside);
+  }, [hoveredIdx]);
+
+  const barPointerProps = (i: number, bucketKey: string) => ({
+    onPointerDown: (e: React.PointerEvent) => {
+      lastPointerRef.current = e.pointerType;
+    },
+    onPointerEnter: (e: React.PointerEvent) => {
+      if (e.pointerType === 'mouse') setHoveredIdx(i);
+    },
+    onPointerLeave: (e: React.PointerEvent) => {
+      if (e.pointerType === 'mouse') setHoveredIdx(null);
+    },
+    onClick: () => {
+      const viaTouch = lastPointerRef.current !== 'mouse';
+      // Keyboard activation after a tap must not inherit the touch behaviour
+      lastPointerRef.current = 'mouse';
+      if (viaTouch && armedIdxRef.current !== i) {
+        armedIdxRef.current = i;
+        setHoveredIdx(i);
+        return;
+      }
+      armedIdxRef.current = null;
+      handleBarClick(bucketKey);
+    },
+  });
 
   // Drill down from 6-month bar
   const handleBarClick = (bucketKey: string) => {
@@ -951,15 +994,14 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                 <div
                   key={b.k}
                   className={`bar-col ${b.isCurrent ? 'current' : ''} ${isHovered ? 'hovered' : ''}`}
-                  onMouseEnter={() => setHoveredIdx(i)}
-                  onMouseLeave={() => setHoveredIdx(null)}
-                  onTouchStart={() => setHoveredIdx(hoveredIdx === i ? null : i)}
-                  onClick={() => handleBarClick(b.k)}
+                  {...barPointerProps(i, b.k)}
                   style={{ cursor: mode === '6m' ? 'pointer' : 'default' }}
                 >
                   {/* Floating Multi-row Detail Tooltip (only when there are deals/transactions) */}
                   {b.t > 0 && (
-                    <div className={`bar-tooltip ${isHovered ? 'active' : ''}`}>
+                    <div
+                      className={`bar-tooltip ${i < buckets.length / 2 ? 'tt-left' : 'tt-right'} ${isHovered ? 'active' : ''}`}
+                    >
                       <div className="bar-tt-header">{b.fullLabel}</div>
                       <div className="bar-tt-content">
                         {b.paid > 0 && (
@@ -1062,9 +1104,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
               <button
                 key={b.k}
                 className={`x-month-label ${b.isCurrent ? 'current' : ''} ${isHovered ? 'hovered' : ''}`}
-                onMouseEnter={() => setHoveredIdx(i)}
-                onMouseLeave={() => setHoveredIdx(null)}
-                onClick={() => handleBarClick(b.k)}
+                {...barPointerProps(i, b.k)}
                 type="button"
                 style={{
                   fontSize: total > 20 ? '10px' : '11px',
