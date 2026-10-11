@@ -4806,8 +4806,7 @@ input[type="file"] {
   .dr select,
   .dr textarea,
   .settings-input {
-    /* iOS Safari zooms into any field under 16px on focus */
-    font-size: 16px !important;
+    font-size: 13.5px !important;
     height: 38px !important;
     padding: 0 11px !important;
     border-radius: 8px !important;
@@ -4821,12 +4820,7 @@ input[type="file"] {
     min-height: 48px !important;
     padding: 8px 11px !important;
     line-height: 1.45 !important;
-    font-size: 16px !important;
-  }
-
-  .search input,
-  .otp-hidden-native-input {
-    font-size: 16px !important;
+    font-size: 13.5px !important;
   }
 
   /* Keep room for the leading icon and the password eye button */
@@ -5177,5 +5171,16 @@ input[type="file"] {
   .dr .ia > .btn,
   .dr .ia .ia-date .custom-datepicker-trigger {
     padding: 0 8px;
+  }
+}
+
+/* iOS Safari zooms the page into any form field under 16px on focus, so
+   only there raise fields to 16px. -webkit-touch-callout is iOS-only, so
+   Android, desktop and macOS Safari keep the smaller design sizes. */
+@supports (-webkit-touch-callout: none) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
   }
 }
