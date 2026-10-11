@@ -6,6 +6,12 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'DotStudio — Projects, Payments & Documents',
   description: 'Clean dashboard management for projects, payments, invoices, quotations, and clients.',
+  // iOS has no Install prompt; Add to Home Screen uses these
+  appleWebApp: {
+    capable: true,
+    title: 'DotStudio',
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 export const viewport: Viewport = {
