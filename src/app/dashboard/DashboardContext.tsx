@@ -337,9 +337,10 @@ interface DashboardContextType {
     projectId: number,
     planItemId: number,
     markPaid: boolean,
-    proofData?: { n: string; d: string } | null
+    proofData?: { n: string; d: string } | null,
+    paidDate?: string
   ) => void;
-  handleProofUpload: (projectId: number, planItemId: number, file: File) => Promise<void>;
+  handleProofUpload: (projectId: number, planItemId: number, file: File, paidDate?: string) => Promise<void>;
   handleUpdatePaymentDate: (projectId: number, planItemId: number, newDate: string) => void;
   handleUpdateDueDate: (projectId: number, planItemId: number, newDate: string) => void;
   handleCreateOrViewInvoice: (projectId: number, planItemId: number) => void;
@@ -1411,7 +1412,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     projectId: number,
     planItemId: number,
     markPaid: boolean,
-    proofData?: { n: string; d: string } | null
+    proofData?: { n: string; d: string } | null,
+    paidDate?: string
   ) => {
     setProjects((prev) =>
       prev.map((p) => {
@@ -1423,7 +1425,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             return {
               ...item,
               paid: markPaid,
-              pd: markPaid ? (item.pd || today()) : '',
+              pd: markPaid ? (paidDate || item.pd || today()) : '',
               proof: proofData !== undefined ? proofData : markPaid ? item.proof : null,
             };
           }),
@@ -1435,7 +1437,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const handleProofUpload = async (
     projectId: number,
     planItemId: number,
-    file: File
+    file: File,
+    paidDate?: string
   ) => {
     setUploadingItemId(planItemId);
     try {
@@ -1448,12 +1451,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         handleTogglePaymentPaid(projectId, planItemId, true, {
           n: uploadedFile.name,
           d: fileUrl,
-        });
+        }, paidDate);
       } else {
         handleTogglePaymentPaid(projectId, planItemId, true, {
           n: file.name,
           d: '',
-        });
+        }, paidDate);
       }
     } catch (err) {
       console.error('UploadThing error:', err);
@@ -1462,7 +1465,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         handleTogglePaymentPaid(projectId, planItemId, true, {
           n: file.name,
           d: reader.result as string,
-        });
+        }, paidDate);
       };
       reader.readAsDataURL(file);
     } finally {

@@ -39,6 +39,8 @@ export function ProjectDrawer() {
   const [addServiceLabel, setAddServiceLabel] = useState('');
   const [addServiceCost, setAddServiceCost] = useState('');
   const [addServiceDue, setAddServiceDue] = useState('');
+  // Paid date picked per plan item before its proof can be uploaded
+  const [pendingPaidDates, setPendingPaidDates] = useState<Record<number, string>>({});
 
   return (
     <div className={`dr ${activeProjectDrawerId ? 'on' : ''}`} id="dr">
@@ -155,29 +157,52 @@ export function ProjectDrawer() {
                                 <span className="mut" style={{ fontSize: '12px' }}>No proof</span>
                               )}
                             </>
-                          ) : (
-                            <label
-                              className="btn sm pri"
-                              style={{
-                                cursor: uploadingItemId === item.id ? 'wait' : 'pointer',
-                                opacity: uploadingItemId === item.id ? 0.7 : 1,
-                              }}
-                            >
-                              <Icon name="upload" size={14} />
-                              {uploadingItemId === item.id ? 'Uploading…' : 'Add Payment Proof'}
-                              <input
-                                type="file"
-                                accept="image/*,.pdf"
-                                disabled={uploadingItemId === item.id}
-                                onChange={(e) => {
-                                  const f = e.target.files?.[0];
-                                  if (f) {
-                                    handleProofUpload(activeProject.id, item.id, f);
+                          ) : (() => {
+                            const paidDate = pendingPaidDates[item.id] || '';
+                            const uploading = uploadingItemId === item.id;
+                            const canUpload = Boolean(paidDate) && !uploading;
+                            return (
+                              <>
+                                <DatePicker
+                                  value={paidDate}
+                                  onChange={(val) =>
+                                    setPendingPaidDates((prev) => ({ ...prev, [item.id]: val }))
                                   }
-                                }}
-                              />
-                            </label>
-                          )}
+                                  placeholder="Paid date"
+                                  className="ia-date"
+                                  disabled={uploading}
+                                />
+                                <label
+                                  className="btn sm pri"
+                                  title={paidDate ? undefined : 'Pick the paid date first'}
+                                  style={{
+                                    cursor: uploading ? 'wait' : canUpload ? 'pointer' : 'not-allowed',
+                                    opacity: canUpload ? 1 : uploading ? 0.7 : 0.4,
+                                  }}
+                                >
+                                  <Icon name="upload" size={14} />
+                                  {uploading ? 'Uploading…' : 'Add Payment Proof'}
+                                  <input
+                                    type="file"
+                                    accept="image/*,.pdf"
+                                    disabled={!canUpload}
+                                    onChange={(e) => {
+                                      const f = e.target.files?.[0];
+                                      e.target.value = '';
+                                      if (f && paidDate) {
+                                        handleProofUpload(activeProject.id, item.id, f, paidDate);
+                                        setPendingPaidDates((prev) => {
+                                          const next = { ...prev };
+                                          delete next[item.id];
+                                          return next;
+                                        });
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </>
+                            );
+                          })()}
 
                           <button
                             className="btn sm"

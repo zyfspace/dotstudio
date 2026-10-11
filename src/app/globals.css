@@ -2437,6 +2437,18 @@ textarea:focus,
   align-items: center;
 }
 
+.ia .custom-datepicker-container.ia-date {
+  width: auto;
+}
+
+.ia .ia-date .custom-datepicker-trigger {
+  height: 28px;
+  padding: 0 9px;
+  font-size: 12px;
+  border-radius: 6px;
+  gap: 6px;
+}
+
 .client-project-item {
   display: flex;
   justify-content: space-between;
