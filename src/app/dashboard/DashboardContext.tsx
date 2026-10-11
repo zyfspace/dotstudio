@@ -692,6 +692,14 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        if (!sbSession?.user) {
+          // Data access is authorized by the Supabase session, so a local
+          // session without one (e.g. from the old client-side login) is stale.
+          clearAuthSession();
+          setAuthUser(null);
+          return;
+        }
+
         if (sbSession?.user) {
           const userEmail = sbSession.user.email || '';
           const userName =

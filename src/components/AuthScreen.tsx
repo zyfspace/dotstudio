@@ -6,9 +6,8 @@ import { DotStudioPaperLogo } from '@/components/Logo';
 import { OtpInput } from '@/components/OtpInput';
 import {
   AuthUser,
-  verifyLogin,
-  registerUser,
   setAuthSession,
+  signInWithSupabase,
   signInWithGoogle,
   signUpWithSupabase,
   verifyOtpWithSupabase,
@@ -118,7 +117,7 @@ export function AuthScreen({
     }
     setIsVerifyingOtp(true);
     setOtpError('');
-    const res = await verifyOtpWithSupabase(email, code, name, studioName, password);
+    const res = await verifyOtpWithSupabase(email, code, name, studioName);
     setIsVerifyingOtp(false);
     if (res.success && res.user) {
       onSuccess(res.user);
@@ -173,7 +172,7 @@ export function AuthScreen({
     setIsSubmitting(true);
 
     if (mode === 'login') {
-      const res = verifyLogin(cleanEmail, password);
+      const res = await signInWithSupabase(cleanEmail, password);
       setIsSubmitting(false);
       if (res.success && res.user) {
         setAuthSession(res.user, rememberMe);
