@@ -307,7 +307,8 @@ export function DocView() {
               <li>
                 Pembayaran saat ini adalah{' '}
                 <b>
-                  {i.l} ({i.pct}%)
+                  {i.l}
+                  {i.pct > 0 ? ` (${i.pct}%)` : ''}
                 </b>{' '}
                 sebesar <b>Rp{i.a.toLocaleString('id-ID')}</b> untuk layanan <b>{p.name}</b>.
               </li>

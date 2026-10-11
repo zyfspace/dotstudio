@@ -104,9 +104,12 @@ export function ProjectDrawer() {
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div className="ins-title">
                               {item.l}{' '}
-                              <span className="mut" style={{ fontWeight: 400, fontSize: '12.5px' }}>
-                                ({item.pct}%)
-                              </span>
+                              {/* Additional services are paid in full and stored with pct 0 */}
+                              {item.pct > 0 && (
+                                <span className="mut" style={{ fontWeight: 400, fontSize: '12.5px' }}>
+                                  ({item.pct}%)
+                                </span>
+                              )}
                             </div>
                             <div className="ins-date-pill">
                               <span className={overdue ? 'od' : 'mut'} style={{ fontSize: '12px' }}>
