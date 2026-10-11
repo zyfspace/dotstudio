@@ -181,7 +181,7 @@ export function ProjectDrawer() {
                                   }}
                                 >
                                   <Icon name="upload" size={14} />
-                                  {uploading ? 'Uploading…' : 'Add Payment Proof'}
+                                  {uploading ? 'Uploading…' : 'Payment'}
                                   <input
                                     type="file"
                                     accept="image/*,.pdf"

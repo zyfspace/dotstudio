@@ -115,7 +115,7 @@ export function PaymentsView() {
                                   url: x.i.proof!.d,
                                 });
                               }}
-                              title="Lihat bukti pembayaran"
+                              title="View payment proof"
                             >
                               <Icon name="file" size={13} />
                               <span style={{ textDecoration: 'underline' }}>{x.i.proof.n}</span>
@@ -182,10 +182,10 @@ export function PaymentsView() {
                         }}
                       >
                         <Icon name="file" size={11} />
-                        <span>Bukti</span>
+                        <span>Payment</span>
                       </button>
                     ) : (
-                      <span className="mut" style={{ fontSize: '11.5px' }}>Tanpa bukti</span>
+                      <span className="mut" style={{ fontSize: '11.5px' }}>No proof</span>
                     )}
                   </div>
                 </div>

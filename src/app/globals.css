@@ -5155,3 +5155,27 @@ input[type="file"] {
   color: inherit !important;
   letter-spacing: inherit !important;
 }
+
+/* Small phones: date picker, Payment and View invoice share one row only
+   without their icons */
+@media (max-width: 380px) {
+  .dr .ia {
+    gap: 6px;
+  }
+
+  .dr .ia > .btn {
+    gap: 0;
+  }
+
+  .dr .ia > .btn svg,
+  .dr .ia .custom-datepicker-icon {
+    display: none;
+  }
+}
+
+@media (max-width: 340px) {
+  .dr .ia > .btn,
+  .dr .ia .ia-date .custom-datepicker-trigger {
+    padding: 0 8px;
+  }
+}
