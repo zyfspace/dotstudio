@@ -2961,6 +2961,33 @@ input[type="file"] {
     display: table;
     width: 100%;
   }
+
+  /* Stacked header blocks read better left-aligned than half right-aligned */
+  .docx-header-grid > div,
+  .docx-meta-grid > div {
+    text-align: left !important;
+  }
+
+  /* Let columns size to their content so amounts and the type label stay whole */
+  .docx-cost-table {
+    table-layout: auto !important;
+  }
+
+  .docx-cost-table thead th,
+  .docx-cost-table tbody td {
+    padding: 6px 7px !important;
+    font-size: 12px !important;
+  }
+
+  .docx-cost-table thead th.c,
+  .docx-cost-table tbody td.c {
+    word-break: normal !important;
+  }
+
+  .docx-cost-table th:last-child,
+  .docx-cost-table td:last-child {
+    white-space: nowrap !important;
+  }
 }
 
 /* PIN Security Modal */
@@ -3112,7 +3139,8 @@ input[type="file"] {
 
 .otp-digit-boxes {
   display: flex;
-  gap: 8px;
+  gap: clamp(4px, 2vw, 8px);
+  min-width: 0;
   justify-content: center;
   align-items: center;
   width: 100%;
@@ -3120,6 +3148,8 @@ input[type="file"] {
 
 .otp-digit-box {
   width: 44px;
+  flex: 0 1 44px;
+  min-width: 0;
   height: 48px;
   border-radius: 8px;
   border: 1px solid var(--line);
@@ -3901,6 +3931,7 @@ input[type="file"] {
 
 .auth-root .box {
   width: min(380px, 100%);
+  min-width: 0;
 }
 
 .auth-form-anim {
@@ -4770,7 +4801,8 @@ input[type="file"] {
   .dr select,
   .dr textarea,
   .settings-input {
-    font-size: 13.5px !important;
+    /* iOS Safari zooms into any field under 16px on focus */
+    font-size: 16px !important;
     height: 38px !important;
     padding: 0 11px !important;
     border-radius: 8px !important;
@@ -4784,7 +4816,18 @@ input[type="file"] {
     min-height: 48px !important;
     padding: 8px 11px !important;
     line-height: 1.45 !important;
-    font-size: 13.5px !important;
+    font-size: 16px !important;
+  }
+
+  .search input,
+  .otp-hidden-native-input {
+    font-size: 16px !important;
+  }
+
+  /* Keep room for the leading icon and the password eye button */
+  .auth-root .fi .in {
+    height: 40px !important;
+    padding: 0 40px 0 38px !important;
   }
 
   /* Responsive Cost Items / Quotation Items on Mobile */
