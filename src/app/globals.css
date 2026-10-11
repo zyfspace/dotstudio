@@ -2,6 +2,7 @@
   --bg: #fff;
   --fg: #0a0a0a;
   --ac: #f16818;
+  --ok: #16a34a;
   --mut: color-mix(in srgb, var(--fg) 52%, var(--bg));
   --line: color-mix(in srgb, var(--fg) 11%, var(--bg));
   --soft: color-mix(in srgb, var(--fg) 4%, var(--bg));
@@ -12,17 +13,20 @@
   :root:not([data-theme="light"]) {
     --bg: #0a0a0a;
     --fg: #fff;
+    --ok: #22c55e;
   }
 }
 
 :root[data-theme="dark"] {
   --bg: #0a0a0a;
   --fg: #fff;
+  --ok: #22c55e;
 }
 
 :root[data-theme="light"] {
   --bg: #fff;
   --fg: #0a0a0a;
+  --ok: #16a34a;
 }
 
 html {
@@ -1583,10 +1587,21 @@ tbody tr:hover {
   border-color: var(--ac);
 }
 
+.st.Done,
+.st.Finished {
+  color: var(--ok);
+  font-weight: 500;
+}
+
 .st.Done:before,
 .st.Finished:before {
-  background: var(--fg);
-  border-color: var(--fg);
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 0;
+  background: var(--ok);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .st.Review:before {
