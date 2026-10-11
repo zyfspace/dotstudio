@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { rp, dt } from '@/lib/formatters';
@@ -13,12 +13,13 @@ export function QuotationsView() {
     setSearchQuery,
     searchInputRef,
     formatQuoteNo,
-    collapsedQuoteGroups,
-    setCollapsedQuoteGroups,
     openDoc,
     setActiveProjectDrawerId,
     handleStartNewQuote,
   } = useDashboard();
+
+  // Groups start closed and only one is open at a time.
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const q = searchQuery.toLowerCase();
   const filtered = quotes
@@ -83,7 +84,8 @@ export function QuotationsView() {
       ) : (
         <div>
           {grouped.map(({ company, items }) => {
-            const isCollapsed = !!collapsedQuoteGroups[company];
+            const isOpen = openGroup === company;
+            const toggle = () => setOpenGroup(isOpen ? null : company);
             const totalGroupAmount = items.reduce((acc, curr) => {
               const val = curr.items.reduce((a, it) => a + (it.q * it.p), 0);
               return acc + val;
@@ -93,12 +95,16 @@ export function QuotationsView() {
               <div key={company} className="accordion-group">
                 <div
                   className="accordion-header"
-                  onClick={() =>
-                    setCollapsedQuoteGroups((prev) => ({
-                      ...prev,
-                      [company]: !prev[company],
-                    }))
-                  }
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isOpen}
+                  onClick={toggle}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggle();
+                    }
+                  }}
                 >
                   <div className="accordion-title-box">
                     <div className="accordion-company-icon">
@@ -113,13 +119,14 @@ export function QuotationsView() {
                     <span className="accordion-total-amount">
                       {rp(totalGroupAmount)}
                     </span>
-                    <span className={`accordion-chevron ${isCollapsed ? '' : 'expanded'}`}>
+                    <span className={`accordion-chevron ${isOpen ? 'expanded' : ''}`}>
                       <Icon name="chevron" size={15} />
                     </span>
                   </div>
                 </div>
 
-                {!isCollapsed && (
+                <div className={`accordion-collapse ${isOpen ? 'open' : ''}`} inert={!isOpen}>
+                  <div className="accordion-collapse-inner">
                   <div className="accordion-body">
                     <div className="tw-desktop-only">
                       <table>
@@ -236,7 +243,8 @@ export function QuotationsView() {
                       })}
                     </div>
                   </div>
-                )}
+                  </div>
+                </div>
               </div>
             );
           })}
