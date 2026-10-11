@@ -115,7 +115,7 @@ export function PaymentsView() {
                                   url: x.i.proof!.d,
                                 });
                               }}
-                              title="Lihat bukti pembayaran"
+                              title="View payment proof"
                             >
                               <Icon name="file" size={13} />
                               <span style={{ textDecoration: 'underline' }}>{x.i.proof.n}</span>
@@ -146,7 +146,7 @@ export function PaymentsView() {
           {/* Mobile Payments Card List (<= 768px) */}
           <div className="mob-card-list">
             <div style={{ padding: '8px 12px', background: 'var(--soft)', borderRadius: '8px', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <span className="mut" style={{ fontSize: '12px' }}>Total {filtered.length} pembayaran</span>
+              <span className="mut" style={{ fontSize: '12px' }}>Total · {filtered.length} {filtered.length === 1 ? 'payment' : 'payments'}</span>
               <b style={{ fontSize: '14px', fontVariantNumeric: 'tabular-nums' }}>{rp(totalPaymentsAmount)}</b>
             </div>
             {filtered.map((x) => {
@@ -166,7 +166,7 @@ export function PaymentsView() {
                   </div>
                   <div className="mob-item-bottom">
                     <span className="mut" style={{ fontSize: '11.5px' }}>
-                      Dibayar: {dt(x.i.pd)}
+                      Paid: {dt(x.i.pd)}
                     </span>
                     {x.i.proof && x.i.proof.n && x.i.proof.d ? (
                       <button
@@ -182,10 +182,10 @@ export function PaymentsView() {
                         }}
                       >
                         <Icon name="file" size={11} />
-                        <span>Bukti</span>
+                        <span>Payment</span>
                       </button>
                     ) : (
-                      <span className="mut" style={{ fontSize: '11.5px' }}>Tanpa bukti</span>
+                      <span className="mut" style={{ fontSize: '11.5px' }}>No proof</span>
                     )}
                   </div>
                 </div>
