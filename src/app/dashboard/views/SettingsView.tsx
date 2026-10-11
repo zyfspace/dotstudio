@@ -151,7 +151,7 @@ export function SettingsView() {
                   type="text"
                   disabled={!isSettingsUnlocked}
                   className="settings-input"
-                  placeholder="e.g. Zyf Studio"
+                  placeholder="Your studio or brand name"
                   value={profileDraft.studioName}
                   onChange={(e) =>
                     setProfileDraft((prev) => ({ ...prev, studioName: e.target.value }))
@@ -165,7 +165,7 @@ export function SettingsView() {
                   type="text"
                   disabled={!isSettingsUnlocked}
                   className="settings-input"
-                  placeholder="e.g. Digital Design & Development"
+                  placeholder="A short line about what you do"
                   value={profileDraft.tagline}
                   onChange={(e) =>
                     setProfileDraft((prev) => ({ ...prev, tagline: e.target.value }))
@@ -182,7 +182,7 @@ export function SettingsView() {
                   type="email"
                   disabled={!isSettingsUnlocked}
                   className="settings-input"
-                  placeholder="e.g. studio@email.com"
+                  placeholder="name@yourstudio.com"
                   value={profileDraft.email}
                   onChange={(e) =>
                     setProfileDraft((prev) => ({ ...prev, email: e.target.value }))
@@ -196,7 +196,7 @@ export function SettingsView() {
                   type="tel"
                   disabled={!isSettingsUnlocked}
                   className="settings-input"
-                  placeholder="e.g. +62 812-3456-7890"
+                  placeholder="Phone or WhatsApp number"
                   value={profileDraft.phone}
                   onChange={(e) =>
                     setProfileDraft((prev) => ({ ...prev, phone: e.target.value }))
@@ -223,7 +223,7 @@ export function SettingsView() {
                   type="text"
                   disabled={!isSettingsUnlocked}
                   className="settings-input"
-                  placeholder="e.g. Faiz Dawami"
+                  placeholder="Name on the bank account"
                   value={profileDraft.accountHolder}
                   onChange={(e) =>
                     setProfileDraft((prev) => ({ ...prev, accountHolder: e.target.value }))
@@ -237,7 +237,7 @@ export function SettingsView() {
                   type="text"
                   disabled={!isSettingsUnlocked}
                   className="settings-input"
-                  placeholder="e.g. BCA / Bank Transfer"
+                  placeholder="Bank name or payment method"
                   value={profileDraft.bankName}
                   onChange={(e) =>
                     setProfileDraft((prev) => ({ ...prev, bankName: e.target.value }))
@@ -254,7 +254,7 @@ export function SettingsView() {
                   type="text"
                   disabled={!isSettingsUnlocked}
                   className="settings-input"
-                  placeholder="e.g. 1234567890"
+                  placeholder="Bank account number"
                   value={profileDraft.accountNumber}
                   onChange={(e) =>
                     setProfileDraft((prev) => ({ ...prev, accountNumber: e.target.value }))
@@ -268,7 +268,7 @@ export function SettingsView() {
                   type="text"
                   disabled={!isSettingsUnlocked}
                   className="settings-input"
-                  placeholder="e.g. Faiz Dawami"
+                  placeholder="Your full name"
                   value={profileDraft.ownerName}
                   onChange={(e) =>
                     setProfileDraft((prev) => ({ ...prev, ownerName: e.target.value }))
@@ -283,7 +283,7 @@ export function SettingsView() {
                 id="st-terms"
                 disabled={!isSettingsUnlocked}
                 className="settings-input"
-                placeholder="e.g. 50% deposit upfront, 50% final payment upon completion"
+                placeholder="e.g. 50% upfront, 50% on completion"
                 value={profileDraft.defaultPaymentTerms}
                 onChange={(e) =>
                   setProfileDraft((prev) => ({ ...prev, defaultPaymentTerms: e.target.value }))
@@ -297,7 +297,7 @@ export function SettingsView() {
                 id="st-notes"
                 disabled={!isSettingsUnlocked}
                 className="settings-input"
-                placeholder="e.g. Quotation is valid for 14 days from issue date."
+                placeholder="e.g. This quotation is valid for 14 days"
                 value={profileDraft.defaultNotes}
                 onChange={(e) =>
                   setProfileDraft((prev) => ({ ...prev, defaultNotes: e.target.value }))

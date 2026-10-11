@@ -34,7 +34,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <AuthScreen
           onSuccess={(user) => {
             setAuthUser(user);
-            loadData(user.email, user);
+            loadData(user.email);
           }}
           theme={theme}
           onToggleTheme={toggleTheme}

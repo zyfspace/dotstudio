@@ -30,10 +30,7 @@ export const loadStudioProfile = (userEmail?: string): StudioProfile => {
   if (typeof window === 'undefined') return DEFAULT_STUDIO_PROFILE;
   try {
     const key = getProfileKey(userEmail);
-    const raw =
-      localStorage.getItem(key) ||
-      localStorage.getItem('zyf-studio-profile-zyfxspace_gmail_com') ||
-      localStorage.getItem('zyf-studio-profile-v1');
+    const raw = localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
