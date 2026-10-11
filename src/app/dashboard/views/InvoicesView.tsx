@@ -38,14 +38,18 @@ export function InvoicesView() {
   // Group by Company / Business Name
   const grouped: { company: string; items: typeof invoicesList }[] = [];
   const companyMap = new Map<string, typeof invoicesList>();
+  // Client names and company shown in each group header.
+  const groupLabels = new Map<string, { names: Set<string>; companyName: string }>();
 
   invoicesList.forEach((item) => {
     const c = getClient(item.p.c);
     const comp = (c.co && c.co.trim()) ? c.co.trim() : (c.name && c.name.trim() ? `${c.name} (Individual)` : 'General / Unassigned');
     if (!companyMap.has(comp)) {
       companyMap.set(comp, []);
+      groupLabels.set(comp, { names: new Set(), companyName: (c.co || '').trim() });
     }
     companyMap.get(comp)!.push(item);
+    if (c.name && c.name.trim()) groupLabels.get(comp)!.names.add(c.name.trim());
   });
 
   companyMap.forEach((items, company) => {
@@ -98,7 +102,14 @@ export function InvoicesView() {
                     <div className="accordion-company-icon">
                       <Icon name="bld" size={15} />
                     </div>
-                    <span className="accordion-company-name">{company}</span>
+                    <div className="accordion-name-stack">
+                      <span className="accordion-client-name">
+                        {[...(groupLabels.get(company)?.names || [])].join(', ') || 'Unassigned'}
+                      </span>
+                      <span className="accordion-company-sub">
+                        {groupLabels.get(company)?.companyName || 'Individual'}
+                      </span>
+                    </div>
                     <span className="accordion-count-badge">
                       {items.length} {items.length === 1 ? 'invoice' : 'invoices'}
                     </span>
