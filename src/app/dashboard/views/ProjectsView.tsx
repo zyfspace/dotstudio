@@ -155,8 +155,10 @@ export function ProjectsView() {
                         </span>
                       </td>
                       <td>
-                        <span>{c.name}</span>
-                        {c.co && <span className="mut"> · {c.co}</span>}
+                        <div className="cell-two">
+                          <span>{c.name}</span>
+                          {c.co && <span className="mut">{c.co}</span>}
+                        </div>
                       </td>
                       <td>
                         <span className={`st ${st}`}>

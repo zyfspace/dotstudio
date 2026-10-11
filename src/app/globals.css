@@ -2437,6 +2437,17 @@ textarea:focus,
   align-items: center;
 }
 
+.cell-two {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.3;
+}
+
+.cell-two .mut {
+  font-size: 12px;
+}
+
 .proj-name {
   display: inline-flex;
   align-items: center;
