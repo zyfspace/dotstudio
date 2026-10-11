@@ -29,6 +29,8 @@ interface IncomeChartProps {
   onCustomRangeChange?: (range: { start: string; end: string }) => void;
   customRangePreset?: string | null;
   onCustomRangePresetChange?: (preset: string | null) => void;
+  /** Called when the refresh button is pressed. */
+  onRefresh?: () => void;
 }
 
 const MONTH_NAMES_EN = [
@@ -66,6 +68,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
   onCustomRangeChange,
   customRangePreset: propCustomRangePreset,
   onCustomRangePresetChange,
+  onRefresh,
 }) => {
   const currentYearMonth = useMemo(() => {
     const d = new Date();
@@ -129,6 +132,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = () => {
+    onRefresh?.();
     setIsRefreshing(true);
     setAnimationKey((k) => k + 1);
     setTimeout(() => {
