@@ -595,6 +595,8 @@ body:has(.lp-root) {
 }
 
 .lp-root .lp-sm {
+  white-space: nowrap;
+  flex-shrink: 0;
   height: 30px;
   padding: 0 12px;
   border-radius: 8px;
@@ -1225,7 +1227,9 @@ body:has(.lp-root) {
   .lp-root .lp-stage {
     height: clamp(370px, 95vw, 450px);
     margin: 24px auto 20px;
-    transform: scale(min(0.92, calc((100vw - 36px) / 440)));
+    /* scale() needs a plain number; a 100vw-based calc() resolves to a length
+       and the whole declaration was dropped, so the mockup never shrank. */
+    transform: scale(0.92);
     transform-origin: center top;
   }
   
@@ -1448,7 +1452,7 @@ body:has(.lp-root) {
   }
   
   .lp-root .lp-stage {
-    transform: scale(min(0.78, calc((100vw - 28px) / 440)));
+    transform: scale(0.7);
     height: 290px;
   }
   
@@ -1477,5 +1481,19 @@ body:has(.lp-root) {
   .lp-root .lp-rv {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* Fit the ~440px hero mockup to phone widths (see note on .lp-stage above) */
+@media (max-width: 480px) and (min-width: 381px) {
+  .lp-root .lp-stage {
+    transform: scale(0.82);
+  }
+}
+
+@media (max-width: 340px) {
+  .lp-root .lp-stage {
+    transform: scale(0.64);
+    height: 270px;
   }
 }

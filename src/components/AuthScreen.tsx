@@ -480,7 +480,7 @@ export function AuthScreen({
                         onClick={() => setShowPassword(!showPassword)}
                         aria-label={showPassword ? 'Hide password' : 'Show password'}
                       >
-                        <Icon name={showPassword ? 'eyeOff' : 'eye'} size={15} />
+                        <Icon name={showPassword ? 'eyeoff' : 'eye'} size={15} />
                       </button>
                     </div>
 

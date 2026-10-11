@@ -1545,6 +1545,13 @@ td {
   color: var(--fg);
 }
 
+/* Text columns may wrap so narrow desktops keep amount/status columns in view */
+td.wrap {
+  white-space: normal;
+  min-width: 110px;
+  overflow-wrap: anywhere;
+}
+
 tr:last-child td {
   border: 0;
 }
@@ -1808,6 +1815,23 @@ tbody tr:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
+}
+
+/* Three stat boxes can't fit large amounts on phones: stack them as rows */
+@media (max-width: 480px) {
+  .drawer-stats {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .drawer-stat {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .drawer-stat b {
+    margin-top: 0;
+  }
 }
 
 .drawer-client-box {
@@ -2937,6 +2961,33 @@ input[type="file"] {
     display: table;
     width: 100%;
   }
+
+  /* Stacked header blocks read better left-aligned than half right-aligned */
+  .docx-header-grid > div,
+  .docx-meta-grid > div {
+    text-align: left !important;
+  }
+
+  /* Let columns size to their content so amounts and the type label stay whole */
+  .docx-cost-table {
+    table-layout: auto !important;
+  }
+
+  .docx-cost-table thead th,
+  .docx-cost-table tbody td {
+    padding: 6px 7px !important;
+    font-size: 12px !important;
+  }
+
+  .docx-cost-table thead th.c,
+  .docx-cost-table tbody td.c {
+    word-break: normal !important;
+  }
+
+  .docx-cost-table th:last-child,
+  .docx-cost-table td:last-child {
+    white-space: nowrap !important;
+  }
 }
 
 /* PIN Security Modal */
@@ -3088,7 +3139,8 @@ input[type="file"] {
 
 .otp-digit-boxes {
   display: flex;
-  gap: 8px;
+  gap: clamp(4px, 2vw, 8px);
+  min-width: 0;
   justify-content: center;
   align-items: center;
   width: 100%;
@@ -3096,6 +3148,8 @@ input[type="file"] {
 
 .otp-digit-box {
   width: 44px;
+  flex: 0 1 44px;
+  min-width: 0;
   height: 48px;
   border-radius: 8px;
   border: 1px solid var(--line);
@@ -3734,8 +3788,8 @@ input[type="file"] {
 }
 
 .accordion-company-icon {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 7px;
   background: var(--bg);
   border: 1px solid var(--line);
@@ -3746,14 +3800,37 @@ input[type="file"] {
   flex-shrink: 0;
 }
 
-.accordion-company-name {
+.accordion-count-inline {
+  display: none;
+}
+
+.accordion-name-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.accordion-client-name {
   font-size: 14px;
   font-weight: 600;
+  line-height: 1.3;
   color: var(--fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.accordion-company-sub {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--mut);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 
 .accordion-count-badge {
   font-size: 11.5px;
@@ -3789,6 +3866,30 @@ input[type="file"] {
 
 .accordion-chevron.expanded {
   transform: rotate(180deg);
+}
+
+.accordion-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+
+.accordion-collapse.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.accordion-collapse-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accordion-collapse,
+  .accordion-chevron {
+    transition: none;
+  }
 }
 
 .accordion-body {
@@ -3830,6 +3931,7 @@ input[type="file"] {
 
 .auth-root .box {
   width: min(380px, 100%);
+  min-width: 0;
 }
 
 .auth-form-anim {
@@ -4681,6 +4783,8 @@ input[type="file"] {
   }
 
   .mob-item-val {
+    flex-shrink: 0;
+    white-space: nowrap;
     font-weight: 600;
     color: var(--fg);
     font-variant-numeric: tabular-nums;
@@ -4697,7 +4801,8 @@ input[type="file"] {
   .dr select,
   .dr textarea,
   .settings-input {
-    font-size: 13.5px !important;
+    /* iOS Safari zooms into any field under 16px on focus */
+    font-size: 16px !important;
     height: 38px !important;
     padding: 0 11px !important;
     border-radius: 8px !important;
@@ -4711,7 +4816,18 @@ input[type="file"] {
     min-height: 48px !important;
     padding: 8px 11px !important;
     line-height: 1.45 !important;
-    font-size: 13.5px !important;
+    font-size: 16px !important;
+  }
+
+  .search input,
+  .otp-hidden-native-input {
+    font-size: 16px !important;
+  }
+
+  /* Keep room for the leading icon and the password eye button */
+  .auth-root .fi .in {
+    height: 40px !important;
+    padding: 0 40px 0 38px !important;
   }
 
   /* Responsive Cost Items / Quotation Items on Mobile */
@@ -4867,9 +4983,14 @@ input[type="file"] {
     gap: 8px !important;
   }
 
-  .accordion-company-name {
-    font-size: 13px !important;
-    max-width: 140px !important;
+  .accordion-client-name {
+    font-size: 13px;
+  }
+  .accordion-title-box .accordion-count-badge {
+    display: none;
+  }
+  .accordion-count-inline {
+    display: inline;
   }
 
   .accordion-total-amount {

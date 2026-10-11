@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { rp, dt, isOverdue } from '@/lib/formatters';
@@ -13,10 +13,11 @@ export function InvoicesView() {
     searchInputRef,
     getClient,
     formatInvoiceNo,
-    collapsedInvoiceGroups,
-    setCollapsedInvoiceGroups,
     openDoc,
   } = useDashboard();
+
+  // Groups start closed and only one is open at a time.
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const q = searchQuery.toLowerCase();
   const invoicesList = allPayments
@@ -37,14 +38,18 @@ export function InvoicesView() {
   // Group by Company / Business Name
   const grouped: { company: string; items: typeof invoicesList }[] = [];
   const companyMap = new Map<string, typeof invoicesList>();
+  // Client names and company shown in each group header.
+  const groupLabels = new Map<string, { names: Set<string>; companyName: string }>();
 
   invoicesList.forEach((item) => {
     const c = getClient(item.p.c);
     const comp = (c.co && c.co.trim()) ? c.co.trim() : (c.name && c.name.trim() ? `${c.name} (Individual)` : 'General / Unassigned');
     if (!companyMap.has(comp)) {
       companyMap.set(comp, []);
+      groupLabels.set(comp, { names: new Set(), companyName: (c.co || '').trim() });
     }
     companyMap.get(comp)!.push(item);
+    if (c.name && c.name.trim()) groupLabels.get(comp)!.names.add(c.name.trim());
   });
 
   companyMap.forEach((items, company) => {
@@ -74,25 +79,40 @@ export function InvoicesView() {
       ) : (
         <div>
           {grouped.map(({ company, items }) => {
-            const isCollapsed = !!collapsedInvoiceGroups[company];
+            const isOpen = openGroup === company;
+            const toggle = () => setOpenGroup(isOpen ? null : company);
             const totalGroupAmount = items.reduce((acc, curr) => acc + curr.i.a, 0);
 
             return (
               <div key={company} className="accordion-group">
                 <div
                   className="accordion-header"
-                  onClick={() =>
-                    setCollapsedInvoiceGroups((prev) => ({
-                      ...prev,
-                      [company]: !prev[company],
-                    }))
-                  }
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isOpen}
+                  onClick={toggle}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggle();
+                    }
+                  }}
                 >
                   <div className="accordion-title-box">
                     <div className="accordion-company-icon">
                       <Icon name="bld" size={15} />
                     </div>
-                    <span className="accordion-company-name">{company}</span>
+                    <div className="accordion-name-stack">
+                      <span className="accordion-client-name">
+                        {[...(groupLabels.get(company)?.names || [])].join(', ') || 'Unassigned'}
+                      </span>
+                      <span className="accordion-company-sub">
+                        {groupLabels.get(company)?.companyName || 'Individual'}
+                        <span className="accordion-count-inline">
+                          {' · '}{items.length} {items.length === 1 ? 'invoice' : 'invoices'}
+                        </span>
+                      </span>
+                    </div>
                     <span className="accordion-count-badge">
                       {items.length} {items.length === 1 ? 'invoice' : 'invoices'}
                     </span>
@@ -101,13 +121,14 @@ export function InvoicesView() {
                     <span className="accordion-total-amount">
                       {rp(totalGroupAmount)}
                     </span>
-                    <span className={`accordion-chevron ${isCollapsed ? '' : 'expanded'}`}>
+                    <span className={`accordion-chevron ${isOpen ? 'expanded' : ''}`}>
                       <Icon name="chevron" size={15} />
                     </span>
                   </div>
                 </div>
 
-                {!isCollapsed && (
+                <div className={`accordion-collapse ${isOpen ? 'open' : ''}`} inert={!isOpen}>
+                  <div className="accordion-collapse-inner">
                   <div className="accordion-body">
                     <div className="tw-desktop-only">
                       <table>
@@ -116,14 +137,12 @@ export function InvoicesView() {
                             <th>No.</th>
                             <th>Date</th>
                             <th>Project</th>
-                            <th>Client</th>
                             <th>Status</th>
                             <th className="r">Amount</th>
                           </tr>
                         </thead>
                         <tbody>
                           {items.map((x) => {
-                            const c = getClient(x.p.c);
                             const overdue = isOverdue(x.i.due, x.i.paid);
                             return (
                               <tr
@@ -134,18 +153,12 @@ export function InvoicesView() {
                               >
                                 <td>{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</td>
                                 <td className="mut">{dt(x.i.inv!.date)}</td>
-                                <td>
-                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                <td className="wrap">
+                                  <div className="cell-two">
                                     <span>{x.p.name}</span>
-                                    {x.i.l && (
-                                      <>
-                                        <span className="mut" style={{ opacity: 0.45, userSelect: 'none' }}>·</span>
-                                        <span className="mut" style={{ fontSize: '13px' }}>{x.i.l}</span>
-                                      </>
-                                    )}
+                                    {x.i.l && <span className="mut">{x.i.l}</span>}
                                   </div>
                                 </td>
-                                <td>{c.name}</td>
                                 <td>
                                   {x.i.paid ? (
                                     <span
@@ -269,7 +282,8 @@ export function InvoicesView() {
                       })}
                     </div>
                   </div>
-                )}
+                  </div>
+                </div>
               </div>
             );
           })}

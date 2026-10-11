@@ -200,10 +200,6 @@ interface DashboardContextType {
 
   docState: DocState | null;
   setDocState: React.Dispatch<React.SetStateAction<DocState | null>>;
-  collapsedInvoiceGroups: Record<string, boolean>;
-  setCollapsedInvoiceGroups: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-  collapsedQuoteGroups: Record<string, boolean>;
-  setCollapsedQuoteGroups: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 
   activeProjectDrawerId: number | null;
   setActiveProjectDrawerId: React.Dispatch<React.SetStateAction<number | null>>;
@@ -419,8 +415,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [sortKey, setSortKey] = useState<'name' | 'due' | 'pg' | 'v'>('due');
   const [sortDir, setSortDir] = useState<number>(1);
   const [docState, setDocState] = useState<DocState | null>(null);
-  const [collapsedInvoiceGroups, setCollapsedInvoiceGroups] = useState<Record<string, boolean>>({});
-  const [collapsedQuoteGroups, setCollapsedQuoteGroups] = useState<Record<string, boolean>>({});
 
   // Drawers
   const [activeProjectDrawerId, setActiveProjectDrawerId] = useState<number | null>(null);
@@ -1778,10 +1772,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
     docState,
     setDocState,
-    collapsedInvoiceGroups,
-    setCollapsedInvoiceGroups,
-    collapsedQuoteGroups,
-    setCollapsedQuoteGroups,
 
     activeProjectDrawerId,
     setActiveProjectDrawerId,
