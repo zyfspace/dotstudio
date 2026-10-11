@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS public.quotes (
   items JSONB DEFAULT '[]'::jsonb,
   services JSONB DEFAULT '[]'::jsonb,
   payment_terms TEXT DEFAULT '',
+  note TEXT DEFAULT '',
   total NUMERIC NOT NULL DEFAULT 0,
   status TEXT DEFAULT 'Draft',
   valid_until TEXT DEFAULT '',
@@ -57,6 +58,9 @@ CREATE TABLE IF NOT EXISTS public.quotes (
   owner_email TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Older databases created before quotes.note existed
+ALTER TABLE public.quotes ADD COLUMN IF NOT EXISTS note TEXT DEFAULT '';
 
 -- 4. STUDIO PROFILES TABLE
 CREATE TABLE IF NOT EXISTS public.studio_profiles (
