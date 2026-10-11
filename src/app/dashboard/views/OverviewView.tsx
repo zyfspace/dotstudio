@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { IncomeChart } from '@/components/IncomeChart';
+import { CountUp } from '@/components/CountUp';
 import { sh, dt, isOverdue, today } from '@/lib/formatters';
 
 export function OverviewView() {
@@ -27,6 +28,9 @@ export function OverviewView() {
     openDoc,
     handleStartNewProject,
   } = useDashboard();
+
+  // Bumped by the chart's refresh button to replay the stat count-up
+  const [statReplay, setStatReplay] = useState(0);
 
   return (
     <div>
@@ -70,7 +74,7 @@ export function OverviewView() {
         <div className="stat">
           <div className="stat-info">
             <span>Total projects</span>
-            <b>{overviewMetrics.totalProjects}</b>
+            <b><CountUp value={overviewMetrics.totalProjects} replayKey={statReplay} /></b>
           </div>
           <div className="stat-icon">
             <Icon name="briefcase" size={18} />
@@ -79,7 +83,7 @@ export function OverviewView() {
         <div className="stat">
           <div className="stat-info">
             <span>Total revenue</span>
-            <b>{sh(overviewMetrics.totalReceived)}</b>
+            <b><CountUp value={overviewMetrics.totalReceived} format={sh} replayKey={statReplay} /></b>
           </div>
           <div className="stat-icon">
             <Icon name="coins" size={18} />
@@ -88,7 +92,7 @@ export function OverviewView() {
         <div className="stat">
           <div className="stat-info">
             <span>Outstanding</span>
-            <b>{sh(overviewMetrics.totalOutstanding)}</b>
+            <b><CountUp value={overviewMetrics.totalOutstanding} format={sh} replayKey={statReplay} /></b>
           </div>
           <div className="stat-icon">
             <Icon name="clock" size={18} />
@@ -115,7 +119,7 @@ export function OverviewView() {
                 </div>
               </div>
             </div>
-            <b>{sh(overviewMetrics.thisMonthVal)}</b>
+            <b><CountUp value={overviewMetrics.thisMonthVal} format={sh} replayKey={statReplay} /></b>
           </div>
           <div className="stat-icon">
             <Icon name="cal" size={18} />
@@ -137,6 +141,7 @@ export function OverviewView() {
           onCustomRangeChange={setChartCustomRange}
           customRangePreset={chartCustomRangePreset}
           onCustomRangePresetChange={setChartCustomRangePreset}
+          onRefresh={() => setStatReplay((k) => k + 1)}
         />
 
         {/* Upcoming payments */}
