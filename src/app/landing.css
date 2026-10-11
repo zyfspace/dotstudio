@@ -1497,3 +1497,30 @@ body:has(.lp-root) {
     height: 270px;
   }
 }
+
+.lp-root .lp-chip-short {
+  display: none;
+}
+
+/* Phones: short labels in one row; chips grow from their text width */
+@media (max-width: 480px) {
+  .lp-root .lp-chips {
+    flex-wrap: nowrap;
+  }
+
+  .lp-root .lp-chip {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: center;
+    padding: 0 10px;
+    white-space: nowrap;
+  }
+
+  .lp-root .lp-chip-long {
+    display: none;
+  }
+
+  .lp-root .lp-chip-short {
+    display: inline;
+  }
+}

@@ -15,6 +15,13 @@ interface LandingPageProps {
   onOpenDashboard?: () => void;
 }
 
+// Short chip labels so all three schemes fit on one line on phones
+const SCHEME_SHORT_LABELS: Record<string, string> = {
+  'Full payment': 'Full',
+  'DP 50 / 50': 'Split',
+  '3 installments': 'Installment',
+};
+
 const PRESET_SCHEMES: Record<string, [string, number][]> = {
   'Full payment': [['Full payment', 100]],
   'DP 50 / 50': [
@@ -492,8 +499,10 @@ export function LandingPage({
                   type="button"
                   className={`lp-chip ${schemeKey === currentScheme ? 'on' : ''}`}
                   onClick={() => handleSchemeChange(schemeKey)}
+                  aria-label={schemeKey}
                 >
-                  {schemeKey}
+                  <span className="lp-chip-long">{schemeKey}</span>
+                  <span className="lp-chip-short">{SCHEME_SHORT_LABELS[schemeKey] || schemeKey}</span>
                 </button>
               ))}
             </div>
