@@ -93,5 +93,5 @@ export function CountUp({ value, format = (n) => String(n), replayKey = 0, durat
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, replayKey, duration]);
 
-  return <span ref={elRef} />;
+  return <span ref={elRef} className="count-up" />;
 }
