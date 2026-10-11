@@ -21,7 +21,6 @@ export function ProjectDrawer() {
     handleProofUpload,
     handleCreateOrViewInvoice,
     handleAddAdditionalService,
-    handleUpdatePaymentDate,
     quotes,
     handleStartNewQuote,
     openDoc,
@@ -113,12 +112,9 @@ export function ProjectDrawer() {
                                 {item.paid ? 'Paid date:' : overdue ? 'Overdue:' : 'Due date:'}
                               </span>
                               {item.paid ? (
-                                <DatePicker
-                                  value={item.pd || ''}
-                                  onChange={(val) => handleUpdatePaymentDate(activeProject.id, item.id, val)}
-                                  placeholder="Set paid date"
-                                  className="inline-date-edit"
-                                />
+                                <span style={{ fontSize: '12px', fontWeight: 500 }}>
+                                  {item.pd ? dt(item.pd) : '—'}
+                                </span>
                               ) : (
                                 <span style={{ fontSize: '12px', fontWeight: 500, color: overdue ? 'var(--red, #ef4444)' : 'inherit' }}>
                                   {item.due ? dt(item.due) : '—'}

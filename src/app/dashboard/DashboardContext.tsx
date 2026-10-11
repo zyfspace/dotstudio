@@ -341,7 +341,6 @@ interface DashboardContextType {
     paidDate?: string
   ) => void;
   handleProofUpload: (projectId: number, planItemId: number, file: File, paidDate?: string) => Promise<void>;
-  handleUpdatePaymentDate: (projectId: number, planItemId: number, newDate: string) => void;
   handleUpdateDueDate: (projectId: number, planItemId: number, newDate: string) => void;
   handleCreateOrViewInvoice: (projectId: number, planItemId: number) => void;
   handleAddAdditionalService: (projectId: number, label: string, cost: number, due: string) => void;
@@ -1473,28 +1472,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const handleUpdatePaymentDate = (
-    projectId: number,
-    planItemId: number,
-    newDate: string
-  ) => {
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id !== projectId) return p;
-        return {
-          ...p,
-          plan: p.plan.map((item) => {
-            if (item.id !== planItemId) return item;
-            return {
-              ...item,
-              pd: newDate,
-            };
-          }),
-        };
-      })
-    );
-  };
-
   const handleUpdateDueDate = (
     projectId: number,
     planItemId: number,
@@ -1873,7 +1850,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     handleConvertQuoteToProject,
     handleTogglePaymentPaid,
     handleProofUpload,
-    handleUpdatePaymentDate,
     handleUpdateDueDate,
     handleCreateOrViewInvoice,
     handleAddAdditionalService,
