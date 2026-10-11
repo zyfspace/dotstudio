@@ -1289,32 +1289,37 @@ aside #tg {
   transform: translateX(-50%) translateY(0);
 }
 
-.bar-col:first-child .bar-tooltip {
+/* Anchor the tooltip to the bar edge facing the chart's middle so it never
+   runs off-screen (left-half bars open rightwards, right-half leftwards) */
+.bar-tooltip.tt-left {
   left: 0;
-  transform: translateX(0) translateY(4px);
+  transform: translateY(4px);
 }
-.bar-col:first-child .bar-tooltip::after {
+
+.bar-tooltip.tt-right {
+  left: auto;
+  right: 0;
+  transform: translateY(4px);
+}
+
+.bar-tooltip.tt-left::after {
   left: 18px;
   transform: none;
 }
-.bar-col:first-child:hover .bar-tooltip,
-.bar-col:first-child.hovered .bar-tooltip {
-  transform: translateX(0) translateY(0);
-}
 
-.bar-col:last-child .bar-tooltip {
-  left: auto;
-  right: 0;
-  transform: translateX(0) translateY(4px);
-}
-.bar-col:last-child .bar-tooltip::after {
+.bar-tooltip.tt-right::after {
   left: auto;
   right: 18px;
   transform: none;
 }
-.bar-col:last-child:hover .bar-tooltip,
-.bar-col:last-child.hovered .bar-tooltip {
-  transform: translateX(0) translateY(0);
+
+.bar-col:hover .bar-tooltip.tt-left,
+.bar-col.hovered .bar-tooltip.tt-left,
+.bar-tooltip.tt-left.active,
+.bar-col:hover .bar-tooltip.tt-right,
+.bar-col.hovered .bar-tooltip.tt-right,
+.bar-tooltip.tt-right.active {
+  transform: translateY(0);
 }
 
 .bar-tt-header {
