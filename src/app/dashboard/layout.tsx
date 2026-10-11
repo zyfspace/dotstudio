@@ -1,0 +1,103 @@
+'use client';
+
+import React from 'react';
+import { DashboardProvider, useDashboard } from './DashboardContext';
+import { Sidebar } from './components/Sidebar';
+import { MobileHeader } from './components/MobileHeader';
+import { MobileNav } from './components/MobileNav';
+import { ProjectDrawer } from './components/ProjectDrawer';
+import { ClientDrawer } from './components/ClientDrawer';
+import { Modals } from './components/Modals';
+import { AuthScreen } from '@/components/AuthScreen';
+import { loadStudioProfile, saveStudioProfile } from '@/lib/storage';
+
+function DashboardShell({ children }: { children: React.ReactNode }) {
+  const {
+    isMounted,
+    authUser,
+    setAuthUser,
+    authInitialMode,
+    authInitialEmail,
+    loadData,
+    theme,
+    toggleTheme,
+    setStudioProfile,
+    setProfileDraft,
+    isSidebarCollapsed,
+    activeProjectDrawerId,
+    activeClientDrawerId,
+    closeDrawer,
+  } = useDashboard();
+
+  if (!isMounted) return null;
+
+  if (!authUser) {
+    return (
+      <div key="page-auth" className="page-view-transition">
+        <AuthScreen
+          onSuccess={(user) => {
+            setAuthUser(user);
+            loadData(user.email);
+            if (user.email?.toLowerCase() === 'zyfxspace@gmail.com') {
+              const currentProfile = loadStudioProfile(user.email);
+              const updatedProfile = {
+                ...currentProfile,
+                ownerName: user.name || currentProfile.ownerName,
+                studioName: user.studioName || currentProfile.studioName,
+                email: user.email || currentProfile.email,
+              };
+              setStudioProfile(updatedProfile);
+              setProfileDraft(updatedProfile);
+              saveStudioProfile(updatedProfile, user.email);
+            } else {
+              const currentProfile = loadStudioProfile(user.email);
+              const updatedProfile = {
+                ...currentProfile,
+                ownerName: currentProfile.ownerName || user.name || '',
+                studioName: currentProfile.studioName || user.studioName || '',
+                email: currentProfile.email || user.email || '',
+              };
+              setStudioProfile(updatedProfile);
+              setProfileDraft(updatedProfile);
+              saveStudioProfile(updatedProfile, user.email);
+            }
+          }}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          initialMode={authInitialMode}
+          initialEmail={authInitialEmail}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div key="page-dashboard" className={`app page-view-transition ${isSidebarCollapsed ? 'c' : ''}`}>
+      <MobileHeader />
+      <Sidebar />
+      <main id="main">
+        {children}
+      </main>
+
+      {/* Overlay for Drawers */}
+      <div
+        className={`ov ${activeProjectDrawerId || activeClientDrawerId ? 'on' : ''}`}
+        id="ov"
+        onClick={closeDrawer}
+      />
+
+      <ProjectDrawer />
+      <ClientDrawer />
+      <Modals />
+      <MobileNav />
+    </div>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <DashboardProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </DashboardProvider>
+  );
+}

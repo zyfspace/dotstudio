@@ -13,8 +13,10 @@ import {
   signUpWithSupabase,
   verifyOtpWithSupabase,
   resendOtpWithSupabase,
+  checkAndConsumeExpiredNotice,
 } from '@/lib/auth';
 import { InteractiveAuthBg } from '@/components/InteractiveAuthBg';
+
 
 interface AuthScreenProps {
   onSuccess: (user: AuthUser) => void;
@@ -55,6 +57,13 @@ export function AuthScreen({
   const [errorPassword, setErrorPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successInfo, setSuccessInfo] = useState<{ title: string; desc: string } | null>(null);
+  const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
+
+  useEffect(() => {
+    if (checkAndConsumeExpiredNotice()) {
+      setSessionExpiredNotice(true);
+    }
+  }, []);
 
   // OTP cooldown timer
   useEffect(() => {
@@ -64,6 +73,7 @@ export function AuthScreen({
     }, 1000);
     return () => clearInterval(timer);
   }, [otpCooldown]);
+
 
   const calculatePasswordScore = (v: string): number => {
     let score = 0;
@@ -337,7 +347,29 @@ export function AuthScreen({
                       : 'Enter your email and we’ll send you a reset link.'}
                 </p>
 
+                {sessionExpiredNotice && mode === 'login' && (
+                  <div
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--line)',
+                      background: 'var(--soft)',
+                      fontSize: '12.5px',
+                      color: 'var(--fg)',
+                      marginBottom: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    <Icon name="clock" size={15} style={{ flexShrink: 0, color: 'var(--ac)' }} />
+                    <span>Sesi Anda telah berakhir setelah 24 jam tidak aktif. Silakan masuk kembali.</span>
+                  </div>
+                )}
+
                 {/* Segmented Mode Selector */}
+
                 {mode !== 'forgot' && (
                   <div className="seg">
                     <button

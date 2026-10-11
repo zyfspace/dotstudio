@@ -1,0 +1,481 @@
+'use client';
+
+import React from 'react';
+import { useDashboard, STATUS_LABELS } from '../DashboardContext';
+import { Icon } from '@/components/Icons';
+import { AutoTextarea } from '@/components/AutoTextarea';
+import { rp, sh, dt, isOverdue } from '@/lib/formatters';
+
+export function ProjectDrawer() {
+  const {
+    activeProjectDrawerId,
+    activeProject,
+    getClient,
+    getProjectPaidAmount,
+    getProjectPct,
+    getProjectStatus,
+    closeDrawer,
+    setPreviewProof,
+    uploadingItemId,
+    handleProofUpload,
+    handleCreateOrViewInvoice,
+    quotes,
+    handleStartNewQuote,
+    openDoc,
+    handleUnlinkQuoteFromProject,
+    handleLinkQuoteToProject,
+    formatQuoteNo,
+    setActiveClientDrawerId,
+    setActiveProjectDrawerId,
+    setProjects,
+    deleteArmed,
+    handleDeleteProject,
+  } = useDashboard();
+
+  return (
+    <div className={`dr ${activeProjectDrawerId ? 'on' : ''}`} id="dr">
+      {activeProject && (
+        <div>
+          {(() => {
+            const c = getClient(activeProject.c);
+            const g = getProjectPaidAmount(activeProject);
+            const b = activeProject.v - g;
+            const k = getProjectStatus(activeProject);
+            const progress = getProjectPct(activeProject);
+
+            return (
+              <>
+                <div className="dh">
+                  <div>
+                    <h2>{activeProject.name}</h2>
+                    <div className="mut">
+                      {c.name}
+                      {c.co ? ` · ${c.co}` : ''}
+                    </div>
+                  </div>
+                  <button
+                    className="ib"
+                    id="x"
+                    onClick={closeDrawer}
+                    aria-label="Close drawer"
+                  >
+                    <Icon name="x" size={18} />
+                  </button>
+                </div>
+
+                <span className={`st ${k}`}>{STATUS_LABELS[k]}</span>
+
+                <div className="big" style={{ marginTop: '14px' }}>
+                  {rp(g)}{' '}
+                  <span className="mut" style={{ fontSize: '14px' }}>
+                    of {rp(activeProject.v)}
+                  </span>
+                </div>
+
+                <div
+                  className="prog"
+                  style={{ margin: '12px 0 8px', height: '6px' }}
+                >
+                  <i style={{ width: `${progress}%` }} />
+                </div>
+
+                <div className="mut">
+                  {b > 0 ? `Remaining ${rp(b)}` : 'All payments received'}
+                </div>
+
+                {/* Payment schedule */}
+                <div className="sec" style={{ marginTop: '18px' }}>
+                  <small>Payment schedule</small>
+                  {activeProject.plan.map((item) => {
+                    const overdue = isOverdue(item.due, item.paid);
+                    return (
+                      <div key={item.id} className="ins">
+                        <div className="ih">
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="ins-title">
+                              {item.l}{' '}
+                              <span className="mut" style={{ fontWeight: 400, fontSize: '12.5px' }}>
+                                ({item.pct}%)
+                              </span>
+                            </div>
+                            <div className="ins-date-pill">
+                              <span className={overdue ? 'od' : 'mut'} style={{ fontSize: '12px' }}>
+                                {item.paid ? 'Paid date:' : overdue ? 'Overdue:' : 'Due date:'}
+                              </span>
+                              <span style={{ fontSize: '12px', fontWeight: 500, color: overdue ? 'var(--red, #ef4444)' : 'inherit' }}>
+                                {item.paid ? (item.pd ? dt(item.pd) : '—') : (item.due ? dt(item.due) : '—')}
+                              </span>
+                            </div>
+                          </div>
+                          <span className={`ins-amount ${item.paid ? 'mut' : ''}`}>
+                            {rp(item.a)}
+                          </span>
+                        </div>
+
+                        <div className="ia">
+                          {item.paid ? (
+                            <>
+                              {item.proof && item.proof.n ? (
+                                item.proof.d ? (
+                                  <button
+                                    type="button"
+                                    className="btn sm"
+                                    title={item.proof.n}
+                                    onClick={() =>
+                                      setPreviewProof({
+                                        name: item.proof!.n,
+                                        url: item.proof!.d,
+                                      })
+                                    }
+                                  >
+                                    <Icon name="file" size={14} />
+                                    Proof
+                                  </button>
+                                ) : (
+                                  <span className="mut" style={{ fontSize: '12px' }}>{item.proof.n}</span>
+                                )
+                              ) : (
+                                <span className="mut" style={{ fontSize: '12px' }}>No proof</span>
+                              )}
+                            </>
+                          ) : (
+                            <label
+                              className="btn sm pri"
+                              style={{
+                                cursor: uploadingItemId === item.id ? 'wait' : 'pointer',
+                                opacity: uploadingItemId === item.id ? 0.7 : 1,
+                              }}
+                            >
+                              <Icon name="upload" size={14} />
+                              {uploadingItemId === item.id ? 'Uploading…' : 'Add Payment Proof'}
+                              <input
+                                type="file"
+                                accept="image/*,.pdf"
+                                disabled={uploadingItemId === item.id}
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) {
+                                    handleProofUpload(activeProject.id, item.id, f);
+                                  }
+                                }}
+                              />
+                            </label>
+                          )}
+
+                          <button
+                            className="btn sm"
+                            onClick={() =>
+                              handleCreateOrViewInvoice(
+                                activeProject.id,
+                                item.id
+                              )
+                            }
+                          >
+                            <Icon name="file" size={14} />
+                            {item.inv ? 'View invoice' : 'Create invoice'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Project Details (Read-only) */}
+                <div className="sec">
+                  <small>Details</small>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '6px' }}>
+                    <div>
+                      <div className="mut" style={{ fontSize: '11.5px', marginBottom: '2px' }}>Project name</div>
+                      <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--fg)' }}>
+                        {activeProject.name}
+                      </div>
+                    </div>
+
+                    <div className="two" style={{ gap: '12px' }}>
+                      <div>
+                        <div className="mut" style={{ fontSize: '11.5px', marginBottom: '2px' }}>Value (Rp)</div>
+                        <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--fg)' }}>
+                          {rp(activeProject.v)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="mut" style={{ fontSize: '11.5px', marginBottom: '2px' }}>Billing type</div>
+                        <div style={{ fontSize: '13.5px', color: 'var(--fg)' }}>
+                          {activeProject.billingType || 'One-time'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="mut" style={{ fontSize: '11.5px', marginBottom: '2px' }}>Deadline</div>
+                      <div style={{ fontSize: '13px', color: 'var(--fg)' }}>
+                        {activeProject.due ? dt(activeProject.due) : '—'}
+                      </div>
+                    </div>
+
+                    {activeProject.desc && (
+                      <div>
+                        <div className="mut" style={{ fontSize: '11.5px', marginBottom: '4px' }}>Scope</div>
+                        <div
+                          style={{
+                            fontSize: '12.5px',
+                            lineHeight: '1.55',
+                            color: 'var(--fg)',
+                            whiteSpace: 'pre-wrap',
+                            background: 'var(--panel)',
+                            padding: '10px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--line)',
+                          }}
+                        >
+                          {activeProject.desc}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeProject.items && activeProject.items.length > 0 && (
+                      <div>
+                        <div className="mut" style={{ fontSize: '11.5px', marginBottom: '6px' }}>Cost items</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {activeProject.items.map((it, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                display: 'flex',
+                                justifySelf: 'stretch',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                fontSize: '12.5px',
+                                padding: '8px 10px',
+                                background: 'var(--panel)',
+                                borderRadius: '6px',
+                                border: '1px solid var(--line)',
+                              }}
+                            >
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0, flex: 1, paddingRight: '10px' }}>
+                                <span style={{ fontWeight: 500, color: 'var(--fg)' }}>{it.d || activeProject.name}</span>
+                                {it.type && <span className="mut" style={{ fontSize: '11px' }}>{it.type}</span>}
+                              </div>
+                              <span style={{ fontWeight: 600, color: 'var(--fg)', whiteSpace: 'nowrap' }}>
+                                {rp(+it.p || 0)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Linked Quotations & Proposals */}
+                {(() => {
+                  const linkedQuotes = quotes.filter((q) => q.pid === activeProject.id);
+                  const unlinkedQuotesForClient = quotes.filter(
+                    (q) =>
+                      (!q.pid || q.pid === 0) &&
+                      (q.cn.toLowerCase() === c.name.toLowerCase() ||
+                        (q.mail && c.mail && q.mail.toLowerCase() === c.mail.toLowerCase()) ||
+                        (q.co && c.co && q.co.toLowerCase() === c.co.toLowerCase()))
+                  );
+
+                  return (
+                    <div className="sec">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <small style={{ margin: 0 }}>Quotations &amp; Proposals ({linkedQuotes.length})</small>
+                        <button
+                          type="button"
+                          className="btn sm"
+                          onClick={() => {
+                            handleStartNewQuote(activeProject.id, activeProject.c);
+                            closeDrawer();
+                          }}
+                        >
+                          <Icon name="plus" size={13} />
+                          New quote
+                        </button>
+                      </div>
+
+                      {linkedQuotes.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {linkedQuotes.map((q) => {
+                            const quoteTotal = q.items.reduce((acc, curr) => acc + (curr.q || 1) * curr.p, 0);
+                            return (
+                              <div
+                                key={q.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  padding: '10px 12px',
+                                  background: 'var(--soft)',
+                                  borderRadius: '8px',
+                                  border: '1px solid var(--line)',
+                                  gap: '10px',
+                                }}
+                              >
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                    <span style={{ fontWeight: 500, fontSize: '13px' }}>
+                                      {formatQuoteNo(q.no, q.date, q.senderName)}
+                                    </span>
+                                    <span className={`st ${q.s === 'Accepted' ? 'Finished' : q.s === 'Sent' ? 'Progress' : 'Pending'}`} style={{ fontSize: '10.5px', padding: '1px 7px' }}>
+                                      {q.s}
+                                    </span>
+                                  </div>
+                                  <div className="mut" style={{ fontSize: '12px', marginTop: '3px' }}>
+                                    {q.title} · {rp(quoteTotal)}
+                                  </div>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                  <button
+                                    type="button"
+                                    className="btn sm"
+                                    onClick={() => {
+                                      openDoc('quo', q.id);
+                                    }}
+                                    title="View quotation"
+                                  >
+                                    <Icon name="file" size={13} />
+                                    View
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="ib"
+                                    style={{ width: '28px', height: '28px' }}
+                                    onClick={() => handleUnlinkQuoteFromProject(q.id)}
+                                    title="Unlink from project"
+                                    aria-label="Unlink quotation"
+                                  >
+                                    <Icon name="x" size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="mut" style={{ fontSize: '12.5px', padding: '2px 0' }}>
+                          No quotations linked to this project yet.
+                        </div>
+                      )}
+
+                      {unlinkedQuotesForClient.length > 0 && (
+                        <div style={{ marginTop: '10px', padding: '10px 12px', background: 'var(--bg)', borderRadius: '8px', border: '1px dashed var(--line)' }}>
+                          <div className="mut" style={{ fontSize: '11.5px', marginBottom: '6px' }}>
+                            Attach existing standalone quotation from {c.name}:
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <select
+                              className="in"
+                              style={{ fontSize: '12.5px', height: '30px' }}
+                              defaultValue=""
+                              id={`attach-quote-${activeProject.id}`}
+                            >
+                              <option value="" disabled>Select quotation...</option>
+                              {unlinkedQuotesForClient.map((uq) => (
+                                <option key={uq.id} value={uq.id}>
+                                  {formatQuoteNo(uq.no, uq.date, uq.senderName)} — {uq.title}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              className="btn sm pri"
+                              style={{ height: '30px', flexShrink: 0 }}
+                              onClick={() => {
+                                const sel = document.getElementById(`attach-quote-${activeProject.id}`) as HTMLSelectElement;
+                                if (sel && sel.value) {
+                                  handleLinkQuoteToProject(+sel.value, activeProject.id);
+                                }
+                              }}
+                            >
+                              Attach
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Client info in drawer */}
+                <div className="sec">
+                  <small>Client</small>
+                  <div className="drawer-client-box">
+                    <div className="kv">
+                      <Icon name="users" />
+                      <b>{c.name}</b>
+                    </div>
+                    {c.co && (
+                      <div className="kv">
+                        <Icon name="bld" />
+                        <span>{c.co}</span>
+                      </div>
+                    )}
+                    {c.mail && (
+                      <div className="kv">
+                        <Icon name="mail" />
+                        <span>{c.mail}</span>
+                      </div>
+                    )}
+                    {c.tel && (
+                      <div className="kv">
+                        <Icon name="phone" />
+                        <span>{c.tel}</span>
+                      </div>
+                    )}
+                    <button
+                      className="btn sm"
+                      id="vc"
+                      style={{ alignSelf: 'flex-start', marginTop: '4px' }}
+                      onClick={() => {
+                        setActiveClientDrawerId(activeProject.c);
+                        setActiveProjectDrawerId(null);
+                      }}
+                    >
+                      View client profile
+                    </button>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div className="sec">
+                  <small>Notes</small>
+                  <div className="f" style={{ margin: 0 }}>
+                    <AutoTextarea
+                      id="nt"
+                      placeholder="Reminders, links…"
+                      value={activeProject.n}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setProjects((prev) =>
+                          prev.map((p) =>
+                            p.id === activeProject.id
+                              ? { ...p, n: val }
+                              : p
+                          )
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Delete button */}
+                <button
+                  className={`btn danger ${deleteArmed ? 'arm' : ''}`}
+                  id="del"
+                  onClick={() => handleDeleteProject(activeProject.id)}
+                >
+                  <Icon name="trash" />
+                  {deleteArmed ? 'Click again to confirm' : 'Delete project'}
+                </button>
+              </>
+            );
+          })()}
+        </div>
+      )}
+    </div>
+  );
+}

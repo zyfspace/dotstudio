@@ -55,14 +55,98 @@ export const saveRegisteredUsers = (users: Array<{ user: AuthUser; passwordHash:
   }
 };
 
-// Check if there is an active logged-in session
+export const SESSION_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours strict inactivity limit
+export const SESSION_EXPIRED_FLAG = 'studio-session-expired';
+
+export interface StoredSession {
+  user: AuthUser;
+  lastActive: number;
+  expiresAt: number;
+}
+
+// Clear all active sessions across localStorage and Supabase
+export const clearAuthSession = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(AUTH_SESSION_KEY);
+    import('./supabase').then(({ supabase }) => {
+      supabase.auth.signOut().catch(() => {});
+    });
+  } catch (e) {
+    console.error('Failed to clear auth session', e);
+  }
+};
+
+// Touch session on activity to renew the 24-hour inactivity window
+export const touchSession = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem(AUTH_SESSION_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const user: AuthUser = parsed.user || (parsed.email ? parsed : null);
+    if (!user) return;
+
+    const now = Date.now();
+    const payload: StoredSession = {
+      user,
+      lastActive: now,
+      expiresAt: now + SESSION_EXPIRY_MS,
+    };
+    localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(payload));
+  } catch (e) {
+    console.error('Failed to touch auth session', e);
+  }
+};
+
+// Check if previous session was terminated due to timeout
+export const checkAndConsumeExpiredNotice = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const flag = sessionStorage.getItem(SESSION_EXPIRED_FLAG);
+    if (flag === '1') {
+      sessionStorage.removeItem(SESSION_EXPIRED_FLAG);
+      return true;
+    }
+  } catch (e) {
+    console.error('Failed to check expired notice', e);
+  }
+  return false;
+};
+
+// Check if there is an active logged-in session (strictly verifies 24-hour inactivity)
 export const getActiveSession = (): AuthUser | null => {
   if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem(AUTH_SESSION_KEY);
-    if (raw) {
-      const user = JSON.parse(raw);
-      if (user && user.email) return user;
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    const now = Date.now();
+
+    // Check if session has lastActive/expiresAt timestamps
+    if (parsed.lastActive && parsed.expiresAt) {
+      const isExpired = now > parsed.expiresAt || (now - parsed.lastActive > SESSION_EXPIRY_MS);
+      if (isExpired) {
+        clearAuthSession();
+        sessionStorage.setItem(SESSION_EXPIRED_FLAG, '1');
+        return null;
+      }
+      // Session is valid; refresh lastActive
+      touchSession();
+      return parsed.user;
+    }
+
+    // Legacy format upgrade (direct AuthUser without timestamps)
+    if (parsed.email) {
+      const user = parsed as AuthUser;
+      const payload: StoredSession = {
+        user,
+        lastActive: now,
+        expiresAt: now + SESSION_EXPIRY_MS,
+      };
+      localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(payload));
+      return user;
     }
   } catch (e) {
     console.error('Failed to load auth session', e);
@@ -70,19 +154,26 @@ export const getActiveSession = (): AuthUser | null => {
   return null;
 };
 
-// Set logged-in session
+// Set logged-in session with 24-hour expiration
 export const setAuthSession = (user: AuthUser | null, rememberMe: boolean = true) => {
   if (typeof window === 'undefined') return;
   try {
     if (user && rememberMe) {
-      localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(user));
+      const now = Date.now();
+      const payload: StoredSession = {
+        user,
+        lastActive: now,
+        expiresAt: now + SESSION_EXPIRY_MS,
+      };
+      localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(payload));
     } else {
-      localStorage.removeItem(AUTH_SESSION_KEY);
+      clearAuthSession();
     }
   } catch (e) {
     console.error('Failed to set auth session', e);
   }
 };
+
 
 // Login verification
 export const verifyLogin = (

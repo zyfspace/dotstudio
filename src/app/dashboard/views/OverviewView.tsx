@@ -1,0 +1,258 @@
+'use client';
+
+import React from 'react';
+import { useDashboard } from '../DashboardContext';
+import { Icon } from '@/components/Icons';
+import { IncomeChart } from '@/components/IncomeChart';
+import { sh, dt, isOverdue, today } from '@/lib/formatters';
+
+export function OverviewView() {
+  const {
+    isProfileComplete,
+    handleOpenSettingsToCompleteProfile,
+    overviewMetrics,
+    chartMode,
+    projects,
+    paidPayments,
+    setChartMode,
+    chartSelectedMonth,
+    setChartSelectedMonth,
+    chartCustomRange,
+    setChartCustomRange,
+    chartCustomRangePreset,
+    setChartCustomRangePreset,
+    getClient,
+    setActiveProjectDrawerId,
+    getProjectPct,
+    openDoc,
+    handleStartNewProject,
+  } = useDashboard();
+
+  return (
+    <div>
+      <div className="top">
+        <h1>Overview</h1>
+        <button
+          className="btn pri"
+          id="add"
+          onClick={() => handleStartNewProject()}
+        >
+          <Icon name="plus" />
+          New project
+        </button>
+      </div>
+
+      {!isProfileComplete && (
+        <div className="profile-setup-banner">
+          <div className="profile-setup-icon">
+            <Icon name="settings" size={18} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--fg)' }}>
+              Complete Studio Profile &amp; Bank Details
+            </div>
+            <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '2px 0 0', lineHeight: 1.4 }}>
+              Set up your studio name, contact info, and bank account in Settings to generate official invoices and quotations.
+            </p>
+          </div>
+          <button
+            className="btn sm pri"
+            onClick={handleOpenSettingsToCompleteProfile}
+          >
+            <Icon name="settings" size={14} style={{ marginRight: '4px' }} />
+            Set up now
+          </button>
+        </div>
+      )}
+
+      {/* Stats 4-cols */}
+      <div className="stats">
+        <div className="stat">
+          <div className="stat-info">
+            <span>Total projects</span>
+            <b>{overviewMetrics.totalProjects}</b>
+          </div>
+          <div className="stat-icon">
+            <Icon name="briefcase" size={18} />
+          </div>
+        </div>
+        <div className="stat">
+          <div className="stat-info">
+            <span>Total revenue</span>
+            <b>{sh(overviewMetrics.totalReceived)}</b>
+          </div>
+          <div className="stat-icon">
+            <Icon name="coins" size={18} />
+          </div>
+        </div>
+        <div className="stat">
+          <div className="stat-info">
+            <span>Outstanding</span>
+            <b>{sh(overviewMetrics.totalOutstanding)}</b>
+          </div>
+          <div className="stat-icon">
+            <Icon name="clock" size={18} />
+          </div>
+        </div>
+        <div className="stat">
+          <div className="stat-info">
+            <div className="stat-label-wrap">
+              <span>{chartMode === '6m' ? 'This month' : chartMode === 'month' ? 'Selected month' : 'Period value'}</span>
+              <div className="stat-help-btn" tabIndex={0} role="note" aria-label="Estimated monthly deal value">
+                <Icon name="help" size={13} />
+                <div className="stat-tooltip">
+                  Total estimated revenue from all projects booked or active this month.
+                </div>
+              </div>
+            </div>
+            <b>{sh(overviewMetrics.thisMonthVal)}</b>
+          </div>
+          <div className="stat-icon">
+            <Icon name="cal" size={18} />
+          </div>
+        </div>
+      </div>
+
+      {/* Middle Cols */}
+      <div className="cols">
+        {/* Income chart */}
+        <IncomeChart
+          projects={projects}
+          paidPayments={paidPayments}
+          mode={chartMode}
+          onModeChange={setChartMode}
+          selectedMonth={chartSelectedMonth}
+          onSelectedMonthChange={setChartSelectedMonth}
+          customRange={chartCustomRange}
+          onCustomRangeChange={setChartCustomRange}
+          customRangePreset={chartCustomRangePreset}
+          onCustomRangePresetChange={setChartCustomRangePreset}
+        />
+
+        {/* Upcoming payments */}
+        <div className="panel">
+          <h3>Upcoming payments</h3>
+          {overviewMetrics.upcoming.length > 0 ? (
+            overviewMetrics.upcoming.map((x) => {
+              const c = getClient(x.p.c);
+              const overdue = isOverdue(x.i.due, x.i.paid);
+              return (
+                <div
+                  key={x.i.id}
+                  className="lr"
+                  onClick={() => setActiveProjectDrawerId(x.p.id)}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'stretch' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{x.p.name}</span>
+                    <b style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(x.i.a)}</b>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                    <span className="mut">{c.name || '—'}</span>
+                    <span className={overdue ? 'od' : 'mut'} style={{ flexShrink: 0 }}>
+                      {overdue ? 'overdue ' : 'due '}
+                      {dt(x.i.due)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="mut">All settled.</div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Cols */}
+      <div className="cols">
+        {/* Active projects */}
+        <div className="panel">
+          <h3>Active projects</h3>
+          {overviewMetrics.activeProjs.length > 0 ? (
+            overviewMetrics.activeProjs.map((x) => {
+              const { p, n } = x;
+              const c = getClient(p.c);
+              const progress = getProjectPct(p);
+              const overdue = n ? isOverdue(n.due, n.paid) : false;
+              return (
+                <div
+                  key={p.id}
+                  className="lr project-lr-item"
+                  onClick={() => setActiveProjectDrawerId(p.id)}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'stretch' }}
+                >
+                  {/* Line 1: Title and Value */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{p.name}</span>
+                    <b style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(p.v)}</b>
+                  </div>
+
+                  {/* Line 2: Client name on left, Next due date on right */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                    <span className="mut" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {c.name || '—'}
+                    </span>
+                    {n && (
+                      <span className={overdue ? 'od' : 'mut'} style={{ flexShrink: 0 }}>
+                        {n.l} · {overdue ? 'overdue ' : 'due '}
+                        {dt(n.due).replace(/ \d{4}$/, '')}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Line 3: Full-width progress track */}
+                  <div className="pg" style={{ marginTop: '2px' }}>
+                    <div className="prog" style={{ height: '4px' }}>
+                      <i style={{ width: `${progress}%` }} />
+                    </div>
+                    <span className="mut" style={{ fontSize: '11.5px', fontVariantNumeric: 'tabular-nums' }}>{progress}%</span>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="mut">No active projects.</div>
+          )}
+        </div>
+
+        {/* Open quotations */}
+        <div className="panel">
+          <h3>Open quotations</h3>
+          {overviewMetrics.openQuotes.length > 0 ? (
+            overviewMetrics.openQuotes.map((x) => {
+              const expired = x.valid && x.valid < today();
+              const quoteTotal = x.items.reduce(
+                (acc, curr) => acc + curr.q * curr.p,
+                0
+              );
+              return (
+                <div
+                  key={x.id}
+                  className="lr"
+                  onClick={() => openDoc('quo', x.id)}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'stretch' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{x.title}</span>
+                    <b style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(quoteTotal)}</b>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                    <span className="mut">
+                      {x.cn || '—'} · <span style={{ textTransform: 'capitalize' }}>{x.s}</span>
+                    </span>
+                    <span className={expired ? 'od' : 'mut'} style={{ flexShrink: 0 }}>
+                      {expired ? 'expired ' : 'until '}
+                      {dt(x.valid).replace(/ \d{4}$/, '')}
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="mut">No open quotations.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -56,6 +56,21 @@ Defined via CSS variables and dynamic `color-mix`:
 - **RHYTHM**: 2 (Structured tables, modular detail drawers, clean invoice/quotation printable sheets)
 - **MOTION**: 1 (Fast transitions, strictly functional feedback)
 
+
+## Route Architecture & Nested Slugs
+- `/dashboard` — Overview dashboard with metrics, income chart, upcoming payments, active projects, and open quotes.
+- `/dashboard/projects` — Projects list with status filters, search, sorting, and project detail drawer.
+- `/dashboard/clients` — Clients directory with financial summaries, contact details, and client drawer.
+- `/dashboard/payments` — All payment installments, proof previews, and status updates.
+- `/dashboard/invoices` — Grouped invoice list with company accordions and printable invoice triggers.
+- `/dashboard/quotations` — Grouped quotations list with company accordions, project links, and status triggers.
+- `/dashboard/settings` — Studio profile, security PIN protection, banking info, and data management.
+- `/dashboard/new` — New project creation form with reference quotation selector and live invoice preview.
+- `/dashboard/quote` — New quotation creation form with live paper quotation preview.
+- `/dashboard/doc` — Document viewer (`?t=inv|quo&a=...&b=...`) with printable A4 sheet, PDF export, and convert actions.
+
+Global state (`clients`, `projects`, `quotes`, `studioProfile`, drawer states, Supabase mutations) is managed in `DashboardContext` inside `src/app/dashboard/layout.tsx`. Navigating between routes preserves state and avoids redundant network fetches. Browser history (back/forward) and direct page refreshes work seamlessly.
+
 ## Quotation & Project Relational Architecture
 - **Standalone Quotations**: Quotations can exist independently for proposals / inquiries without requiring an existing project.
 - **Relational Linking**:
@@ -63,3 +78,5 @@ Defined via CSS variables and dynamic `color-mix`:
   - `New Project`: Optional reference selector to import title, value, cost items, and scope directly from any quotation.
   - `Project Drawer`: Dedicated "Quotations & Proposals" section with document viewer, status indicators, "+ New quote" trigger, unlink, and quick attach for client's standalone quotes.
   - `Quotations List`: Shows linked project badge with one-click trigger to the project detail drawer, or "Standalone" indicator.
+
+

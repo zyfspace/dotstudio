@@ -115,14 +115,17 @@ b, th {
   font-weight: 500;
 }
 
-button {
+button,
+a {
   cursor: pointer;
   color: inherit;
   background: none;
   border: 0;
   font-size: inherit;
   font-family: inherit;
+  text-decoration: none;
 }
+
 
 .i {
   flex: none;
@@ -199,17 +202,22 @@ aside .nav {
   width: 100%;
   transition: 0.15s ease;
   white-space: nowrap;
+  text-decoration: none;
 }
 
-aside .nav:hover {
+aside .nav:hover,
+aside .nav:focus,
+aside .nav:visited {
   background: var(--soft);
   color: var(--fg);
+  text-decoration: none;
 }
 
 aside .nav.on {
   background: var(--soft);
   color: var(--fg);
   font-weight: 500;
+  text-decoration: none;
 }
 
 aside .nav em {
@@ -222,9 +230,11 @@ aside .nav em {
   padding: 1px 5px;
   border-radius: 4px;
   line-height: 1.2;
+  text-decoration: none;
 }
 
 .ib {
+
   display: inline-flex;
   align-items: center;
   justify-content: center;

@@ -1,0 +1,280 @@
+'use client';
+
+import React from 'react';
+import { useDashboard } from '../DashboardContext';
+import { Icon } from '@/components/Icons';
+import { rp, dt, isOverdue } from '@/lib/formatters';
+
+export function InvoicesView() {
+  const {
+    allPayments,
+    searchQuery,
+    setSearchQuery,
+    searchInputRef,
+    getClient,
+    formatInvoiceNo,
+    collapsedInvoiceGroups,
+    setCollapsedInvoiceGroups,
+    openDoc,
+  } = useDashboard();
+
+  const q = searchQuery.toLowerCase();
+  const invoicesList = allPayments
+    .filter((x) => {
+      if (!x.i.inv) return false;
+      const c = getClient(x.p.c);
+      const invFormattedNo = formatInvoiceNo(x.i.inv.no, x.i.inv.date);
+      return (
+        (invFormattedNo + x.p.name + c.name + (c.co || ''))
+          .toLowerCase()
+          .indexOf(q) > -1
+      );
+    })
+    .sort((a, b) =>
+      a.i.inv!.date < b.i.inv!.date ? 1 : -1
+    );
+
+  // Group by Company / Business Name
+  const grouped: { company: string; items: typeof invoicesList }[] = [];
+  const companyMap = new Map<string, typeof invoicesList>();
+
+  invoicesList.forEach((item) => {
+    const c = getClient(item.p.c);
+    const comp = (c.co && c.co.trim()) ? c.co.trim() : (c.name && c.name.trim() ? `${c.name} (Individual)` : 'General / Unassigned');
+    if (!companyMap.has(comp)) {
+      companyMap.set(comp, []);
+    }
+    companyMap.get(comp)!.push(item);
+  });
+
+  companyMap.forEach((items, company) => {
+    grouped.push({ company, items });
+  });
+
+  return (
+    <div>
+      <div className="top">
+        <h1>Invoices</h1>
+        <label className="search">
+          <Icon name="search" />
+          <input
+            ref={searchInputRef}
+            id="q"
+            placeholder="Search…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            autoComplete="off"
+          />
+          <kbd>/</kbd>
+        </label>
+      </div>
+
+      {!invoicesList.length ? (
+        <div className="empty">No invoices found.</div>
+      ) : (
+        <div>
+          {grouped.map(({ company, items }) => {
+            const isCollapsed = !!collapsedInvoiceGroups[company];
+            const totalGroupAmount = items.reduce((acc, curr) => acc + curr.i.a, 0);
+
+            return (
+              <div key={company} className="accordion-group">
+                <div
+                  className="accordion-header"
+                  onClick={() =>
+                    setCollapsedInvoiceGroups((prev) => ({
+                      ...prev,
+                      [company]: !prev[company],
+                    }))
+                  }
+                >
+                  <div className="accordion-title-box">
+                    <div className="accordion-company-icon">
+                      <Icon name="bld" size={15} />
+                    </div>
+                    <span className="accordion-company-name">{company}</span>
+                    <span className="accordion-count-badge">
+                      {items.length} {items.length === 1 ? 'invoice' : 'invoices'}
+                    </span>
+                  </div>
+                  <div className="accordion-meta-box">
+                    <span className="accordion-total-amount">
+                      {rp(totalGroupAmount)}
+                    </span>
+                    <span className={`accordion-chevron ${isCollapsed ? '' : 'expanded'}`}>
+                      <Icon name="chevron" size={15} />
+                    </span>
+                  </div>
+                </div>
+
+                {!isCollapsed && (
+                  <div className="accordion-body">
+                    <div className="tw-desktop-only">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>No.</th>
+                            <th>Date</th>
+                            <th>Project</th>
+                            <th>Client</th>
+                            <th>Status</th>
+                            <th className="r">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.map((x) => {
+                            const c = getClient(x.p.c);
+                            const overdue = isOverdue(x.i.due, x.i.paid);
+                            return (
+                              <tr
+                                key={x.i.id}
+                                onClick={() =>
+                                  openDoc('inv', x.p.id, x.i.id)
+                                }
+                              >
+                                <td>{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</td>
+                                <td className="mut">{dt(x.i.inv!.date)}</td>
+                                <td>
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>{x.p.name}</span>
+                                    {x.i.l && (
+                                      <>
+                                        <span className="mut" style={{ opacity: 0.45, userSelect: 'none' }}>·</span>
+                                        <span className="mut" style={{ fontSize: '13px' }}>{x.i.l}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                                <td>{c.name}</td>
+                                <td>
+                                  {x.i.paid ? (
+                                    <span
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        color: '#10b981',
+                                        fontSize: '13px',
+                                        fontWeight: 500,
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          width: '15px',
+                                          height: '15px',
+                                          borderRadius: '50%',
+                                          background: 'rgba(16, 185, 129, 0.15)',
+                                          border: '1px solid rgba(16, 185, 129, 0.4)',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          flexShrink: 0,
+                                        }}
+                                      >
+                                        <svg
+                                          width="9"
+                                          height="9"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="3"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        >
+                                          <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                      </span>
+                                      Paid
+                                    </span>
+                                  ) : overdue ? (
+                                    <span
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        color: '#ef4444',
+                                        fontSize: '13px',
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          width: '7px',
+                                          height: '7px',
+                                          borderRadius: '50%',
+                                          background: '#ef4444',
+                                          display: 'inline-block',
+                                          flexShrink: 0,
+                                        }}
+                                      />
+                                      Overdue
+                                    </span>
+                                  ) : (
+                                    <span
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        color: 'var(--mut)',
+                                        fontSize: '13px',
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          width: '7px',
+                                          height: '7px',
+                                          borderRadius: '50%',
+                                          border: '1.5px solid var(--mut)',
+                                          background: 'transparent',
+                                          display: 'inline-block',
+                                          flexShrink: 0,
+                                        }}
+                                      />
+                                      Unpaid
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="r">{rp(x.i.a)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile Invoices Card List */}
+                    <div className="mob-card-list">
+                      {items.map((x) => {
+                        const overdue = isOverdue(x.i.due, x.i.paid);
+                        return (
+                          <div
+                            key={x.i.id}
+                            className="mob-item-card"
+                            onClick={() => openDoc('inv', x.p.id, x.i.id)}
+                          >
+                            <div className="mob-item-top">
+                              <div>
+                                <div className="mob-item-title">{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</div>
+                                <div className="mob-item-sub">{x.p.name} · {x.i.l}</div>
+                              </div>
+                              <span style={{ fontSize: '12px', fontWeight: 500, color: x.i.paid ? '#10b981' : overdue ? '#ef4444' : 'var(--mut)' }}>
+                                {x.i.paid ? 'Paid' : overdue ? 'Overdue' : 'Unpaid'}
+                              </span>
+                            </div>
+                            <div className="mob-item-bottom">
+                              <span className="mut">{dt(x.i.inv!.date)}</span>
+                              <span className="mob-item-val">{rp(x.i.a)}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
