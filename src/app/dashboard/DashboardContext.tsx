@@ -1563,7 +1563,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       return;
     }
     setProjects((prev) => prev.filter((p) => p.id !== projectId));
-    deleteProjectFromSupabase(projectId);
+    deleteProjectFromSupabase(projectId, authUser?.email);
     closeDrawer();
   };
 
@@ -1573,13 +1573,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       return;
     }
     setClients((prev) => prev.filter((c) => c.id !== clientId));
-    deleteClientFromSupabase(clientId);
+    deleteClientFromSupabase(clientId, authUser?.email);
     closeDrawer();
   };
 
   const handleDeleteQuote = (quoteId: number) => {
     setQuotes((prev) => prev.filter((q) => q.id !== quoteId));
-    deleteQuoteFromSupabase(quoteId);
+    deleteQuoteFromSupabase(quoteId, authUser?.email);
     router.push('/dashboard/quotations');
   };
 
