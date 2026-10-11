@@ -5146,3 +5146,12 @@ input[type="file"] {
     box-sizing: border-box;
   }
 }
+
+/* The count-up number is a span inside the value; stat label rules such as
+   `.stat span` (12px, muted) and the global weight reset must not reach it */
+.count-up,
+.stat b > .count-up {
+  font: inherit !important;
+  color: inherit !important;
+  letter-spacing: inherit !important;
+}
