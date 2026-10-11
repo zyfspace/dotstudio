@@ -88,7 +88,7 @@ export function DocView() {
 
     return (
       <div>
-        <div className="top noprint">
+        <div className="top doc-top noprint">
           <button
             className="ib"
             id="bk"
@@ -97,10 +97,11 @@ export function DocView() {
           >
             <Icon name="back" size={18} />
           </button>
-          <h1>Invoice {formatInvoiceNo(i.inv.no, i.inv.date)}</h1>
-          <button className="btn pri" id="pt" onClick={() => window.print()}>
+          <h1><span className="doc-kind">Invoice </span>{formatInvoiceNo(i.inv.no, i.inv.date)}</h1>
+          <button className="btn pri" id="pt" onClick={() => window.print()} aria-label="Print / PDF">
             <Icon name="print" />
-            Print / PDF
+            <span className="pt-long">Print / PDF</span>
+            <span className="pt-short">Print</span>
           </button>
         </div>
 
@@ -367,7 +368,7 @@ export function DocView() {
 
   return (
     <div>
-      <div className="top noprint">
+      <div className="top doc-top noprint">
         <button
           className="ib"
           id="bk"
@@ -376,7 +377,8 @@ export function DocView() {
         >
           <Icon name="back" size={18} />
         </button>
-        <h1>Quotation {formatQuoteNo(q.no, q.date, qSenderName)}</h1>
+        <h1><span className="doc-kind">Quotation </span>{formatQuoteNo(q.no, q.date, qSenderName)}</h1>
+        <span className="doc-top-break" aria-hidden="true" />
 
         {q.pid > 0 && projects.some((p) => p.id === q.pid) ? (
           <button
@@ -416,9 +418,10 @@ export function DocView() {
           </button>
         )}
 
-        <button className="btn pri" id="pt" onClick={() => window.print()}>
+        <button className="btn pri" id="pt" onClick={() => window.print()} aria-label="Print / PDF">
           <Icon name="print" />
-          Print / PDF
+          <span className="pt-long">Print / PDF</span>
+          <span className="pt-short">Print</span>
         </button>
 
         <button
