@@ -5031,3 +5031,72 @@ input[type="file"] {
     transition: none !important;
   }
 }
+
+/* Document header: title and Print share one row on phones; any other
+   actions (quotations) drop to the next row */
+.doc-top .pt-short,
+.doc-top .doc-top-break {
+  display: none;
+}
+
+/* The global * rule resets weight, so the type label must inherit the title's */
+.doc-top .doc-kind {
+  font-weight: inherit;
+}
+
+@media (max-width: 768px) {
+  .doc-top {
+    flex-wrap: wrap;
+    column-gap: 8px;
+  }
+
+  .doc-top > * {
+    order: 2;
+  }
+
+  .doc-top > #bk,
+  .doc-top > h1,
+  .doc-top > #pt {
+    order: 0;
+  }
+
+  .doc-top > h1 {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 15px !important;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .doc-top > #pt {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .doc-top .pt-long {
+    display: none;
+  }
+
+  .doc-top .pt-short {
+    display: inline;
+  }
+
+  .doc-top .doc-top-break {
+    display: block;
+    order: 1;
+    flex-basis: 100%;
+    height: 0;
+  }
+}
+
+/* Very narrow phones: the breadcrumb already names the document type, so
+   drop it from the title and keep the number whole */
+@media (max-width: 360px) {
+  .doc-top .doc-kind {
+    display: none;
+  }
+}
