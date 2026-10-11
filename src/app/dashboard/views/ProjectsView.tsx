@@ -149,12 +149,16 @@ export function ProjectsView() {
                       onClick={() => setActiveProjectDrawerId(p.id)}
                     >
                       <td>
-                        <AdditionalEyebrow project={p} />
-                        {p.name}
+                        <span className="proj-name">
+                          {p.name}
+                          <AddOnChip project={p} />
+                        </span>
                       </td>
                       <td>
-                        <span>{c.name}</span>
-                        {c.co && <span className="mut"> · {c.co}</span>}
+                        <div className="cell-two">
+                          <span>{c.name}</span>
+                          {c.co && <span className="mut">{c.co}</span>}
+                        </div>
                       </td>
                       <td>
                         <span className={`st ${st}`}>
@@ -193,8 +197,10 @@ export function ProjectsView() {
                 >
                   <div className="mob-item-top">
                     <div style={{ minWidth: 0 }}>
-                      <AdditionalEyebrow project={p} />
-                      <div className="mob-item-title">{p.name}</div>
+                      <div className="mob-item-title proj-name">
+                        {p.name}
+                        <AddOnChip project={p} />
+                      </div>
                       <div className="mob-item-sub">
                         {c.name}{c.co ? ` · ${c.co}` : ''}
                       </div>
@@ -230,12 +236,13 @@ export function ProjectsView() {
 }
 
 // Marks a main project that has additional services; details live in its drawer.
-function AdditionalEyebrow({ project }: { project: Project }) {
+function AddOnChip({ project }: { project: Project }) {
   const count = (project.items || []).filter((it) => it.type === 'Additional').length;
   if (!count) return null;
   return (
-    <span className="proj-eyebrow">
-      Additional services{count > 1 ? ` · ${count}` : ''}
+    <span className="addon-chip" title={`${count} additional service${count > 1 ? 's' : ''}`}>
+      <Icon name="plus" size={10} />
+      {count} add-on{count > 1 ? 's' : ''}
     </span>
   );
 }
