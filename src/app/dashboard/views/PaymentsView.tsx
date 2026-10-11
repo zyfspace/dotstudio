@@ -89,7 +89,7 @@ export function PaymentsView() {
                       <td>{c.name}</td>
                       <td>
                         {x.i.l}{' '}
-                        <span className="mut">{x.i.pct}%</span>
+                        {x.i.pct > 0 && <span className="mut">{x.i.pct}%</span>}
                       </td>
                       <td className="mut">
                         {x.i.proof && x.i.proof.n ? (
@@ -160,7 +160,7 @@ export function PaymentsView() {
                   <div className="mob-item-top">
                     <div>
                       <div className="mob-item-title">{x.p.name}</div>
-                      <div className="mob-item-sub">{c.name} · {x.i.l} ({x.i.pct}%)</div>
+                      <div className="mob-item-sub">{c.name} · {x.i.l}{x.i.pct > 0 ? ` (${x.i.pct}%)` : ''}</div>
                     </div>
                     <span className="mob-item-val">{rp(x.i.a)}</span>
                   </div>
