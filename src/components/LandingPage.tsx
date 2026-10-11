@@ -111,6 +111,22 @@ export function LandingPage({
   const stageRef = useRef<HTMLDivElement | null>(null);
   const rigRef = useRef<HTMLDivElement | null>(null);
   const toastRef = useRef<HTMLDivElement | null>(null);
+  // Features become a swipeable row on phones; track the card in view for the dots
+  const featureRowRef = useRef<HTMLDivElement | null>(null);
+  const [activeFeature, setActiveFeature] = useState(0);
+
+  const handleFeatureScroll = () => {
+    const row = featureRowRef.current;
+    if (!row || !row.firstElementChild) return;
+    const step = (row.firstElementChild as HTMLElement).offsetWidth + 12;
+    setActiveFeature(Math.min(FEATURES.length - 1, Math.round(row.scrollLeft / step)));
+  };
+
+  const scrollToFeature = (index: number) => {
+    const row = featureRowRef.current;
+    const card = row?.children[index] as HTMLElement | undefined;
+    if (row && card) row.scrollTo({ left: card.offsetLeft - row.offsetLeft - parseFloat(getComputedStyle(row).paddingLeft || '0'), behavior: 'smooth' });
+  };
   const flowRef = useRef<HTMLDivElement | null>(null);
   const heroProgressRef = useRef<HTMLElement | null>(null);
 
@@ -588,7 +604,7 @@ export function LandingPage({
           <h2 className="lp-t lp-rv" style={{ transitionDelay: '.05s' }}>
             Everything a payment-driven practice needs. Nothing it doesn’t.
           </h2>
-          <div className="lp-grid">
+          <div className="lp-grid" ref={featureRowRef} onScroll={handleFeatureScroll}>
             {FEATURES.map((feat, i) => (
               <div
                 key={feat.title}
@@ -601,6 +617,19 @@ export function LandingPage({
                 <h3>{feat.title}</h3>
                 <p>{feat.desc}</p>
               </div>
+            ))}
+          </div>
+          <div className="lp-grid-dots" role="tablist" aria-label="Features">
+            {FEATURES.map((feat, i) => (
+              <button
+                key={feat.title}
+                type="button"
+                role="tab"
+                aria-selected={i === activeFeature}
+                aria-label={feat.title}
+                className={i === activeFeature ? 'on' : ''}
+                onClick={() => scrollToFeature(i)}
+              />
             ))}
           </div>
         </div>

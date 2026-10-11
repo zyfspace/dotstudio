@@ -1524,3 +1524,86 @@ body:has(.lp-root) {
     display: inline;
   }
 }
+
+.lp-root .lp-grid-dots {
+  display: none;
+}
+
+/* Phones: features become one swipeable row with the next card peeking in,
+   instead of six stacked cards. The row bleeds to the screen edges. */
+@media (max-width: 640px) {
+  .lp-root .lp-grid {
+    --gutter: 18px;
+    display: flex;
+    gap: 12px;
+    margin: 28px calc(-1 * var(--gutter)) 0;
+    padding: 0 var(--gutter);
+    scroll-padding: 0 var(--gutter);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    border: 0;
+    border-radius: 0;
+    scrollbar-width: none;
+  }
+
+  .lp-root .lp-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lp-root .lp-fc {
+    flex: 0 0 82%;
+    scroll-snap-align: start;
+    border: 1px solid var(--line) !important;
+    border-radius: 14px;
+  }
+
+  .lp-root .lp-fc:last-child {
+    border-bottom: 1px solid var(--line) !important;
+  }
+
+  .lp-root .lp-fc .lp-ic {
+    margin-bottom: 20px;
+  }
+
+  .lp-root .lp-grid-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 16px;
+  }
+
+  .lp-root .lp-grid-dots button {
+    width: 6px;
+    height: 6px;
+    padding: 0;
+    border: 0;
+    border-radius: 99px;
+    background: var(--line);
+    cursor: pointer;
+    transition: width 0.25s ease, background 0.25s ease;
+  }
+
+  .lp-root .lp-grid-dots button.on {
+    width: 18px;
+    background: var(--fg);
+  }
+
+  /* Small screens move the nav button off the top edge */
+  .lp-root .lp-nav .lp-wrap {
+    height: 64px;
+  }
+}
+
+@media (max-width: 380px) {
+  .lp-root .lp-grid {
+    --gutter: 14px;
+  }
+}
+
+/* Installed/standalone mode: keep the sticky nav clear of the status bar */
+.lp-root .lp-nav {
+  top: 0;
+  padding-top: env(safe-area-inset-top, 0px);
+}
