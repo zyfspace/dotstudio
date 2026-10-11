@@ -651,19 +651,20 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
           </span>
         </div>
 
+        {/* Refresh sits in the top-right corner; CSS orders it after the filter */}
+        <button
+          className={`chart-refresh-btn income-refresh ${isRefreshing ? 'spinning' : ''}`}
+          onClick={handleRefresh}
+          type="button"
+          title="Refresh chart animation"
+          aria-label="Refresh chart"
+        >
+          <Icon name="refresh" size={14} />
+        </button>
+
         {/* Filter Dropdown Controls */}
         <div className="income-filter-container" ref={dropdownRef}>
           <div className="income-filter-trigger-group">
-            <button
-              className={`chart-refresh-btn ${isRefreshing ? 'spinning' : ''}`}
-              onClick={handleRefresh}
-              type="button"
-              title="Refresh chart animation"
-              aria-label="Refresh chart"
-            >
-              <Icon name="refresh" size={14} />
-            </button>
-
             {!isDefaultView && (
               <button
                 className="btn sm income-reset-btn"

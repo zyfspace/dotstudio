@@ -5105,3 +5105,44 @@ input[type="file"] {
     display: none;
   }
 }
+
+/* Income header: refresh is always the top-right item. On wide screens the
+   period filter sits just left of it; on tablets and phones the filter drops
+   to its own left-aligned row and the popover opens from the left. */
+.income-title-group {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.income-header > .income-filter-container {
+  order: 1;
+}
+
+.income-header > .income-refresh {
+  order: 2;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .income-header > .income-refresh {
+    order: 1;
+  }
+
+  .income-header > .income-filter-container {
+    order: 2;
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  .income-filter-trigger-group {
+    justify-content: flex-start;
+  }
+
+  .income-filter-popover {
+    left: 0 !important;
+    right: auto !important;
+    width: min(320px, 100%) !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+}
