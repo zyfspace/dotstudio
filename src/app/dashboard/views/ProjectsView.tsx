@@ -148,7 +148,10 @@ export function ProjectsView() {
                       key={p.id}
                       onClick={() => setActiveProjectDrawerId(p.id)}
                     >
-                      <td>{p.name}</td>
+                      <td>
+                        <AdditionalEyebrow project={p} />
+                        {p.name}
+                      </td>
                       <td>
                         <span>{c.name}</span>
                         {c.co && <span className="mut"> · {c.co}</span>}
@@ -190,6 +193,7 @@ export function ProjectsView() {
                 >
                   <div className="mob-item-top">
                     <div style={{ minWidth: 0 }}>
+                      <AdditionalEyebrow project={p} />
                       <div className="mob-item-title">{p.name}</div>
                       <div className="mob-item-sub">
                         {c.name}{c.co ? ` · ${c.co}` : ''}
@@ -222,5 +226,16 @@ export function ProjectsView() {
         </>
       )}
     </div>
+  );
+}
+
+// Marks a main project that has additional services; details live in its drawer.
+function AdditionalEyebrow({ project }: { project: Project }) {
+  const count = (project.items || []).filter((it) => it.type === 'Additional').length;
+  if (!count) return null;
+  return (
+    <span className="proj-eyebrow">
+      Additional services{count > 1 ? ` · ${count}` : ''}
+    </span>
   );
 }
