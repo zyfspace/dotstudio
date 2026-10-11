@@ -1594,7 +1594,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       const endD = new Date(refY, refM, 0);
       const start = `${startD.getFullYear()}-${String(startD.getMonth() + 1).padStart(2, '0')}-01`;
       const end = `${endD.getFullYear()}-${String(endD.getMonth() + 1).padStart(2, '0')}-${String(endD.getDate()).padStart(2, '0')}`;
-      return { start, end, label: '6 bulan terakhir' };
+      return { start, end, label: 'Last 6 months' };
     }
     if (chartMode === 'month') {
       const [y, m] = chartSelectedMonth.split('-').map(Number);

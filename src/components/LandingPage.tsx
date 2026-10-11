@@ -449,14 +449,14 @@ export function LandingPage({
                       Booking automation
                       <div className="lp-mut">Final · due 12 Nov</div>
                     </span>
-                    <b>Rp 7 jt</b>
+                    <b>Rp 7M</b>
                   </div>
                   <div className="lp-row" style={{ padding: '7px 0', borderTop: '1px solid var(--line)' }}>
                     <span>
                       SEO content plan
                       <div className="lp-mut" style={{ color: 'var(--ac)' }}>Final · overdue</div>
                     </span>
-                    <b>Rp 3,6 jt</b>
+                    <b>Rp 3.6M</b>
                   </div>
                 </div>
 

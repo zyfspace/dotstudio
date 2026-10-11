@@ -363,7 +363,7 @@ export function AuthScreen({
                     }}
                   >
                     <Icon name="clock" size={15} style={{ flexShrink: 0, color: 'var(--ac)' }} />
-                    <span>Sesi Anda telah berakhir setelah 24 jam tidak aktif. Silakan masuk kembali.</span>
+                    <span>Your session ended after 24 hours of inactivity. Please sign in again.</span>
                   </div>
                 )}
 
