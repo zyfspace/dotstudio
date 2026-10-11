@@ -120,6 +120,9 @@ export function QuotationsView() {
                       </span>
                       <span className="accordion-company-sub">
                         {groupLabels.get(company)?.companyName || 'Individual'}
+                        <span className="accordion-count-inline">
+                          {' · '}{items.length} {items.length === 1 ? 'quotation' : 'quotations'}
+                        </span>
                       </span>
                     </div>
                     <span className="accordion-count-badge">
@@ -145,7 +148,6 @@ export function QuotationsView() {
                           <tr>
                             <th>No.</th>
                             <th>Date</th>
-                            <th>Client</th>
                             <th>Title</th>
                             <th>Project</th>
                             <th>Valid until</th>
@@ -167,9 +169,8 @@ export function QuotationsView() {
                               >
                                 <td>{formatQuoteNo(x.no, x.date, x.senderName)}</td>
                                 <td className="mut">{dt(x.date)}</td>
-                                <td>{x.cn}</td>
-                                <td>{x.title}</td>
-                                <td>
+                                <td className="wrap">{x.title}</td>
+                                <td className="wrap">
                                   {linkedProj ? (
                                     <button
                                       type="button"

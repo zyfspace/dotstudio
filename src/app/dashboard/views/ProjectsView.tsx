@@ -148,13 +148,13 @@ export function ProjectsView() {
                       key={p.id}
                       onClick={() => setActiveProjectDrawerId(p.id)}
                     >
-                      <td>
+                      <td className="wrap">
                         <span className="proj-name">
                           {p.name}
                           <AddOnChip project={p} />
                         </span>
                       </td>
-                      <td>
+                      <td className="wrap">
                         <div className="cell-two">
                           <span>{c.name}</span>
                           {c.co && <span className="mut">{c.co}</span>}

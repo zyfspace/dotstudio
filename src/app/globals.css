@@ -1545,6 +1545,13 @@ td {
   color: var(--fg);
 }
 
+/* Text columns may wrap so narrow desktops keep amount/status columns in view */
+td.wrap {
+  white-space: normal;
+  min-width: 110px;
+  overflow-wrap: anywhere;
+}
+
 tr:last-child td {
   border: 0;
 }
@@ -1808,6 +1815,23 @@ tbody tr:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
+}
+
+/* Three stat boxes can't fit large amounts on phones: stack them as rows */
+@media (max-width: 480px) {
+  .drawer-stats {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .drawer-stat {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .drawer-stat b {
+    margin-top: 0;
+  }
 }
 
 .drawer-client-box {
@@ -3746,6 +3770,10 @@ input[type="file"] {
   flex-shrink: 0;
 }
 
+.accordion-count-inline {
+  display: none;
+}
+
 .accordion-name-stack {
   display: flex;
   flex-direction: column;
@@ -4724,6 +4752,8 @@ input[type="file"] {
   }
 
   .mob-item-val {
+    flex-shrink: 0;
+    white-space: nowrap;
     font-weight: 600;
     color: var(--fg);
     font-variant-numeric: tabular-nums;
@@ -4913,8 +4943,11 @@ input[type="file"] {
   .accordion-client-name {
     font-size: 13px;
   }
-  .accordion-name-stack {
-    max-width: 150px;
+  .accordion-title-box .accordion-count-badge {
+    display: none;
+  }
+  .accordion-count-inline {
+    display: inline;
   }
 
   .accordion-total-amount {

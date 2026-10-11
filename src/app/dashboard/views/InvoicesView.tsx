@@ -108,6 +108,9 @@ export function InvoicesView() {
                       </span>
                       <span className="accordion-company-sub">
                         {groupLabels.get(company)?.companyName || 'Individual'}
+                        <span className="accordion-count-inline">
+                          {' · '}{items.length} {items.length === 1 ? 'invoice' : 'invoices'}
+                        </span>
                       </span>
                     </div>
                     <span className="accordion-count-badge">
@@ -134,14 +137,12 @@ export function InvoicesView() {
                             <th>No.</th>
                             <th>Date</th>
                             <th>Project</th>
-                            <th>Client</th>
                             <th>Status</th>
                             <th className="r">Amount</th>
                           </tr>
                         </thead>
                         <tbody>
                           {items.map((x) => {
-                            const c = getClient(x.p.c);
                             const overdue = isOverdue(x.i.due, x.i.paid);
                             return (
                               <tr
@@ -152,18 +153,12 @@ export function InvoicesView() {
                               >
                                 <td>{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</td>
                                 <td className="mut">{dt(x.i.inv!.date)}</td>
-                                <td>
-                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                <td className="wrap">
+                                  <div className="cell-two">
                                     <span>{x.p.name}</span>
-                                    {x.i.l && (
-                                      <>
-                                        <span className="mut" style={{ opacity: 0.45, userSelect: 'none' }}>·</span>
-                                        <span className="mut" style={{ fontSize: '13px' }}>{x.i.l}</span>
-                                      </>
-                                    )}
+                                    {x.i.l && <span className="mut">{x.i.l}</span>}
                                   </div>
                                 </td>
-                                <td>{c.name}</td>
                                 <td>
                                   {x.i.paid ? (
                                     <span
