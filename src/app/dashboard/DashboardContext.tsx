@@ -343,7 +343,7 @@ interface DashboardContextType {
   handleProofUpload: (projectId: number, planItemId: number, file: File, paidDate?: string) => Promise<void>;
   handleUpdateDueDate: (projectId: number, planItemId: number, newDate: string) => void;
   handleCreateOrViewInvoice: (projectId: number, planItemId: number) => void;
-  handleAddAdditionalService: (projectId: number, label: string, cost: number, due: string) => void;
+  handleAddAdditionalService: (projectId: number, label: string, cost: number, paidAt: string) => number | null;
   handleDeleteProject: (projectId: number) => void;
   handleDeleteClient: (clientId: number) => void;
   handleDeleteQuote: (quoteId: number) => void;
@@ -1494,13 +1494,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const handleAddAdditionalService = (projectId: number, label: string, cost: number, due: string) => {
+  const handleAddAdditionalService = (projectId: number, label: string, cost: number, paidAt: string) => {
     const targetProject = projects.find((p) => p.id === projectId);
-    if (!targetProject) return;
+    if (!targetProject) return null;
 
     const newItemId = Date.now() * 10 + targetProject.plan.length;
     const currentInvCount = allPayments.filter((x) => x.i.inv).length + 1;
-    const invDate = today();
+    const invDate = paidAt || today();
     const d = new Date(invDate + 'T00:00:00');
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
@@ -1512,7 +1512,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       l: label,
       pct: 0,
       a: cost,
-      due,
+      due: paidAt,
       paid: false,
       pd: '',
       proof: null,
@@ -1536,6 +1536,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         };
       })
     );
+    return newItemId;
   };
 
   const handleCreateOrViewInvoice = (projectId: number, planItemId: number) => {

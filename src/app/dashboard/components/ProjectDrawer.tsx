@@ -37,7 +37,8 @@ export function ProjectDrawer() {
   const [showAddService, setShowAddService] = useState(false);
   const [addServiceLabel, setAddServiceLabel] = useState('');
   const [addServiceCost, setAddServiceCost] = useState('');
-  const [addServiceDue, setAddServiceDue] = useState('');
+  const [addServicePaidAt, setAddServicePaidAt] = useState('');
+  const [addServiceProof, setAddServiceProof] = useState<File | null>(null);
   // Paid date picked per plan item before its proof can be uploaded
   const [pendingPaidDates, setPendingPaidDates] = useState<Record<number, string>>({});
 
@@ -216,36 +217,25 @@ export function ProjectDrawer() {
                       </div>
                     );
                   })}
-                </div>
 
-                {/* Additional Service */}
-                <div style={{ marginTop: '12px' }}>
+                  {/* Additional Service */}
                   {!showAddService ? (
                     <button
                       type="button"
-                      className="btn sm"
+                      className="add-svc-btn"
                       onClick={() => {
                         setShowAddService(true);
                         setAddServiceLabel('');
                         setAddServiceCost('');
-                        setAddServiceDue(today());
+                        setAddServicePaidAt(today());
+                        setAddServiceProof(null);
                       }}
                     >
                       <Icon name="plus" size={14} />
                       Additional service
                     </button>
                   ) : (
-                    <div
-                      style={{
-                        padding: '14px',
-                        borderRadius: '8px',
-                        border: '1px solid var(--line)',
-                        background: 'var(--soft)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '10px',
-                      }}
-                    >
+                    <div className="add-svc-form">
                       <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--fg)' }}>
                         New additional service
                       </div>
@@ -274,30 +264,59 @@ export function ProjectDrawer() {
                           />
                         </div>
                         <div className="f" style={{ margin: 0 }}>
-                          <label style={{ fontSize: '12px' }}>Due date</label>
+                          <label style={{ fontSize: '12px' }}>Paid at</label>
                           <DatePicker
-                            value={addServiceDue}
-                            onChange={(val) => setAddServiceDue(val)}
-                            placeholder="Due date"
+                            value={addServicePaidAt}
+                            onChange={(val) => setAddServicePaidAt(val)}
+                            placeholder="Paid at"
                           />
                         </div>
+                      </div>
+                      <div className="f" style={{ margin: 0 }}>
+                        <label style={{ fontSize: '12px' }}>Payment proof</label>
+                        <label className="btn sm add-svc-file" title={addServiceProof?.name}>
+                          <Icon name="upload" size={14} />
+                          <span className="add-svc-file-name">
+                            {addServiceProof ? addServiceProof.name : 'Choose file'}
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              e.target.value = '';
+                              if (f) setAddServiceProof(f);
+                            }}
+                          />
+                        </label>
                       </div>
                       <div style={{ display: 'flex', gap: '8px', marginTop: '2px' }}>
                         <button
                           type="button"
                           className="btn sm pri"
-                          disabled={!addServiceLabel.trim() || !addServiceCost || +addServiceCost <= 0}
+                          disabled={
+                            !addServiceLabel.trim() ||
+                            !addServiceCost ||
+                            +addServiceCost <= 0 ||
+                            !addServicePaidAt ||
+                            !addServiceProof
+                          }
                           onClick={() => {
-                            handleAddAdditionalService(
+                            if (!addServiceProof) return;
+                            const newItemId = handleAddAdditionalService(
                               activeProject.id,
                               addServiceLabel.trim(),
                               +addServiceCost,
-                              addServiceDue
+                              addServicePaidAt
                             );
+                            if (newItemId !== null) {
+                              handleProofUpload(activeProject.id, newItemId, addServiceProof, addServicePaidAt);
+                            }
                             setShowAddService(false);
                             setAddServiceLabel('');
                             setAddServiceCost('');
-                            setAddServiceDue('');
+                            setAddServicePaidAt('');
+                            setAddServiceProof(null);
                           }}
                         >
                           Save
