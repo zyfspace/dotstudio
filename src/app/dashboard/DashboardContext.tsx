@@ -138,7 +138,7 @@ interface DashboardContextType {
   setAuthInitialMode: React.Dispatch<React.SetStateAction<'login' | 'signup'>>;
   authInitialEmail: string;
   setAuthInitialEmail: React.Dispatch<React.SetStateAction<string>>;
-  loadData: (email?: string, user?: AuthUser) => Promise<void>;
+  loadData: (email?: string) => Promise<void>;
 
   clients: Client[];
   setClients: React.Dispatch<React.SetStateAction<Client[]>>;
@@ -545,19 +545,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [previewProof]);
 
   // Load and sync data from LocalStorage & Supabase
-  const loadData = useCallback(async (email?: string, user?: AuthUser) => {
+  const loadData = useCallback(async (email?: string) => {
     isDataInitializedRef.current = false;
     const userEmail = email || authUser?.email;
     const data = loadStoredData(userEmail);
-    // Account details only fill empty fields and are never written back, so
-    // a fresh browser can't overwrite the profile saved in Supabase.
-    const withAccountDefaults = (p: StudioProfile): StudioProfile => ({
-      ...p,
-      ownerName: p.ownerName || user?.name || '',
-      studioName: p.studioName || user?.studioName || '',
-      email: p.email || user?.email || userEmail || '',
-    });
-    const profile = withAccountDefaults(loadStudioProfile(userEmail));
+    const profile = loadStudioProfile(userEmail);
     setStudioProfile(profile);
     setProfileDraft(profile);
 
@@ -584,9 +576,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       const remote = await fetchFromSupabase(userEmail);
       if (remote) {
         if (remote.profile) {
-          const remoteProfile = withAccountDefaults(remote.profile);
-          setStudioProfile(remoteProfile);
-          setProfileDraft(remoteProfile);
+          setStudioProfile(remote.profile);
+          setProfileDraft(remote.profile);
         }
 
         let invSeq = 0;
@@ -682,7 +673,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     const session = getActiveSession();
     if (session) {
       setAuthUser(session);
-      loadData(session.email, session);
+      loadData(session.email);
     } else {
       clearAuthSession();
       setAuthUser(null);
@@ -697,6 +688,14 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           if (sbSession) {
             supabase.auth.signOut().catch(() => {});
           }
+          setAuthUser(null);
+          return;
+        }
+
+        if (!sbSession?.user) {
+          // Data access is authorized by the Supabase session, so a local
+          // session without one (e.g. from the old client-side login) is stale.
+          clearAuthSession();
           setAuthUser(null);
           return;
         }
@@ -717,7 +716,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           };
           setAuthSession(userObj);
           setAuthUser(userObj);
-          loadData(userEmail, userObj);
+          loadData(userEmail);
         }
       });
     });
@@ -1572,7 +1571,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       return;
     }
     setProjects((prev) => prev.filter((p) => p.id !== projectId));
-    deleteProjectFromSupabase(projectId);
+    deleteProjectFromSupabase(projectId, authUser?.email);
     closeDrawer();
   };
 
@@ -1582,13 +1581,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       return;
     }
     setClients((prev) => prev.filter((c) => c.id !== clientId));
-    deleteClientFromSupabase(clientId);
+    deleteClientFromSupabase(clientId, authUser?.email);
     closeDrawer();
   };
 
   const handleDeleteQuote = (quoteId: number) => {
     setQuotes((prev) => prev.filter((q) => q.id !== quoteId));
-    deleteQuoteFromSupabase(quoteId);
+    deleteQuoteFromSupabase(quoteId, authUser?.email);
     router.push('/dashboard/quotations');
   };
 

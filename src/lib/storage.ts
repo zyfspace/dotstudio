@@ -30,10 +30,7 @@ export const loadStudioProfile = (userEmail?: string): StudioProfile => {
   if (typeof window === 'undefined') return DEFAULT_STUDIO_PROFILE;
   try {
     const key = getProfileKey(userEmail);
-    const raw =
-      localStorage.getItem(key) ||
-      localStorage.getItem('zyf-studio-profile-zyfxspace_gmail_com') ||
-      localStorage.getItem('zyf-studio-profile-v1');
+    const raw = localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
@@ -60,7 +57,9 @@ export const saveStudioProfile = (profile: StudioProfile, userEmail?: string) =>
 };
 
 export const syncProfileToSupabase = async (profile: StudioProfile, userEmail?: string) => {
-  const targetEmail = (userEmail || profile.email || 'zyfxspace@gmail.com').toLowerCase();
+  // Profiles are keyed by the signed-in account; never guess another owner.
+  if (!userEmail) return;
+  const targetEmail = userEmail.toLowerCase();
   try {
     await supabase.from('studio_profiles').upsert(
       {
@@ -161,15 +160,16 @@ export const saveStoredData = (data: StorageData, userEmail?: string) => {
 export const fetchFromSupabase = async (
   userEmail?: string
 ): Promise<{ data: StorageData; profile?: StudioProfile } | null> => {
-  const targetEmail = (userEmail || 'zyfxspace@gmail.com').toLowerCase();
+  if (!userEmail) return null;
+  const targetEmail = userEmail.toLowerCase();
 
   try {
     currentSyncStatus = { ...currentSyncStatus, status: 'syncing' };
 
     const [clientsRes, projectsRes, quotesRes, profileRes] = await Promise.allSettled([
-      supabase.from('clients').select('*'),
-      supabase.from('projects').select('*'),
-      supabase.from('quotes').select('*'),
+      supabase.from('clients').select('*').eq('owner_email', targetEmail),
+      supabase.from('projects').select('*').eq('owner_email', targetEmail),
+      supabase.from('quotes').select('*').eq('owner_email', targetEmail),
       supabase.from('studio_profiles').select('*').eq('email', targetEmail).maybeSingle(),
     ]);
 
@@ -291,7 +291,8 @@ export const fetchFromSupabase = async (
 
 // Sync whole state to Supabase safely (Upsert items)
 export const syncToSupabase = async (data: StorageData, userEmail?: string) => {
-  const targetEmail = (userEmail || 'zyfxspace@gmail.com').toLowerCase();
+  if (!userEmail) return;
+  const targetEmail = userEmail.toLowerCase();
 
   try {
     currentSyncStatus = { ...currentSyncStatus, status: 'syncing' };
@@ -378,27 +379,42 @@ export const syncToSupabase = async (data: StorageData, userEmail?: string) => {
 };
 
 // Delete single project from Supabase
-export const deleteProjectFromSupabase = async (projectId: number) => {
+export const deleteProjectFromSupabase = async (projectId: number, userEmail?: string) => {
+  if (!userEmail) return;
   try {
-    await supabase.from('projects').delete().eq('id', projectId);
+    await supabase
+      .from('projects')
+      .delete()
+      .eq('id', projectId)
+      .eq('owner_email', userEmail.toLowerCase());
   } catch (e) {
     console.error('Error deleting project from Supabase', e);
   }
 };
 
 // Delete single client from Supabase
-export const deleteClientFromSupabase = async (clientId: number) => {
+export const deleteClientFromSupabase = async (clientId: number, userEmail?: string) => {
+  if (!userEmail) return;
   try {
-    await supabase.from('clients').delete().eq('id', clientId);
+    await supabase
+      .from('clients')
+      .delete()
+      .eq('id', clientId)
+      .eq('owner_email', userEmail.toLowerCase());
   } catch (e) {
     console.error('Error deleting client from Supabase', e);
   }
 };
 
 // Delete single quote from Supabase
-export const deleteQuoteFromSupabase = async (quoteId: number) => {
+export const deleteQuoteFromSupabase = async (quoteId: number, userEmail?: string) => {
+  if (!userEmail) return;
   try {
-    await supabase.from('quotes').delete().eq('id', quoteId);
+    await supabase
+      .from('quotes')
+      .delete()
+      .eq('id', quoteId)
+      .eq('owner_email', userEmail.toLowerCase());
   } catch (e) {
     console.error('Error deleting quote from Supabase', e);
   }
