@@ -256,7 +256,8 @@ export const fetchFromSupabase = async (
         const key = getStorageKey(userEmail);
         localStorage.setItem(key, JSON.stringify(syncedData));
         if (profile) {
-          saveStudioProfile(profile, userEmail);
+          // Cache locally only; re-uploading what was just fetched is redundant.
+          localStorage.setItem(getProfileKey(userEmail), JSON.stringify(profile));
         }
       }
       currentSyncStatus = {
@@ -289,6 +290,14 @@ export const fetchFromSupabase = async (
   return null;
 };
 
+// Ids deleted in this tab. A sync that started before a delete still holds the
+// old rows, so skip these to keep it from re-creating them.
+const deletedIds = {
+  clients: new Set<number>(),
+  projects: new Set<number>(),
+  quotes: new Set<number>(),
+};
+
 // Sync whole state to Supabase safely (Upsert items)
 export const syncToSupabase = async (data: StorageData, userEmail?: string) => {
   if (!userEmail) return;
@@ -299,6 +308,7 @@ export const syncToSupabase = async (data: StorageData, userEmail?: string) => {
 
     // 1. Sync Clients
     for (const c of data.clients) {
+      if (deletedIds.clients.has(c.id)) continue;
       await supabase.from('clients').upsert(
         {
           id: c.id,
@@ -315,6 +325,7 @@ export const syncToSupabase = async (data: StorageData, userEmail?: string) => {
 
     // 2. Sync Projects
     for (const p of data.projects) {
+      if (deletedIds.projects.has(p.id)) continue;
       const client = data.clients.find((c) => c.id === p.c);
       await supabase.from('projects').upsert(
         {
@@ -337,6 +348,7 @@ export const syncToSupabase = async (data: StorageData, userEmail?: string) => {
 
     // 3. Sync Quotes
     for (const q of data.quotes) {
+      if (deletedIds.quotes.has(q.id)) continue;
       await supabase.from('quotes').upsert(
         {
           id: q.id,
@@ -381,6 +393,7 @@ export const syncToSupabase = async (data: StorageData, userEmail?: string) => {
 // Delete single project from Supabase
 export const deleteProjectFromSupabase = async (projectId: number, userEmail?: string) => {
   if (!userEmail) return;
+  deletedIds.projects.add(projectId);
   try {
     await supabase
       .from('projects')
@@ -395,6 +408,7 @@ export const deleteProjectFromSupabase = async (projectId: number, userEmail?: s
 // Delete single client from Supabase
 export const deleteClientFromSupabase = async (clientId: number, userEmail?: string) => {
   if (!userEmail) return;
+  deletedIds.clients.add(clientId);
   try {
     await supabase
       .from('clients')
@@ -409,6 +423,7 @@ export const deleteClientFromSupabase = async (clientId: number, userEmail?: str
 // Delete single quote from Supabase
 export const deleteQuoteFromSupabase = async (quoteId: number, userEmail?: string) => {
   if (!userEmail) return;
+  deletedIds.quotes.add(quoteId);
   try {
     await supabase
       .from('quotes')
