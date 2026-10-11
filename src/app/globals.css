@@ -5184,3 +5184,10 @@ input[type="file"] {
     font-size: 16px !important;
   }
 }
+
+/* Empty slots that pad a short last week in the month chart */
+.bar-col.placeholder,
+.x-month-label.placeholder {
+  pointer-events: none;
+  cursor: default;
+}

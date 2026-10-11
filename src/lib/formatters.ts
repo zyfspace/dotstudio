@@ -50,17 +50,9 @@ export const dt = (s?: string): string => {
 export const numShort = (n?: number): string => {
   const val = n || 0;
   if (val === 0) return '0';
-  if (Math.abs(val) >= 1_000_000_000) {
-    const formatted = (val / 1_000_000_000).toFixed(1).replace(/\.0$/, '').replace('.', ',');
-    return `${formatted}M`;
-  }
-  if (Math.abs(val) >= 1_000_000) {
-    const formatted = (val / 1_000_000).toFixed(1).replace(/\.0$/, '').replace('.', ',');
-    return `${formatted}jt`;
-  }
-  if (Math.abs(val) >= 1_000) {
-    const formatted = (val / 1_000).toFixed(1).replace(/\.0$/, '').replace('.', ',');
-    return `${formatted}rb`;
+  const units: [number, string][] = [[1_000_000_000, 'B'], [1_000_000, 'M'], [1_000, 'K']];
+  for (const [size, unit] of units) {
+    if (Math.abs(val) >= size) return `${(val / size).toFixed(1).replace(/\.0$/, '')}${unit}`;
   }
   return String(val);
 };

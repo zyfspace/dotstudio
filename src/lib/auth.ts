@@ -250,18 +250,18 @@ export const verifyOtpWithSupabase = async (
     });
 
     if (error) {
-      return { success: false, error: error.message || 'Kode verifikasi salah atau kedaluwarsa.' };
+      return { success: false, error: error.message || 'Invalid or expired verification code.' };
     }
 
     if (!data.user) {
-      return { success: false, error: 'Kode verifikasi salah atau kedaluwarsa.' };
+      return { success: false, error: 'Invalid or expired verification code.' };
     }
     const authUser = toAuthUser(data.user, { name, studioName, email: cleanEmail });
 
     setAuthSession(authUser);
     return { success: true, user: authUser };
   } catch (e: any) {
-    return { success: false, error: e?.message || 'Gagal memverifikasi kode.' };
+    return { success: false, error: e?.message || 'Could not verify the code.' };
   }
 };
 
@@ -281,7 +281,7 @@ export const resendOtpWithSupabase = async (
     }
     return { success: true };
   } catch (e: any) {
-    return { success: false, error: e?.message || 'Gagal mengirim ulang kode.' };
+    return { success: false, error: e?.message || 'Could not resend the code.' };
   }
 };
 
