@@ -138,7 +138,7 @@ interface DashboardContextType {
   setAuthInitialMode: React.Dispatch<React.SetStateAction<'login' | 'signup'>>;
   authInitialEmail: string;
   setAuthInitialEmail: React.Dispatch<React.SetStateAction<string>>;
-  loadData: (email?: string) => Promise<void>;
+  loadData: (email?: string, user?: AuthUser) => Promise<void>;
 
   clients: Client[];
   setClients: React.Dispatch<React.SetStateAction<Client[]>>;
@@ -545,11 +545,19 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [previewProof]);
 
   // Load and sync data from LocalStorage & Supabase
-  const loadData = useCallback(async (email?: string) => {
+  const loadData = useCallback(async (email?: string, user?: AuthUser) => {
     isDataInitializedRef.current = false;
     const userEmail = email || authUser?.email;
     const data = loadStoredData(userEmail);
-    const profile = loadStudioProfile(userEmail);
+    // Account details only fill empty fields and are never written back, so
+    // a fresh browser can't overwrite the profile saved in Supabase.
+    const withAccountDefaults = (p: StudioProfile): StudioProfile => ({
+      ...p,
+      ownerName: p.ownerName || user?.name || '',
+      studioName: p.studioName || user?.studioName || '',
+      email: p.email || user?.email || userEmail || '',
+    });
+    const profile = withAccountDefaults(loadStudioProfile(userEmail));
     setStudioProfile(profile);
     setProfileDraft(profile);
 
@@ -576,8 +584,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       const remote = await fetchFromSupabase(userEmail);
       if (remote) {
         if (remote.profile) {
-          setStudioProfile(remote.profile);
-          setProfileDraft(remote.profile);
+          const remoteProfile = withAccountDefaults(remote.profile);
+          setStudioProfile(remoteProfile);
+          setProfileDraft(remoteProfile);
         }
 
         let invSeq = 0;
@@ -673,7 +682,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     const session = getActiveSession();
     if (session) {
       setAuthUser(session);
-      loadData(session.email);
+      loadData(session.email, session);
     } else {
       clearAuthSession();
       setAuthUser(null);
@@ -708,18 +717,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           };
           setAuthSession(userObj);
           setAuthUser(userObj);
-          loadData(userEmail);
-
-          const currentProfile = loadStudioProfile(userEmail);
-          const updatedProfile = {
-            ...currentProfile,
-            ownerName: userEmail.toLowerCase() === 'zyfxspace@gmail.com' ? (userObj.name || currentProfile.ownerName) : (currentProfile.ownerName || userObj.name || ''),
-            studioName: userEmail.toLowerCase() === 'zyfxspace@gmail.com' ? (userObj.studioName || currentProfile.studioName) : (currentProfile.studioName || userObj.studioName || ''),
-            email: currentProfile.email || userObj.email || '',
-          };
-          setStudioProfile(updatedProfile);
-          setProfileDraft(updatedProfile);
-          saveStudioProfile(updatedProfile, userEmail);
+          loadData(userEmail, userObj);
         }
       });
     });
@@ -842,7 +840,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
     const updated = { ...studioProfile, securityPin: cleanNew };
     setStudioProfile(updated);
-    saveStudioProfile(updated);
+    saveStudioProfile(updated, authUser?.email);
     setProfileDraft(updated);
     setIsSettingsUnlocked(true);
     setPinModalMode('none');
@@ -869,7 +867,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
     const updated = { ...studioProfile, securityPin: cleanNew };
     setStudioProfile(updated);
-    saveStudioProfile(updated);
+    saveStudioProfile(updated, authUser?.email);
     setProfileDraft(updated);
     setPinModalMode('none');
     setPinInput('');
@@ -880,7 +878,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   const handleSaveUnlockedSettings = () => {
     setStudioProfile(profileDraft);
-    saveStudioProfile(profileDraft);
+    saveStudioProfile(profileDraft, authUser?.email);
     setIsSettingsUnlocked(false);
     setProfileSavedFeedback(true);
     setTimeout(() => {

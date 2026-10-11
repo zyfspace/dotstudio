@@ -12,16 +12,16 @@ export const getProfileKey = (email?: string) => {
 };
 
 export const DEFAULT_STUDIO_PROFILE: StudioProfile = {
-  studioName: 'Zyf.Space',
-  ownerName: 'Faiz Dawami',
-  tagline: 'Your digital partner solution.',
-  email: 'zyfxspace@gmail.com',
-  phone: '0851-5637-9510',
-  bankName: 'BCA',
-  accountNumber: '123-456-7890',
-  accountHolder: 'Faiz Dawami',
-  defaultPaymentTerms: '50% di awal sebelum pengerjaan, pelunasan saat selesai',
-  defaultNotes: 'Quotation berlaku sesuai tanggal yang tertera.',
+  studioName: '',
+  ownerName: '',
+  tagline: '',
+  email: '',
+  phone: '',
+  bankName: '',
+  accountNumber: '',
+  accountHolder: '',
+  defaultPaymentTerms: '',
+  defaultNotes: '',
 };
 
 export const MASTER_STUDIO_PROFILE: StudioProfile = DEFAULT_STUDIO_PROFILE;

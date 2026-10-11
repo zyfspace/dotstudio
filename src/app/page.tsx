@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { LandingPage } from '@/components/LandingPage';
 import { AuthScreen } from '@/components/AuthScreen';
 import { AuthUser, getActiveSession } from '@/lib/auth';
-import { loadStudioProfile, saveStudioProfile } from '@/lib/storage';
 
 export default function RootHomePage() {
   const router = useRouter();
@@ -49,14 +48,6 @@ export default function RootHomePage() {
         <AuthScreen
           onSuccess={(user) => {
             setAuthUser(user);
-            const currentProfile = loadStudioProfile(user.email);
-            const updatedProfile = {
-              ...currentProfile,
-              ownerName: currentProfile.ownerName || user.name || '',
-              studioName: currentProfile.studioName || user.studioName || '',
-              email: currentProfile.email || user.email || '',
-            };
-            saveStudioProfile(updatedProfile, user.email);
             router.push('/dashboard');
           }}
           theme={theme}
