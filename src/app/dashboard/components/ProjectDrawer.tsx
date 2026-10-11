@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useDashboard, STATUS_LABELS } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { AutoTextarea } from '@/components/AutoTextarea';
-import { rp, sh, dt, isOverdue } from '@/lib/formatters';
+import { DatePicker } from '@/components/DatePicker';
+import { rp, sh, dt, isOverdue, today } from '@/lib/formatters';
 
 export function ProjectDrawer() {
   const {
@@ -19,6 +20,8 @@ export function ProjectDrawer() {
     uploadingItemId,
     handleProofUpload,
     handleCreateOrViewInvoice,
+    handleAddAdditionalService,
+    handleUpdatePaymentDate,
     quotes,
     handleStartNewQuote,
     openDoc,
@@ -31,6 +34,11 @@ export function ProjectDrawer() {
     deleteArmed,
     handleDeleteProject,
   } = useDashboard();
+
+  const [showAddService, setShowAddService] = useState(false);
+  const [addServiceLabel, setAddServiceLabel] = useState('');
+  const [addServiceCost, setAddServiceCost] = useState('');
+  const [addServiceDue, setAddServiceDue] = useState('');
 
   return (
     <div className={`dr ${activeProjectDrawerId ? 'on' : ''}`} id="dr">
@@ -102,9 +110,18 @@ export function ProjectDrawer() {
                               <span className={overdue ? 'od' : 'mut'} style={{ fontSize: '12px' }}>
                                 {item.paid ? 'Paid date:' : overdue ? 'Overdue:' : 'Due date:'}
                               </span>
-                              <span style={{ fontSize: '12px', fontWeight: 500, color: overdue ? 'var(--red, #ef4444)' : 'inherit' }}>
-                                {item.paid ? (item.pd ? dt(item.pd) : '—') : (item.due ? dt(item.due) : '—')}
-                              </span>
+                              {item.paid ? (
+                                <DatePicker
+                                  value={item.pd || ''}
+                                  onChange={(val) => handleUpdatePaymentDate(activeProject.id, item.id, val)}
+                                  placeholder="Set paid date"
+                                  className="inline-date-edit"
+                                />
+                              ) : (
+                                <span style={{ fontSize: '12px', fontWeight: 500, color: overdue ? 'var(--red, #ef4444)' : 'inherit' }}>
+                                  {item.due ? dt(item.due) : '—'}
+                                </span>
+                              )}
                             </div>
                           </div>
                           <span className={`ins-amount ${item.paid ? 'mut' : ''}`}>
@@ -178,6 +195,102 @@ export function ProjectDrawer() {
                       </div>
                     );
                   })}
+                </div>
+
+                {/* Additional Service */}
+                <div style={{ marginTop: '12px' }}>
+                  {!showAddService ? (
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() => {
+                        setShowAddService(true);
+                        setAddServiceLabel('');
+                        setAddServiceCost('');
+                        setAddServiceDue(today());
+                      }}
+                    >
+                      <Icon name="plus" size={14} />
+                      Additional service
+                    </button>
+                  ) : (
+                    <div
+                      style={{
+                        padding: '14px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--line)',
+                        background: 'var(--soft)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px',
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--fg)' }}>
+                        New additional service
+                      </div>
+                      <div className="f" style={{ margin: 0 }}>
+                        <label htmlFor="add-svc-label" style={{ fontSize: '12px' }}>Service name</label>
+                        <input
+                          id="add-svc-label"
+                          className="in"
+                          type="text"
+                          placeholder="e.g. Payment Gateway Integration"
+                          value={addServiceLabel}
+                          onChange={(e) => setAddServiceLabel(e.target.value)}
+                        />
+                      </div>
+                      <div className="two" style={{ gap: '10px' }}>
+                        <div className="f" style={{ margin: 0 }}>
+                          <label htmlFor="add-svc-cost" style={{ fontSize: '12px' }}>Cost (Rp)</label>
+                          <input
+                            id="add-svc-cost"
+                            className="in"
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={addServiceCost}
+                            onChange={(e) => setAddServiceCost(e.target.value)}
+                          />
+                        </div>
+                        <div className="f" style={{ margin: 0 }}>
+                          <label style={{ fontSize: '12px' }}>Due date</label>
+                          <DatePicker
+                            value={addServiceDue}
+                            onChange={(val) => setAddServiceDue(val)}
+                            placeholder="Due date"
+                          />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '2px' }}>
+                        <button
+                          type="button"
+                          className="btn sm pri"
+                          disabled={!addServiceLabel.trim() || !addServiceCost || +addServiceCost <= 0}
+                          onClick={() => {
+                            handleAddAdditionalService(
+                              activeProject.id,
+                              addServiceLabel.trim(),
+                              +addServiceCost,
+                              addServiceDue
+                            );
+                            setShowAddService(false);
+                            setAddServiceLabel('');
+                            setAddServiceCost('');
+                            setAddServiceDue('');
+                          }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className="btn sm out"
+                          onClick={() => setShowAddService(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Project Details (Read-only) */}

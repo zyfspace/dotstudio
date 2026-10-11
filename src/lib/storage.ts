@@ -12,45 +12,33 @@ export const getProfileKey = (email?: string) => {
 };
 
 export const DEFAULT_STUDIO_PROFILE: StudioProfile = {
-  studioName: '',
-  ownerName: '',
-  tagline: '',
-  email: '',
-  phone: '',
-  bankName: '',
-  accountNumber: '',
-  accountHolder: '',
-  defaultPaymentTerms: '',
-  defaultNotes: '',
-};
-
-export const MASTER_STUDIO_PROFILE: StudioProfile = {
   studioName: 'Zyf.Space',
   ownerName: 'Faiz Dawami',
   tagline: 'Your digital partner solution.',
   email: 'zyfxspace@gmail.com',
   phone: '0851-5637-9510',
-  bankName: 'BCA / Mandiri Transfer',
+  bankName: 'BCA',
   accountNumber: '123-456-7890',
   accountHolder: 'Faiz Dawami',
   defaultPaymentTerms: '50% di awal sebelum pengerjaan, pelunasan saat selesai',
   defaultNotes: 'Quotation berlaku sesuai tanggal yang tertera.',
 };
 
+export const MASTER_STUDIO_PROFILE: StudioProfile = DEFAULT_STUDIO_PROFILE;
+
 export const loadStudioProfile = (userEmail?: string): StudioProfile => {
   if (typeof window === 'undefined') return DEFAULT_STUDIO_PROFILE;
   try {
-    const isMaster = userEmail?.toLowerCase() === 'zyfxspace@gmail.com';
     const key = getProfileKey(userEmail);
-    const raw = localStorage.getItem(key) || (isMaster ? localStorage.getItem('zyf-studio-profile-v1') : null);
+    const raw =
+      localStorage.getItem(key) ||
+      localStorage.getItem('zyf-studio-profile-zyfxspace_gmail_com') ||
+      localStorage.getItem('zyf-studio-profile-v1');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
         return { ...DEFAULT_STUDIO_PROFILE, ...parsed };
       }
-    }
-    if (isMaster) {
-      return MASTER_STUDIO_PROFILE;
     }
   } catch (e) {
     console.error('Failed to load studio profile', e);
@@ -76,14 +64,23 @@ export const syncProfileToSupabase = async (profile: StudioProfile, userEmail?: 
   try {
     await supabase.from('studio_profiles').upsert(
       {
-        owner_email: targetEmail,
-        profile: profile,
+        email: targetEmail,
+        studio_name: profile.studioName || '',
+        owner_name: profile.ownerName || '',
+        tagline: profile.tagline || '',
+        phone: profile.phone || '',
+        bank_name: profile.bankName || '',
+        account_number: profile.accountNumber || '',
+        account_holder: profile.accountHolder || '',
+        default_payment_terms: profile.defaultPaymentTerms || '',
+        default_notes: profile.defaultNotes || '',
+        security_pin: profile.securityPin || '',
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'owner_email' }
+      { onConflict: 'email' }
     );
   } catch (e) {
-    // Silent fail if table not created yet
+    console.error('Failed to sync profile to Supabase', e);
   }
 };
 
@@ -173,7 +170,7 @@ export const fetchFromSupabase = async (
       supabase.from('clients').select('*'),
       supabase.from('projects').select('*'),
       supabase.from('quotes').select('*'),
-      supabase.from('studio_profiles').select('*').eq('owner_email', targetEmail).maybeSingle(),
+      supabase.from('studio_profiles').select('*').eq('email', targetEmail).maybeSingle(),
     ]);
 
     let hadErrors = false;
@@ -238,19 +235,18 @@ export const fetchFromSupabase = async (
 
     let profile: StudioProfile | undefined = undefined;
     if (profileRaw) {
-      const pData = profileRaw.profile || profileRaw;
       profile = {
-        studioName: pData.studioName || pData.studio_name || '',
-        ownerName: pData.ownerName || pData.owner_name || '',
-        tagline: pData.tagline || '',
-        email: pData.email || targetEmail,
-        phone: pData.phone || '',
-        bankName: pData.bankName || pData.bank_name || '',
-        accountNumber: pData.accountNumber || pData.account_number || '',
-        accountHolder: pData.accountHolder || pData.account_holder || '',
-        defaultPaymentTerms: pData.defaultPaymentTerms || pData.default_payment_terms || '',
-        defaultNotes: pData.defaultNotes || pData.default_notes || '',
-        securityPin: pData.securityPin || pData.security_pin || undefined,
+        studioName: profileRaw.studio_name || profileRaw.studioName || '',
+        ownerName: profileRaw.owner_name || profileRaw.ownerName || '',
+        tagline: profileRaw.tagline || '',
+        email: profileRaw.email || targetEmail,
+        phone: profileRaw.phone || '',
+        bankName: profileRaw.bank_name || profileRaw.bankName || '',
+        accountNumber: profileRaw.account_number || profileRaw.accountNumber || '',
+        accountHolder: profileRaw.account_holder || profileRaw.accountHolder || '',
+        defaultPaymentTerms: profileRaw.default_payment_terms || profileRaw.defaultPaymentTerms || '',
+        defaultNotes: profileRaw.default_notes || profileRaw.defaultNotes || '',
+        securityPin: profileRaw.security_pin || profileRaw.securityPin || undefined,
       };
     }
 

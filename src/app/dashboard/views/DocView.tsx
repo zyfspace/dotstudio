@@ -114,7 +114,7 @@ export function DocView() {
                   No. Invoice {formatInvoiceNo(i.inv.no, i.inv.date)}
                 </div>
                 <div className="docx-h-sub">Invoice Date: {dt(i.inv.date)}</div>
-                <div className="docx-h-sub">Due Date: {dt(i.due)}</div>
+                <div className="docx-h-sub">Due Date: {i.due ? dt(i.due) : '—'}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div className="docx-h-title">

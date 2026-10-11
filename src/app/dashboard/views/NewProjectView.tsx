@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useDashboard, PRESETS, PRESET_NAMES } from '../DashboardContext';
+import { useDashboard, PRESETS, PRESET_NAMES, generatePlanFromPreset } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { AutoTextarea } from '@/components/AutoTextarea';
 import { DatePicker } from '@/components/DatePicker';
@@ -105,7 +105,7 @@ export function NewProjectView() {
                           mail: matchedClient ? matchedClient.mail : foundQ.mail,
                           tel: matchedClient ? matchedClient.tel : foundQ.tel,
                           plan: prev.pre !== 'custom'
-                            ? PRESETS[prev.pre].map(([l, pct]) => ({ l, pct, due: '' }))
+                            ? generatePlanFromPreset(prev.pre, prev.due, prev.plan)
                             : prev.plan,
                         }));
                       }
@@ -141,16 +141,62 @@ export function NewProjectView() {
                 }
               />
             </div>
-            <div className="f">
-              <label htmlFor="nd">Deadline</label>
-              <DatePicker
-                id="nd"
-                value={newProjectData.due}
-                onChange={(val) =>
-                  setNewProjectData((prev) => ({ ...prev, due: val }))
-                }
-                placeholder="Select deadline"
-              />
+            <div className="two">
+              <div className="f">
+                <label htmlFor="ni-date">Invoice date</label>
+                <DatePicker
+                  id="ni-date"
+                  value={newProjectData.invoiceDate || today()}
+                  onChange={(val) =>
+                    setNewProjectData((prev) => {
+                      const nextPlan = [...prev.plan];
+                      if (nextPlan.length > 0 && (!nextPlan[0].due || nextPlan[0].due === (prev.invoiceDate || today()))) {
+                        nextPlan[0] = { ...nextPlan[0], due: val };
+                      }
+                      return { ...prev, invoiceDate: val, plan: nextPlan };
+                    })
+                  }
+                  placeholder="Select invoice date"
+                />
+              </div>
+              <div className="f">
+                <label htmlFor="nd">Project deadline</label>
+                <DatePicker
+                  id="nd"
+                  value={newProjectData.due}
+                  onChange={(val) =>
+                    setNewProjectData((prev) => {
+                      const nextPlan = [...prev.plan];
+                      if (nextPlan.length > 1) {
+                        const lastIdx = nextPlan.length - 1;
+                        if (!nextPlan[lastIdx].due || nextPlan[lastIdx].due === prev.due) {
+                          nextPlan[lastIdx] = { ...nextPlan[lastIdx], due: val };
+                        }
+                        if (!nextPlan[0].due) {
+                          nextPlan[0] = { ...nextPlan[0], due: prev.invoiceDate || today() };
+                        }
+                        if (nextPlan.length === 3 && (!nextPlan[1].due || nextPlan[1].due === prev.due) && val) {
+                          const baseDate = prev.invoiceDate || today();
+                          const d1 = new Date(baseDate + 'T00:00');
+                          const d2 = new Date(val + 'T00:00');
+                          if (!isNaN(d1.getTime()) && !isNaN(d2.getTime()) && d2 > d1) {
+                            const midTime = d1.getTime() + (d2.getTime() - d1.getTime()) / 2;
+                            const mid = new Date(midTime);
+                            const y = mid.getFullYear();
+                            const m = String(mid.getMonth() + 1).padStart(2, '0');
+                            const d = String(mid.getDate()).padStart(2, '0');
+                            nextPlan[1] = { ...nextPlan[1], due: `${y}-${m}-${d}` };
+                          }
+                        }
+                      } else if (nextPlan.length === 1 && !nextPlan[0].due) {
+                        nextPlan[0] = { ...nextPlan[0], due: prev.invoiceDate || today() };
+                      }
+                      return { ...prev, due: val, plan: nextPlan };
+                    })
+                  }
+                  placeholder="Select deadline"
+                />
+              </div>
             </div>
             <div className="f" style={{ margin: 0 }}>
               <label htmlFor="ne">Scope / description</label>
@@ -604,11 +650,11 @@ export function NewProjectView() {
                   <div>
                     <div className="docx-h-title">Invoice</div>
                     <div className="docx-h-sub" style={{ marginTop: '4px' }}>
-                      No. Invoice {getNextInvoiceNo()} (Draft)
+                      No. Invoice {getNextInvoiceNo(newProjectData.invoiceDate || today())} (Draft)
                     </div>
-                    <div className="docx-h-sub">Invoice Date: {dt(today())}</div>
+                    <div className="docx-h-sub">Invoice Date: {dt(newProjectData.invoiceDate || today())}</div>
                     <div className="docx-h-sub">
-                      Due Date: {newProjectData.plan[0]?.due ? dt(newProjectData.plan[0].due) : (newProjectData.due ? dt(newProjectData.due) : '—')}
+                      Due Date: {newProjectData.plan[0]?.due ? dt(newProjectData.plan[0].due) : '—'}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>

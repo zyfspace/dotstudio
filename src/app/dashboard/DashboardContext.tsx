@@ -71,6 +71,59 @@ export const PRESET_NAMES: Record<string, string> = {
   custom: 'Custom',
 };
 
+export const generatePlanFromPreset = (
+  presetKey: string,
+  projectDeadline?: string,
+  currentPlan?: { l: string; pct: number; due: string }[]
+): { l: string; pct: number; due: string }[] => {
+  const t = today();
+  if (presetKey === 'custom') {
+    return currentPlan && currentPlan.length ? currentPlan : [{ l: '', pct: 100, due: t }];
+  }
+  const presetConfig = PRESETS[presetKey];
+  if (!presetConfig || !presetConfig.length) {
+    return [{ l: '', pct: 100, due: t }];
+  }
+
+  if (presetKey === 'full') {
+    return [{ l: 'Full payment', pct: 100, due: t }];
+  }
+
+  if (presetKey === 'dp') {
+    return [
+      { l: 'DP', pct: 50, due: t },
+      { l: 'Final payment', pct: 50, due: projectDeadline || '' },
+    ];
+  }
+
+  if (presetKey === 't3') {
+    let midDate = '';
+    if (projectDeadline) {
+      const d1 = new Date(t + 'T00:00');
+      const d2 = new Date(projectDeadline + 'T00:00');
+      if (!isNaN(d1.getTime()) && !isNaN(d2.getTime()) && d2 > d1) {
+        const midTime = d1.getTime() + (d2.getTime() - d1.getTime()) / 2;
+        const mid = new Date(midTime);
+        const y = mid.getFullYear();
+        const m = String(mid.getMonth() + 1).padStart(2, '0');
+        const d = String(mid.getDate()).padStart(2, '0');
+        midDate = `${y}-${m}-${d}`;
+      }
+    }
+    return [
+      { l: 'DP', pct: 30, due: t },
+      { l: 'Progress', pct: 40, due: midDate },
+      { l: 'Final payment', pct: 30, due: projectDeadline || '' },
+    ];
+  }
+
+  return presetConfig.map(([l, pct], i) => ({
+    l,
+    pct,
+    due: i === 0 ? t : (i === presetConfig.length - 1 ? (projectDeadline || '') : ''),
+  }));
+};
+
 export const STATUS_LABELS: Record<ProjectStatus, string> = {
   Pending: 'Pending',
   Progress: 'In progress',
@@ -182,6 +235,7 @@ interface DashboardContextType {
     v: string;
     billingType: string;
     items: { d: string; type: string; p: number | string }[];
+    invoiceDate: string;
     due: string;
     desc: string;
     cn: string;
@@ -196,6 +250,7 @@ interface DashboardContextType {
     v: string;
     billingType: string;
     items: { d: string; type: string; p: number | string }[];
+    invoiceDate: string;
     due: string;
     desc: string;
     cn: string;
@@ -288,6 +343,7 @@ interface DashboardContextType {
   handleUpdatePaymentDate: (projectId: number, planItemId: number, newDate: string) => void;
   handleUpdateDueDate: (projectId: number, planItemId: number, newDate: string) => void;
   handleCreateOrViewInvoice: (projectId: number, planItemId: number) => void;
+  handleAddAdditionalService: (projectId: number, label: string, cost: number, due: string) => void;
   handleDeleteProject: (projectId: number) => void;
   handleDeleteClient: (clientId: number) => void;
   handleDeleteQuote: (quoteId: number) => void;
@@ -388,6 +444,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     v: '',
     billingType: 'One-time',
     items: [{ d: '', type: 'One-time', p: '' as number | string }],
+    invoiceDate: today(),
     due: '',
     desc: '',
     cn: '',
@@ -395,7 +452,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     mail: '',
     tel: '',
     pre: 'dp',
-    plan: PRESETS.dp.map(([l, pct]) => ({ l, pct, due: '' })),
+    plan: generatePlanFromPreset('dp', ''),
   });
 
   const [newQuoteData, setNewQuoteData] = useState({
@@ -1083,6 +1140,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       v: quoteTotal ? String(quoteTotal) : '',
       billingType: fromQuote?.items[0]?.type || 'One-time',
       items: quoteItems,
+      invoiceDate: today(),
       due: '',
       desc: quoteScopeDesc,
       cn: fromQuote ? fromQuote.cn : targetClient ? targetClient.name : '',
@@ -1090,7 +1148,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       mail: fromQuote ? fromQuote.mail : targetClient ? targetClient.mail : '',
       tel: fromQuote ? fromQuote.tel : targetClient ? targetClient.tel : '',
       pre: 'dp',
-      plan: PRESETS.dp.map(([l, pct]) => ({ l, pct, due: '' })),
+      plan: generatePlanFromPreset('dp', ''),
     });
     router.push('/dashboard/new');
   }, [clients, isProfileComplete, router]);
@@ -1145,19 +1203,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [clients, isProfileComplete, projects, studioProfile, router]);
 
   const handlePlanPresetChange = (presetKey: string) => {
-    if (presetKey !== 'custom') {
-      setNewProjectData((prev) => ({
-        ...prev,
-        pre: presetKey,
-        plan: PRESETS[presetKey].map(([l, pct]) => ({ l, pct, due: '' })),
-      }));
-    } else {
-      setNewProjectData((prev) => ({
-        ...prev,
-        pre: 'custom',
-        plan: prev.plan.length ? prev.plan : [{ l: '', pct: 100, due: '' }],
-      }));
-    }
+    setNewProjectData((prev) => ({
+      ...prev,
+      pre: presetKey,
+      plan: generatePlanFromPreset(presetKey, prev.due, prev.plan),
+    }));
   };
 
   const handleCreateProjectSubmit = () => {
@@ -1178,8 +1228,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           : Math.round((val * +r.pct) / 100);
       rem -= a;
       currentInvCount += 1;
-      const mm = String(new Date().getMonth() + 1).padStart(2, '0');
-      const dd = String(new Date().getDate()).padStart(2, '0');
+      const invDate = newProjectData.invoiceDate || today();
+      const d = new Date(invDate + 'T00:00:00');
+      const validDate = !isNaN(d.getTime());
+      const mm = validDate ? String(d.getMonth() + 1).padStart(2, '0') : String(new Date().getMonth() + 1).padStart(2, '0');
+      const dd = validDate ? String(d.getDate()).padStart(2, '0') : String(new Date().getDate()).padStart(2, '0');
       const prefix = getBrandInitials(studioProfile.studioName);
       const invNo = `INV/${prefix}/${mm}/${dd}/${pad(currentInvCount)}`;
       return {
@@ -1191,7 +1244,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         paid: false,
         pd: '',
         proof: null,
-        inv: { no: invNo, date: today() },
+        inv: { no: invNo, date: invDate },
       };
     });
 
@@ -1308,18 +1361,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     });
     const id = Date.now();
     const tot = q.items.reduce((acc, curr) => acc + curr.q * curr.p, 0);
-    const dpPlan = PRESETS.dp;
+    const planItems = generatePlanFromPreset('dp', '');
     let rem = tot;
-    const plan: PlanItem[] = dpPlan.map(([l, pct], i) => {
+    const plan: PlanItem[] = planItems.map((pi, i) => {
       const a =
-        i === dpPlan.length - 1 ? rem : Math.round((tot * pct) / 100);
+        i === planItems.length - 1 ? rem : Math.round((tot * pi.pct) / 100);
       rem -= a;
       return {
         id: id * 10 + i,
-        l,
-        pct,
+        l: pi.l,
+        pct: pi.pct,
         a,
-        due: '',
+        due: pi.due,
         paid: false,
         pd: '',
         proof: null,
@@ -1461,6 +1514,50 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const handleAddAdditionalService = (projectId: number, label: string, cost: number, due: string) => {
+    const targetProject = projects.find((p) => p.id === projectId);
+    if (!targetProject) return;
+
+    const newItemId = Date.now() * 10 + targetProject.plan.length;
+    const currentInvCount = allPayments.filter((x) => x.i.inv).length + 1;
+    const invDate = today();
+    const d = new Date(invDate + 'T00:00:00');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const prefix = getBrandInitials(studioProfile.studioName);
+    const invNo = `INV/${prefix}/${mm}/${dd}/${pad(currentInvCount)}`;
+
+    const newPlanItem: PlanItem = {
+      id: newItemId,
+      l: label,
+      pct: 0,
+      a: cost,
+      due,
+      paid: false,
+      pd: '',
+      proof: null,
+      inv: { no: invNo, date: invDate },
+    };
+
+    const newCostItem = {
+      d: label,
+      type: 'Additional' as const,
+      p: cost,
+    };
+
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          v: p.v + cost,
+          items: [...(p.items || []), newCostItem],
+          plan: [...p.plan, newPlanItem],
+        };
+      })
+    );
+  };
+
   const handleCreateOrViewInvoice = (projectId: number, planItemId: number) => {
     const targetProject = projects.find((p) => p.id === projectId);
     const targetItem = targetProject?.plan.find((it) => it.id === planItemId);
@@ -1573,18 +1670,21 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
 
     const currentYm = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-    const thisMonthProjects = projects.filter((p) => {
-      if (chartMode === '6m') {
-        const hasPlanInMonth = p.plan.some((i) => i.due && i.due.startsWith(currentYm));
-        if (hasPlanInMonth) return true;
-        if (p.due && p.due.startsWith(currentYm)) return true;
-        return getProjectStatus(p) !== 'Finished';
-      } else {
-        return activeProjectsInPeriod.includes(p);
-      }
-    });
-
-    const thisMonthVal = thisMonthProjects.reduce((sum, p) => sum + (+p.v || 0), 0);
+    let thisMonthVal = 0;
+    if (chartMode === '6m') {
+      thisMonthVal = projects.reduce((sum, p) => sum + (+p.v || 0), 0);
+    } else if (chartMode === 'month') {
+      const targetMonth = chartSelectedMonth || currentYm;
+      const monthProjects = projects.filter((p) => {
+        const hasPaidInMonth = p.plan.some((item) => item.paid && item.pd && item.pd.startsWith(targetMonth));
+        const hasDueInMonth = p.plan.some((item) => item.due && item.due.startsWith(targetMonth));
+        const hasProjectDue = p.due && p.due.startsWith(targetMonth);
+        return hasPaidInMonth || hasDueInMonth || hasProjectDue;
+      });
+      thisMonthVal = monthProjects.reduce((sum, p) => sum + (+p.v || 0), 0);
+    } else {
+      thisMonthVal = activeProjectsInPeriod.reduce((sum, p) => sum + (+p.v || 0), 0);
+    }
     const periodTxCount = periodPaidPayments.length;
 
     const upcoming = allPayments
@@ -1773,6 +1873,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     handleUpdatePaymentDate,
     handleUpdateDueDate,
     handleCreateOrViewInvoice,
+    handleAddAdditionalService,
     handleDeleteProject,
     handleDeleteClient,
     handleDeleteQuote,

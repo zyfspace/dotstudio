@@ -97,11 +97,21 @@ export function OverviewView() {
         <div className="stat">
           <div className="stat-info">
             <div className="stat-label-wrap">
-              <span>{chartMode === '6m' ? 'This month' : chartMode === 'month' ? 'Selected month' : 'Period value'}</span>
-              <div className="stat-help-btn" tabIndex={0} role="note" aria-label="Estimated monthly deal value">
+              <span>
+                {chartMode === '6m'
+                  ? '6 months'
+                  : chartMode === 'month'
+                    ? (chartSelectedMonth === `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
+                        ? 'This month'
+                        : 'Selected month')
+                    : 'Period value'}
+              </span>
+              <div className="stat-help-btn" tabIndex={0} role="note" aria-label="Deal value">
                 <Icon name="help" size={13} />
                 <div className="stat-tooltip">
-                  Total estimated revenue from all projects booked or active this month.
+                  {chartMode === '6m'
+                    ? 'Total contract deal value across the last 6 months.'
+                    : 'Total deal value for the selected period.'}
                 </div>
               </div>
             </div>
