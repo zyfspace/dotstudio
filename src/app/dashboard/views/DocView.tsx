@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
+import { PaidStamp } from '@/components/PaidStamp';
 import { dt } from '@/lib/formatters';
 
 export function DocView() {
@@ -284,19 +285,7 @@ export function DocView() {
                       <span>Amount Due</span>
                       <span>Rp{i.a.toLocaleString('id-ID')}</span>
                     </div>
-                    {i.paid && (
-                      <div
-                        style={{
-                          marginTop: '4px',
-                          textAlign: 'right',
-                          color: '#16a34a',
-                          fontWeight: 600,
-                          fontSize: '12px',
-                        }}
-                      >
-                        ✓ PAID (LUNAS) — {dt(i.pd)}
-                      </div>
-                    )}
+                    {i.paid && <PaidStamp date={i.pd ? dt(i.pd) : undefined} />}
                   </div>
                 );
               })()}
@@ -333,8 +322,8 @@ export function DocView() {
               {brandTagline && <div style={{ fontSize: '13px' }}>{brandTagline}</div>}
             </div>
 
-            {/* Studio Subtle Bottom Watermark */}
-            <DocumentWatermark />
+            {/* Studio watermark; a paid invoice carries the paid stamp instead */}
+            {!i.paid && <DocumentWatermark />}
           </div>
         </div>
       </div>
