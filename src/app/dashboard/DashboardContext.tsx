@@ -472,6 +472,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [uploadingItemId, setUploadingItemId] = useState<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isDataInitializedRef = useRef(false);
+  const loadSeqRef = useRef(0);
 
   const isProfileComplete = Boolean(
     studioProfile.studioName?.trim() &&
@@ -540,6 +541,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   // Load and sync data from LocalStorage & Supabase
   const loadData = useCallback(async (email?: string) => {
+    // Mount and sign-in can both start a load; only the latest one may mark
+    // the data ready, or an earlier one could enable saving mid-way.
+    const loadId = ++loadSeqRef.current;
     isDataInitializedRef.current = false;
     const userEmail = email || authUser?.email;
     const data = loadStoredData(userEmail);
@@ -616,17 +620,16 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           return q;
         });
 
-        if (remote.data.clients.length > 0 || remote.data.projects.length > 0 || remote.data.quotes.length > 0) {
-          setClients(remote.data.clients);
-          setProjects(normProjects);
-          setQuotes(normQuotes);
-        }
+        // The server copy wins over the local cache, even when it is empty
+        setClients(remote.data.clients);
+        setProjects(normProjects);
+        setQuotes(normQuotes);
       }
     } catch (e) {
       console.error('Failed to load from Supabase', e);
     } finally {
       setTimeout(() => {
-        isDataInitializedRef.current = true;
+        if (loadSeqRef.current === loadId) isDataInitializedRef.current = true;
       }, 500);
     }
   }, [authUser?.email]);
@@ -644,11 +647,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           setStudioProfile(remote.profile);
           setProfileDraft(remote.profile);
         }
-        if (remote.data.clients.length > 0 || remote.data.projects.length > 0 || remote.data.quotes.length > 0) {
-          setClients(remote.data.clients);
-          setProjects(remote.data.projects);
-          setQuotes(remote.data.quotes);
-        }
+        setClients(remote.data.clients);
+        setProjects(remote.data.projects);
+        setQuotes(remote.data.quotes);
         setSyncFeedback('Data synced successfully.');
       } else {
         setSyncFeedback('Saved locally.');
