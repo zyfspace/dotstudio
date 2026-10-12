@@ -5265,3 +5265,190 @@ input[type="file"] {
     --s: 0.33;
   }
 }
+
+/* ── A4 document page (invoice / quotation view) ──────────────────────────
+   One layout for screen, phone and print: a 210×297mm page with real
+   margins and the footer pinned to the bottom. Phones get the same page
+   scaled down (see useA4Fit in DocView), so it matches the PDF exactly. */
+.docx-paper.docx-a4 {
+  width: 794px !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 1123px !important;
+  max-height: none !important;
+  padding: 22mm 20mm 16mm !important;
+  box-sizing: border-box !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.docx-a4 .docx-body-content {
+  flex: 1 0 auto !important;
+}
+
+.docx-a4 .docx-footer-wrap {
+  margin-top: auto !important;
+  padding-top: 28px !important;
+}
+
+.docx-a4 .docx-header-grid {
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 24px !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 18px !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.docx-a4 .docx-h-title {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.01em;
+  margin-bottom: 6px !important;
+}
+
+.docx-a4 .docx-h-sub {
+  font-size: 11px !important;
+  line-height: 1.6 !important;
+  color: #374151 !important;
+  margin-top: 0 !important;
+}
+
+.docx-a4 .docx-meta-grid {
+  flex-direction: row !important;
+  gap: 32px !important;
+  margin: 18px 0 6px !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+
+.docx-a4 .docx-header-grid > div:last-child,
+.docx-a4 .docx-meta-grid > div:last-child {
+  text-align: right !important;
+}
+
+/* "Dari: <studio>" stays on one line next to a long client name */
+.docx-a4 .docx-meta-grid > div:last-child {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.docx-a4 .docx-sec-title {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  margin: 20px 0 8px !important;
+}
+
+.docx-a4 .docx-list {
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+  gap: 3px !important;
+  margin: 0 !important;
+  padding-left: 18px !important;
+}
+
+.docx-a4 .docx-cost-table {
+  table-layout: fixed !important;
+  border: 0 !important;
+  margin: 0 !important;
+}
+
+.docx-a4 .docx-cost-table thead th {
+  background: #f1f5f9 !important;
+  color: #1f3864 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 7px 10px !important;
+  border: 0 !important;
+  border-top: 1px solid #cbd5e1 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.docx-a4 .docx-cost-table tbody td {
+  font-size: 12px !important;
+  padding: 7px 10px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  white-space: normal !important;
+}
+
+.docx-a4 .docx-cost-table thead th:last-child,
+.docx-a4 .docx-cost-table tbody td:last-child {
+  text-align: right !important;
+}
+
+.docx-a4 .docx-payment-summary-grid {
+  grid-template-columns: 1fr 1fr !important;
+  gap: 40px !important;
+  margin: 18px 0 0 !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+
+.docx-a4 .docx-calc-row {
+  font-size: 12px !important;
+}
+
+.docx-a4 .docx-calc-total {
+  font-size: 13.5px !important;
+}
+
+.docx-a4 .docx-footer {
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+}
+
+.docx-a4 .docx-footer > div:first-child {
+  margin-bottom: 16px !important;
+}
+
+.docx-a4 .docx-footer > div:nth-child(3) {
+  height: 36px !important;
+}
+
+.docx-a4 .docx-watermark-wrap {
+  margin-top: 20px !important;
+}
+
+@media print {
+  /* A long document continues on a second page instead of being cut off */
+  html:has(.docx-a4),
+  body:has(.docx-a4),
+  :has(> .docx-a4),
+  .app:has(.docx-a4),
+  main:has(.docx-a4) {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .docx-paper.docx-a4 {
+    zoom: 1 !important;
+    width: 210mm !important;
+    height: auto !important;
+    min-height: 297mm !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    /* Every printed page gets the page margins, not just the first */
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  .docx-a4 .docx-cost-table {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .docx-a4 .docx-cost-table tbody tr {
+    break-inside: avoid;
+  }
+}
