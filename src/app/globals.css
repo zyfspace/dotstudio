@@ -5330,6 +5330,17 @@ input[type="file"] {
   text-align: right !important;
 }
 
+/* Document number and dates keep their lines; a long studio name wraps instead */
+.docx-a4 .docx-header-grid > div:first-child {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.docx-a4 .docx-header-grid > div:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 /* "Dari: <studio>" stays on one line next to a long client name */
 .docx-a4 .docx-meta-grid > div:last-child {
   flex-shrink: 0;
