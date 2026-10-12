@@ -5191,3 +5191,77 @@ input[type="file"] {
   pointer-events: none;
   cursor: default;
 }
+
+/* Paid stamp under "Amount Due" on settled invoices (see PaidStamp.tsx).
+   Positions come from a 684×214 design scaled by --s. */
+.paid-stamp {
+  --s: 0.36;
+  position: relative;
+  width: calc(684px * var(--s));
+  height: calc(214px * var(--s));
+  margin: 14px 0 0 auto;
+  font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+  user-select: none;
+  pointer-events: none;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  -webkit-font-smoothing: antialiased;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.paid-stamp-text {
+  position: absolute;
+  font-size: calc(32px * var(--s));
+  font-weight: 500;
+  line-height: calc(36px * var(--s));
+  white-space: nowrap;
+  color: #16a34a;
+  opacity: 0.75;
+}
+
+.paid-stamp-top {
+  left: 0;
+  top: 0;
+}
+
+.paid-stamp-bottom {
+  right: 0;
+  top: calc(182px * var(--s));
+}
+
+.paid-stamp-logo {
+  position: absolute;
+  left: 0;
+  top: calc(30px * var(--s));
+  width: 100%;
+  height: calc(154px * var(--s));
+  opacity: 0.16;
+}
+
+.paid-stamp-dot {
+  position: absolute;
+  left: 0;
+  top: calc(28px * var(--s));
+  width: calc(98px * var(--s));
+  height: calc(98px * var(--s));
+  border-radius: 9999px;
+  background: #F16818;
+}
+
+.paid-stamp-word {
+  position: absolute;
+  left: calc(149px * var(--s));
+  top: 0;
+  font-size: calc(128px * var(--s));
+  font-weight: 500;
+  line-height: calc(154px * var(--s));
+  letter-spacing: -0.06em;
+  color: #000000;
+}
+
+@media screen and (max-width: 360px) {
+  .paid-stamp {
+    --s: 0.33;
+  }
+}
