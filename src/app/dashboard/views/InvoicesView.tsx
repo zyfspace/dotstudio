@@ -274,7 +274,7 @@ export function InvoicesView() {
                               </span>
                             </div>
                             <div className="mob-item-bottom">
-                              <span className="mut">{dt(x.i.inv!.date)}</span>
+                              <span className="mut mob-inv-date">{dt(x.i.inv!.date)}</span>
                               <span className="mob-item-val">{rp(x.i.a)}</span>
                             </div>
                           </div>
