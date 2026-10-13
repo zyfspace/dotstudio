@@ -12,16 +12,16 @@ export const getProfileKey = (email?: string) => {
 };
 
 export const DEFAULT_STUDIO_PROFILE: StudioProfile = {
-  studioName: 'Zyf.Space',
-  ownerName: 'Faiz Dawami',
-  tagline: 'Your digital partner solution.',
-  email: 'zyfxspace@gmail.com',
-  phone: '0851-5637-9510',
-  bankName: 'BCA',
-  accountNumber: '123-456-7890',
-  accountHolder: 'Faiz Dawami',
-  defaultPaymentTerms: '50% di awal sebelum pengerjaan, pelunasan saat selesai',
-  defaultNotes: 'Quotation berlaku sesuai tanggal yang tertera.',
+  studioName: '',
+  ownerName: '',
+  tagline: '',
+  email: '',
+  phone: '',
+  bankName: '',
+  accountNumber: '',
+  accountHolder: '',
+  defaultPaymentTerms: '',
+  defaultNotes: '',
 };
 
 export const MASTER_STUDIO_PROFILE: StudioProfile = DEFAULT_STUDIO_PROFILE;
@@ -30,10 +30,7 @@ export const loadStudioProfile = (userEmail?: string): StudioProfile => {
   if (typeof window === 'undefined') return DEFAULT_STUDIO_PROFILE;
   try {
     const key = getProfileKey(userEmail);
-    const raw =
-      localStorage.getItem(key) ||
-      localStorage.getItem('zyf-studio-profile-zyfxspace_gmail_com') ||
-      localStorage.getItem('zyf-studio-profile-v1');
+    const raw = localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
@@ -60,7 +57,9 @@ export const saveStudioProfile = (profile: StudioProfile, userEmail?: string) =>
 };
 
 export const syncProfileToSupabase = async (profile: StudioProfile, userEmail?: string) => {
-  const targetEmail = (userEmail || profile.email || 'zyfxspace@gmail.com').toLowerCase();
+  // Profiles are keyed by the signed-in account; never guess another owner.
+  if (!userEmail) return;
+  const targetEmail = userEmail.toLowerCase();
   try {
     await supabase.from('studio_profiles').upsert(
       {
@@ -161,24 +160,32 @@ export const saveStoredData = (data: StorageData, userEmail?: string) => {
 export const fetchFromSupabase = async (
   userEmail?: string
 ): Promise<{ data: StorageData; profile?: StudioProfile } | null> => {
-  const targetEmail = (userEmail || 'zyfxspace@gmail.com').toLowerCase();
+  if (!userEmail) return null;
+  const targetEmail = userEmail.toLowerCase();
 
   try {
+    // Without a signed-in Supabase session RLS returns no rows, which would
+    // look like an empty account; treat it as "not loaded" instead.
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData.session?.user?.email?.toLowerCase() !== targetEmail) return null;
+
     currentSyncStatus = { ...currentSyncStatus, status: 'syncing' };
 
     const [clientsRes, projectsRes, quotesRes, profileRes] = await Promise.allSettled([
-      supabase.from('clients').select('*'),
-      supabase.from('projects').select('*'),
-      supabase.from('quotes').select('*'),
+      supabase.from('clients').select('*').eq('owner_email', targetEmail),
+      supabase.from('projects').select('*').eq('owner_email', targetEmail),
+      supabase.from('quotes').select('*').eq('owner_email', targetEmail),
       supabase.from('studio_profiles').select('*').eq('email', targetEmail).maybeSingle(),
     ]);
 
     let hadErrors = false;
     let errorMsg = '';
 
-    if (clientsRes.status === 'rejected' || (clientsRes.status === 'fulfilled' && clientsRes.value.error)) {
-      hadErrors = true;
-      errorMsg = (clientsRes as any).value?.error?.message || 'Failed to query clients table';
+    for (const res of [clientsRes, projectsRes, quotesRes]) {
+      if (res.status === 'rejected' || res.value.error) {
+        hadErrors = true;
+        errorMsg = (res as any).value?.error?.message || 'Failed to query Supabase';
+      }
     }
 
     const clientsRaw = clientsRes.status === 'fulfilled' && clientsRes.value.data ? clientsRes.value.data : [];
@@ -250,13 +257,17 @@ export const fetchFromSupabase = async (
       };
     }
 
-    if (clients.length > 0 || projects.length > 0 || quotes.length > 0 || profile) {
+    // A complete answer replaces the local cache, even when the account is
+    // empty, so rows deleted on another device don't linger here.
+    if (!hadErrors) {
       const syncedData = { clients, projects, quotes };
+      rememberServerRows(syncedData, targetEmail);
       if (typeof window !== 'undefined') {
         const key = getStorageKey(userEmail);
         localStorage.setItem(key, JSON.stringify(syncedData));
         if (profile) {
-          saveStudioProfile(profile, userEmail);
+          // Cache locally only; re-uploading what was just fetched is redundant.
+          localStorage.setItem(getProfileKey(userEmail), JSON.stringify(profile));
         }
       }
       currentSyncStatus = {
@@ -266,18 +277,11 @@ export const fetchFromSupabase = async (
       return { data: syncedData, profile };
     }
 
-    if (hadErrors) {
-      currentSyncStatus = {
-        lastSyncedAt: null,
-        status: 'error',
-        errorMessage: errorMsg,
-      };
-    } else {
-      currentSyncStatus = {
-        lastSyncedAt: new Date().toLocaleTimeString(),
-        status: 'success',
-      };
-    }
+    currentSyncStatus = {
+      lastSyncedAt: null,
+      status: 'error',
+      errorMessage: errorMsg,
+    };
   } catch (e: any) {
     currentSyncStatus = {
       lastSyncedAt: null,
@@ -289,78 +293,114 @@ export const fetchFromSupabase = async (
   return null;
 };
 
-// Sync whole state to Supabase safely (Upsert items)
+// Ids deleted in this tab. A sync that started before a delete still holds the
+// old rows, so skip these to keep it from re-creating them.
+const deletedIds = {
+  clients: new Set<number>(),
+  projects: new Set<number>(),
+  quotes: new Set<number>(),
+};
+
+// The server is the source of truth. Until this tab has loaded the account's
+// rows from Supabase, nothing is pushed: a device with an old local cache
+// (e.g. a phone not opened for a while) would otherwise re-create rows that
+// were deleted elsewhere. After loading, only rows that differ from what the
+// server last held are written.
+let loadedFor: string | null = null;
+const serverRows = {
+  clients: new Map<number, string>(),
+  projects: new Map<number, string>(),
+  quotes: new Map<number, string>(),
+};
+
+const clientRow = (c: Client, owner: string) => ({
+  id: c.id,
+  name: c.name,
+  company: c.co || '',
+  email: c.mail || '',
+  phone: c.tel || '',
+  address: c.n || '',
+  owner_email: owner,
+});
+
+const projectRow = (p: Project, clients: Client[], owner: string) => {
+  const client = clients.find((c) => c.id === p.c);
+  return {
+    id: p.id,
+    name: p.name,
+    client_id: p.c || 0,
+    client_name: client ? client.name : '',
+    client_company: client ? client.co || '' : '',
+    value: p.v,
+    billing_type: p.billingType || 'One-time',
+    items: p.items || [],
+    deadline: p.due || '',
+    notes: p.desc || '',
+    plan: p.plan || [],
+    owner_email: owner,
+  };
+};
+
+const quoteRow = (q: Quotation, owner: string) => ({
+  id: q.id,
+  number: q.no,
+  title: q.title,
+  client_id: q.pid || 0,
+  client_name: q.cn || '',
+  client_company: q.co || '',
+  scope: q.scope || [],
+  items: q.items || [],
+  services: q.services || [],
+  payment_terms: q.paymentTerms || '',
+  note: q.note || '',
+  total: (q.items || []).reduce((s, i) => s + (i.p || 0) * (i.q || 1), 0),
+  status: q.s || 'Draft',
+  valid_until: q.valid || '',
+  date: q.date || '',
+  sender_name: q.senderName || '',
+  sender_tagline: q.senderTagline || '',
+  sender_email: q.senderEmail || '',
+  sender_phone: q.senderPhone || '',
+  owner_email: owner,
+});
+
+const rememberServerRows = (data: StorageData, owner: string) => {
+  serverRows.clients = new Map(data.clients.map((c) => [c.id, JSON.stringify(clientRow(c, owner))]));
+  serverRows.projects = new Map(
+    data.projects.map((p) => [p.id, JSON.stringify(projectRow(p, data.clients, owner))])
+  );
+  serverRows.quotes = new Map(data.quotes.map((q) => [q.id, JSON.stringify(quoteRow(q, owner))]));
+  loadedFor = owner;
+};
+
+// Write the rows that changed since the server last saw them
 export const syncToSupabase = async (data: StorageData, userEmail?: string) => {
-  const targetEmail = (userEmail || 'zyfxspace@gmail.com').toLowerCase();
+  if (!userEmail) return;
+  const targetEmail = userEmail.toLowerCase();
+  if (loadedFor !== targetEmail) return;
+
+  type Row = { id: number } & Record<string, unknown>;
+  const tables: { table: string; seen: Map<number, string>; skip: Set<number>; rows: Row[] }[] = [
+    { table: 'clients', seen: serverRows.clients, skip: deletedIds.clients,
+      rows: data.clients.map((c) => clientRow(c, targetEmail)) },
+    { table: 'projects', seen: serverRows.projects, skip: deletedIds.projects,
+      rows: data.projects.map((p) => projectRow(p, data.clients, targetEmail)) },
+    { table: 'quotes', seen: serverRows.quotes, skip: deletedIds.quotes,
+      rows: data.quotes.map((q) => quoteRow(q, targetEmail)) },
+  ];
 
   try {
     currentSyncStatus = { ...currentSyncStatus, status: 'syncing' };
 
-    // 1. Sync Clients
-    for (const c of data.clients) {
-      await supabase.from('clients').upsert(
-        {
-          id: c.id,
-          name: c.name,
-          company: c.co || '',
-          email: c.mail || '',
-          phone: c.tel || '',
-          address: c.n || '',
-          owner_email: targetEmail,
-        },
-        { onConflict: 'id' }
-      );
-    }
-
-    // 2. Sync Projects
-    for (const p of data.projects) {
-      const client = data.clients.find((c) => c.id === p.c);
-      await supabase.from('projects').upsert(
-        {
-          id: p.id,
-          name: p.name,
-          client_id: p.c || 0,
-          client_name: client ? client.name : '',
-          client_company: client ? client.co || '' : '',
-          value: p.v,
-          billing_type: p.billingType || 'One-time',
-          items: p.items || [],
-          deadline: p.due || '',
-          notes: p.desc || '',
-          plan: p.plan || [],
-          owner_email: targetEmail,
-        },
-        { onConflict: 'id' }
-      );
-    }
-
-    // 3. Sync Quotes
-    for (const q of data.quotes) {
-      await supabase.from('quotes').upsert(
-        {
-          id: q.id,
-          number: q.no,
-          title: q.title,
-          client_id: q.pid || 0,
-          client_name: q.cn || '',
-          client_company: q.co || '',
-          scope: q.scope || [],
-          items: q.items || [],
-          services: q.services || [],
-          payment_terms: q.paymentTerms || '',
-          note: q.note || '',
-          total: (q.items || []).reduce((s, i) => s + (i.p || 0) * (i.q || 1), 0),
-          status: q.s || 'Draft',
-          valid_until: q.valid || '',
-          date: q.date || '',
-          sender_name: q.senderName || '',
-          sender_tagline: q.senderTagline || '',
-          sender_email: q.senderEmail || '',
-          sender_phone: q.senderPhone || '',
-          owner_email: targetEmail,
-        },
-        { onConflict: 'id' }
-      );
+    for (const { table, seen, skip, rows } of tables) {
+      for (const row of rows) {
+        if (skip.has(row.id)) continue;
+        const json = JSON.stringify(row);
+        if (seen.get(row.id) === json) continue;
+        const { error } = await supabase.from(table).upsert(row, { onConflict: 'id' });
+        if (error) throw error;
+        seen.set(row.id, json);
+      }
     }
 
     currentSyncStatus = {
@@ -378,27 +418,48 @@ export const syncToSupabase = async (data: StorageData, userEmail?: string) => {
 };
 
 // Delete single project from Supabase
-export const deleteProjectFromSupabase = async (projectId: number) => {
+export const deleteProjectFromSupabase = async (projectId: number, userEmail?: string) => {
+  if (!userEmail) return;
+  deletedIds.projects.add(projectId);
+  serverRows.projects.delete(projectId);
   try {
-    await supabase.from('projects').delete().eq('id', projectId);
+    await supabase
+      .from('projects')
+      .delete()
+      .eq('id', projectId)
+      .eq('owner_email', userEmail.toLowerCase());
   } catch (e) {
     console.error('Error deleting project from Supabase', e);
   }
 };
 
 // Delete single client from Supabase
-export const deleteClientFromSupabase = async (clientId: number) => {
+export const deleteClientFromSupabase = async (clientId: number, userEmail?: string) => {
+  if (!userEmail) return;
+  deletedIds.clients.add(clientId);
+  serverRows.clients.delete(clientId);
   try {
-    await supabase.from('clients').delete().eq('id', clientId);
+    await supabase
+      .from('clients')
+      .delete()
+      .eq('id', clientId)
+      .eq('owner_email', userEmail.toLowerCase());
   } catch (e) {
     console.error('Error deleting client from Supabase', e);
   }
 };
 
 // Delete single quote from Supabase
-export const deleteQuoteFromSupabase = async (quoteId: number) => {
+export const deleteQuoteFromSupabase = async (quoteId: number, userEmail?: string) => {
+  if (!userEmail) return;
+  deletedIds.quotes.add(quoteId);
+  serverRows.quotes.delete(quoteId);
   try {
-    await supabase.from('quotes').delete().eq('id', quoteId);
+    await supabase
+      .from('quotes')
+      .delete()
+      .eq('id', quoteId)
+      .eq('owner_email', userEmail.toLowerCase());
   } catch (e) {
     console.error('Error deleting quote from Supabase', e);
   }

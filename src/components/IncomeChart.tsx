@@ -16,6 +16,8 @@ export interface ChartBucket {
   pending: number; // outstanding amount
   count: number;
   isCurrent?: boolean;
+  /** Empty slot that keeps a short last week at the same bar width. */
+  placeholder?: boolean;
 }
 
 interface IncomeChartProps {
@@ -29,6 +31,8 @@ interface IncomeChartProps {
   onCustomRangeChange?: (range: { start: string; end: string }) => void;
   customRangePreset?: string | null;
   onCustomRangePresetChange?: (preset: string | null) => void;
+  /** Called when the refresh button is pressed. */
+  onRefresh?: () => void;
 }
 
 const MONTH_NAMES_EN = [
@@ -55,6 +59,27 @@ function formatDateYM(d: Date) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
 }
 
+// Tooltips grow inward from bars near either edge; the middle bar of an odd
+// count stays centred so it cannot run off a narrow screen.
+function ttSide(i: number, count: number) {
+  const mid = (count - 1) / 2;
+  return i < mid ? 'tt-left' : i > mid ? 'tt-right' : '';
+}
+
+// A month is shown a week at a time: days 1–7, 8–14, 15–21, 22–28, 29–end.
+function daysIn(ym: string) {
+  const [y, m] = ym.split('-').map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
+function weeksIn(ym: string) {
+  return Math.ceil(daysIn(ym) / 7);
+}
+
+function weekOfDay(ymd: string) {
+  return Math.floor((Number(ymd.slice(8, 10)) - 1) / 7);
+}
+
 export const IncomeChart: React.FC<IncomeChartProps> = ({
   projects = [],
   paidPayments,
@@ -66,6 +91,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
   onCustomRangeChange,
   customRangePreset: propCustomRangePreset,
   onCustomRangePresetChange,
+  onRefresh,
 }) => {
   const currentYearMonth = useMemo(() => {
     const d = new Date();
@@ -120,11 +146,19 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
   // Month picker year state
   const [monthPickerYear, setMonthPickerYear] = useState<number>(() => new Date().getFullYear());
 
+  // Week shown in month mode; null picks one from the data (see defaultWeek)
+  const [weekPick, setWeekPick] = useState<number | null>(null);
+
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  // Touch has no hover: the first tap on a bar shows its tooltip and a second
+  // tap on the same bar drills in. Mouse keeps hover-to-preview, click-to-drill.
+  const lastPointerRef = useRef<string>('mouse');
+  const armedIdxRef = useRef<number | null>(null);
   const [animationKey, setAnimationKey] = useState<number>(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = () => {
+    onRefresh?.();
     setIsRefreshing(true);
     setAnimationKey((k) => k + 1);
     setTimeout(() => {
@@ -170,6 +204,25 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     }
     setDropdownOpen(true);
   };
+
+  // Open a month on the week of its latest payment, else this week for the
+  // current month, else the first week with something due, else week 1.
+  const defaultWeek = useMemo(() => {
+    const paid = paidPayments
+      .map((x) => x.i.pd || '')
+      .filter((d) => d.startsWith(selectedMonth))
+      .sort();
+    if (paid.length) return weekOfDay(paid[paid.length - 1]);
+    if (selectedMonth === currentYearMonth) return weekOfDay(today());
+    const dues = projects
+      .flatMap((p) => p.plan)
+      .filter((it) => !it.paid && it.due && it.due.startsWith(selectedMonth))
+      .map((it) => it.due as string)
+      .sort();
+    return dues.length ? weekOfDay(dues[0]) : 0;
+  }, [paidPayments, projects, selectedMonth, currentYearMonth]);
+
+  const week = Math.min(weekPick ?? defaultWeek, weeksIn(selectedMonth) - 1);
 
   // Compute chart buckets based on selected mode
   const { buckets, periodLabel, filterButtonLabel, totalInPeriod, countInPeriod } = useMemo(() => {
@@ -246,15 +299,17 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
       const daysInMonth = new Date(refY, refM, 0).getDate();
       const daysList: ChartBucket[] = [];
       const mName = MONTH_NAMES_EN[refM - 1];
+      const mShort = MONTH_SHORT_EN[refM - 1];
+      const firstDay = week * 7 + 1;
+      const lastDay = Math.min(firstDay + 6, daysInMonth);
 
-      for (let day = 1; day <= daysInMonth; day++) {
-        const d = new Date(refY, refM - 1, day);
+      for (let day = firstDay; day <= lastDay; day++) {
         const ymd = `${refY}-${pad2(refM)}-${pad2(day)}`;
         const isToday = ymd === today();
 
         daysList.push({
           k: ymd,
-          l: `${day}`,
+          l: `${day} ${mShort}`,
           fullLabel: `${day} ${mName} ${refY}`,
           t: 0,
           paid: 0,
@@ -291,8 +346,14 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
         b.t = b.paid + b.pending;
       });
 
+      // Keep the short last week (29–31) at the same bar width as the others
+      for (let n = daysList.length; n < 7; n++) {
+        daysList.push({ k: `pad-${n}`, l: '', fullLabel: '', t: 0, paid: 0, pending: 0, count: 0, placeholder: true });
+      }
+
       resultBuckets = daysList;
-      pLabel = `${mName} ${refY}`;
+      const span = firstDay === lastDay ? `${firstDay}` : `${firstDay}–${lastDay}`;
+      pLabel = `Week ${week + 1} · ${span} ${mShort} ${refY}`;
       btnLabel = `${mName} ${refY}`;
     } else if (mode === 'range') {
       const start = customRange.start || ago(30);
@@ -404,7 +465,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     const countInPeriod = resultBuckets.reduce((sum, b) => sum + b.count, 0);
 
     return { buckets: resultBuckets, periodLabel: pLabel, filterButtonLabel: btnLabel, totalInPeriod, countInPeriod };
-  }, [mode, selectedMonth, customRange, customRangePreset, paidPayments, projects, currentYearMonth]);
+  }, [mode, selectedMonth, week, customRange, customRangePreset, paidPayments, projects, currentYearMonth]);
 
   const maxBucketVal = Math.max(...buckets.map((m) => m.t), 0);
 
@@ -450,11 +511,19 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     return { yMax: computedMax, yTicks: ticks };
   }, [maxBucketVal]);
 
-  // Month navigation in Single Month mode
-  const shiftSingleMonth = (delta: number) => {
+  // Week navigation in month mode; stepping past either end of the month
+  // carries on into the neighbouring month.
+  const shiftWeek = (delta: number) => {
+    setHoveredIdx(null);
+    const next = week + delta;
+    if (next >= 0 && next < weeksIn(selectedMonth)) {
+      setWeekPick(next);
+      return;
+    }
     const [y, m] = selectedMonth.split('-').map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    setSelectedMonth(formatDateYM(d));
+    const ym = formatDateYM(new Date(y, m - 1 + delta, 1));
+    setSelectedMonth(ym);
+    setWeekPick(delta < 0 ? weeksIn(ym) - 1 : 0);
   };
 
   // Reset to default (6 months)
@@ -468,16 +537,57 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
   // Select a specific single month
   const handleSelectMonth = (ym: string) => {
     setSelectedMonth(ym);
+    setWeekPick(null);
     setMode('month');
     setCustomRangePreset(null);
     setHoveredIdx(null);
     setDropdownOpen(false);
   };
 
+  useEffect(() => {
+    if (hoveredIdx === null) {
+      armedIdxRef.current = null;
+      return;
+    }
+    // A tap outside the bars closes the tooltip opened by touch
+    const onOutside = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse') return;
+      const target = e.target as Element | null;
+      if (!target?.closest('.bar-col, .x-month-label')) setHoveredIdx(null);
+    };
+    document.addEventListener('pointerdown', onOutside);
+    return () => document.removeEventListener('pointerdown', onOutside);
+  }, [hoveredIdx]);
+
+  const barPointerProps = (i: number, bucketKey: string) => ({
+    onPointerDown: (e: React.PointerEvent) => {
+      lastPointerRef.current = e.pointerType;
+    },
+    onPointerEnter: (e: React.PointerEvent) => {
+      if (e.pointerType === 'mouse') setHoveredIdx(i);
+    },
+    onPointerLeave: (e: React.PointerEvent) => {
+      if (e.pointerType === 'mouse') setHoveredIdx(null);
+    },
+    onClick: () => {
+      const viaTouch = lastPointerRef.current !== 'mouse';
+      // Keyboard activation after a tap must not inherit the touch behaviour
+      lastPointerRef.current = 'mouse';
+      if (viaTouch && armedIdxRef.current !== i) {
+        armedIdxRef.current = i;
+        setHoveredIdx(i);
+        return;
+      }
+      armedIdxRef.current = null;
+      handleBarClick(bucketKey);
+    },
+  });
+
   // Drill down from 6-month bar
   const handleBarClick = (bucketKey: string) => {
     if (mode === '6m') {
       setSelectedMonth(bucketKey);
+      setWeekPick(null);
       setMode('month');
       setHoveredIdx(null);
     }
@@ -496,15 +606,16 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
       return;
     }
     if (presetKey === '7d') {
-      setCustomRange({ start: ago(7), end: today() });
-      setCustomRangePreset('7 Hari Terakhir');
+      // ago(6)..today is 7 days including today
+      setCustomRange({ start: ago(6), end: today() });
+      setCustomRangePreset('Last 7 days');
       setMode('range');
       setDropdownOpen(false);
       return;
     }
     if (presetKey === '30d') {
-      setCustomRange({ start: ago(30), end: today() });
-      setCustomRangePreset('30 Hari Terakhir');
+      setCustomRange({ start: ago(29), end: today() });
+      setCustomRangePreset('Last 30 days');
       setMode('range');
       setDropdownOpen(false);
       return;
@@ -604,23 +715,24 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
         <div className="income-title-group">
           <h3>Income</h3>
           <span className="income-period-summary">
-            {rp(totalInPeriod)} · {countInPeriod} Transaction
+            {rp(totalInPeriod)} · {countInPeriod} {countInPeriod === 1 ? 'transaction' : 'transactions'}
           </span>
         </div>
+
+        {/* Refresh sits in the top-right corner; CSS orders it after the filter */}
+        <button
+          className={`chart-refresh-btn income-refresh ${isRefreshing ? 'spinning' : ''}`}
+          onClick={handleRefresh}
+          type="button"
+          title="Refresh chart animation"
+          aria-label="Refresh chart"
+        >
+          <Icon name="refresh" size={14} />
+        </button>
 
         {/* Filter Dropdown Controls */}
         <div className="income-filter-container" ref={dropdownRef}>
           <div className="income-filter-trigger-group">
-            <button
-              className={`chart-refresh-btn ${isRefreshing ? 'spinning' : ''}`}
-              onClick={handleRefresh}
-              type="button"
-              title="Refresh chart animation"
-              aria-label="Refresh chart"
-            >
-              <Icon name="refresh" size={14} />
-            </button>
-
             {!isDefaultView && (
               <button
                 className="btn sm income-reset-btn"
@@ -877,16 +989,18 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
             <>
               <button
                 className="ib sm-ib"
-                onClick={() => shiftSingleMonth(-1)}
-                title="Previous month"
+                onClick={() => shiftWeek(-1)}
+                title="Previous week"
+                aria-label="Previous week"
                 type="button"
               >
                 <Icon name="chevron-left" size={13} />
               </button>
               <button
                 className="ib sm-ib"
-                onClick={() => shiftSingleMonth(1)}
-                title="Next month"
+                onClick={() => shiftWeek(1)}
+                title="Next week"
+                aria-label="Next week"
                 type="button"
               >
                 <Icon name="chevron-right" size={13} />
@@ -940,6 +1054,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
             style={buckets.length > 20 ? { gap: '2px' } : undefined}
           >
             {buckets.map((b, i) => {
+              if (b.placeholder) return <div key={b.k} className="bar-col placeholder" aria-hidden="true" />;
               const isHovered = hoveredIdx === i;
               const heightPct = yMax > 0 ? (b.t / yMax) * 85 : 0;
               const safeHeight = b.t > 0 ? Math.max(heightPct, 4) : 1.5;
@@ -951,15 +1066,14 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                 <div
                   key={b.k}
                   className={`bar-col ${b.isCurrent ? 'current' : ''} ${isHovered ? 'hovered' : ''}`}
-                  onMouseEnter={() => setHoveredIdx(i)}
-                  onMouseLeave={() => setHoveredIdx(null)}
-                  onTouchStart={() => setHoveredIdx(hoveredIdx === i ? null : i)}
-                  onClick={() => handleBarClick(b.k)}
+                  {...barPointerProps(i, b.k)}
                   style={{ cursor: mode === '6m' ? 'pointer' : 'default' }}
                 >
                   {/* Floating Multi-row Detail Tooltip (only when there are deals/transactions) */}
                   {b.t > 0 && (
-                    <div className={`bar-tooltip ${isHovered ? 'active' : ''}`}>
+                    <div
+                      className={`bar-tooltip ${ttSide(i, buckets.length)} ${isHovered ? 'active' : ''}`}
+                    >
                       <div className="bar-tt-header">{b.fullLabel}</div>
                       <div className="bar-tt-content">
                         {b.paid > 0 && (
@@ -1026,6 +1140,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
           style={buckets.length > 20 ? { gap: '2px' } : undefined}
         >
           {buckets.map((b, i) => {
+            if (b.placeholder) return <span key={b.k} className="x-month-label placeholder" aria-hidden="true" />;
             const isHovered = hoveredIdx === i;
             const total = buckets.length;
             let showLabelText = true;
@@ -1062,9 +1177,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
               <button
                 key={b.k}
                 className={`x-month-label ${b.isCurrent ? 'current' : ''} ${isHovered ? 'hovered' : ''}`}
-                onMouseEnter={() => setHoveredIdx(i)}
-                onMouseLeave={() => setHoveredIdx(null)}
-                onClick={() => handleBarClick(b.k)}
+                {...barPointerProps(i, b.k)}
                 type="button"
                 style={{
                   fontSize: total > 20 ? '10px' : '11px',

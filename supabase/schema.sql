@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.clients (
   email TEXT DEFAULT '',
   phone TEXT DEFAULT '',
   address TEXT DEFAULT '',
-  owner_email TEXT DEFAULT 'zyfxspace@gmail.com',
+  owner_email TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS public.projects (
   status TEXT DEFAULT 'In Progress',
   notes TEXT DEFAULT '',
   plan JSONB DEFAULT '[]'::jsonb,
-  owner_email TEXT DEFAULT 'zyfxspace@gmail.com',
+  owner_email TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS public.quotes (
   items JSONB DEFAULT '[]'::jsonb,
   services JSONB DEFAULT '[]'::jsonb,
   payment_terms TEXT DEFAULT '',
+  note TEXT DEFAULT '',
   total NUMERIC NOT NULL DEFAULT 0,
   status TEXT DEFAULT 'Draft',
   valid_until TEXT DEFAULT '',
@@ -54,9 +55,12 @@ CREATE TABLE IF NOT EXISTS public.quotes (
   sender_tagline TEXT DEFAULT '',
   sender_email TEXT DEFAULT '',
   sender_phone TEXT DEFAULT '',
-  owner_email TEXT DEFAULT 'zyfxspace@gmail.com',
+  owner_email TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Older databases created before quotes.note existed
+ALTER TABLE public.quotes ADD COLUMN IF NOT EXISTS note TEXT DEFAULT '';
 
 -- 4. STUDIO PROFILES TABLE
 CREATE TABLE IF NOT EXISTS public.studio_profiles (
@@ -101,26 +105,29 @@ DROP POLICY IF EXISTS "Allow public insert studio_profiles" ON public.studio_pro
 DROP POLICY IF EXISTS "Allow public update studio_profiles" ON public.studio_profiles;
 DROP POLICY IF EXISTS "Allow public delete studio_profiles" ON public.studio_profiles;
 
--- CREATE PERMISSIVE POLICIES FOR ANON / PUBLISHABLE KEY ACCESS
-CREATE POLICY "Allow public read clients" ON public.clients FOR SELECT USING (true);
-CREATE POLICY "Allow public insert clients" ON public.clients FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update clients" ON public.clients FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete clients" ON public.clients FOR DELETE USING (true);
+-- OWNER-ONLY POLICIES
+-- Each row is visible and writable only by the signed-in Supabase Auth user
+-- whose email matches the row's owner. Requests without a session see nothing.
+DROP POLICY IF EXISTS "Owner access clients" ON public.clients;
+DROP POLICY IF EXISTS "Owner access projects" ON public.projects;
+DROP POLICY IF EXISTS "Owner access quotes" ON public.quotes;
+DROP POLICY IF EXISTS "Owner access studio_profiles" ON public.studio_profiles;
 
-CREATE POLICY "Allow public read projects" ON public.projects FOR SELECT USING (true);
-CREATE POLICY "Allow public insert projects" ON public.projects FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update projects" ON public.projects FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete projects" ON public.projects FOR DELETE USING (true);
+CREATE POLICY "Owner access clients" ON public.clients FOR ALL TO authenticated
+  USING (lower(owner_email) = lower(auth.jwt() ->> 'email'))
+  WITH CHECK (lower(owner_email) = lower(auth.jwt() ->> 'email'));
 
-CREATE POLICY "Allow public read quotes" ON public.quotes FOR SELECT USING (true);
-CREATE POLICY "Allow public insert quotes" ON public.quotes FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update quotes" ON public.quotes FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete quotes" ON public.quotes FOR DELETE USING (true);
+CREATE POLICY "Owner access projects" ON public.projects FOR ALL TO authenticated
+  USING (lower(owner_email) = lower(auth.jwt() ->> 'email'))
+  WITH CHECK (lower(owner_email) = lower(auth.jwt() ->> 'email'));
 
-CREATE POLICY "Allow public read studio_profiles" ON public.studio_profiles FOR SELECT USING (true);
-CREATE POLICY "Allow public insert studio_profiles" ON public.studio_profiles FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update studio_profiles" ON public.studio_profiles FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete studio_profiles" ON public.studio_profiles FOR DELETE USING (true);
+CREATE POLICY "Owner access quotes" ON public.quotes FOR ALL TO authenticated
+  USING (lower(owner_email) = lower(auth.jwt() ->> 'email'))
+  WITH CHECK (lower(owner_email) = lower(auth.jwt() ->> 'email'));
+
+CREATE POLICY "Owner access studio_profiles" ON public.studio_profiles FOR ALL TO authenticated
+  USING (lower(email) = lower(auth.jwt() ->> 'email'))
+  WITH CHECK (lower(email) = lower(auth.jwt() ->> 'email'));
 
 -- CREATE INDEXES FOR FAST QUERYING
 CREATE INDEX IF NOT EXISTS idx_clients_owner ON public.clients (owner_email);

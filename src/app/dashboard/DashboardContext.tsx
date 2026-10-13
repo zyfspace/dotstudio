@@ -200,10 +200,6 @@ interface DashboardContextType {
 
   docState: DocState | null;
   setDocState: React.Dispatch<React.SetStateAction<DocState | null>>;
-  collapsedInvoiceGroups: Record<string, boolean>;
-  setCollapsedInvoiceGroups: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-  collapsedQuoteGroups: Record<string, boolean>;
-  setCollapsedQuoteGroups: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 
   activeProjectDrawerId: number | null;
   setActiveProjectDrawerId: React.Dispatch<React.SetStateAction<number | null>>;
@@ -337,13 +333,13 @@ interface DashboardContextType {
     projectId: number,
     planItemId: number,
     markPaid: boolean,
-    proofData?: { n: string; d: string } | null
+    proofData?: { n: string; d: string } | null,
+    paidDate?: string
   ) => void;
-  handleProofUpload: (projectId: number, planItemId: number, file: File) => Promise<void>;
-  handleUpdatePaymentDate: (projectId: number, planItemId: number, newDate: string) => void;
+  handleProofUpload: (projectId: number, planItemId: number, file: File, paidDate?: string) => Promise<void>;
   handleUpdateDueDate: (projectId: number, planItemId: number, newDate: string) => void;
   handleCreateOrViewInvoice: (projectId: number, planItemId: number) => void;
-  handleAddAdditionalService: (projectId: number, label: string, cost: number, due: string) => void;
+  handleAddAdditionalService: (projectId: number, label: string, cost: number, paidAt: string) => number | null;
   handleDeleteProject: (projectId: number) => void;
   handleDeleteClient: (clientId: number) => void;
   handleDeleteQuote: (quoteId: number) => void;
@@ -419,8 +415,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [sortKey, setSortKey] = useState<'name' | 'due' | 'pg' | 'v'>('due');
   const [sortDir, setSortDir] = useState<number>(1);
   const [docState, setDocState] = useState<DocState | null>(null);
-  const [collapsedInvoiceGroups, setCollapsedInvoiceGroups] = useState<Record<string, boolean>>({});
-  const [collapsedQuoteGroups, setCollapsedQuoteGroups] = useState<Record<string, boolean>>({});
 
   // Drawers
   const [activeProjectDrawerId, setActiveProjectDrawerId] = useState<number | null>(null);
@@ -478,6 +472,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [uploadingItemId, setUploadingItemId] = useState<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isDataInitializedRef = useRef(false);
+  const loadSeqRef = useRef(0);
 
   const isProfileComplete = Boolean(
     studioProfile.studioName?.trim() &&
@@ -546,6 +541,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   // Load and sync data from LocalStorage & Supabase
   const loadData = useCallback(async (email?: string) => {
+    // Mount and sign-in can both start a load; only the latest one may mark
+    // the data ready, or an earlier one could enable saving mid-way.
+    const loadId = ++loadSeqRef.current;
     isDataInitializedRef.current = false;
     const userEmail = email || authUser?.email;
     const data = loadStoredData(userEmail);
@@ -622,17 +620,16 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           return q;
         });
 
-        if (remote.data.clients.length > 0 || remote.data.projects.length > 0 || remote.data.quotes.length > 0) {
-          setClients(remote.data.clients);
-          setProjects(normProjects);
-          setQuotes(normQuotes);
-        }
+        // The server copy wins over the local cache, even when it is empty
+        setClients(remote.data.clients);
+        setProjects(normProjects);
+        setQuotes(normQuotes);
       }
     } catch (e) {
       console.error('Failed to load from Supabase', e);
     } finally {
       setTimeout(() => {
-        isDataInitializedRef.current = true;
+        if (loadSeqRef.current === loadId) isDataInitializedRef.current = true;
       }, 500);
     }
   }, [authUser?.email]);
@@ -650,11 +647,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           setStudioProfile(remote.profile);
           setProfileDraft(remote.profile);
         }
-        if (remote.data.clients.length > 0 || remote.data.projects.length > 0 || remote.data.quotes.length > 0) {
-          setClients(remote.data.clients);
-          setProjects(remote.data.projects);
-          setQuotes(remote.data.quotes);
-        }
+        setClients(remote.data.clients);
+        setProjects(remote.data.projects);
+        setQuotes(remote.data.quotes);
         setSyncFeedback('Data synced successfully.');
       } else {
         setSyncFeedback('Saved locally.');
@@ -692,6 +687,14 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        if (!sbSession?.user) {
+          // Data access is authorized by the Supabase session, so a local
+          // session without one (e.g. from the old client-side login) is stale.
+          clearAuthSession();
+          setAuthUser(null);
+          return;
+        }
+
         if (sbSession?.user) {
           const userEmail = sbSession.user.email || '';
           const userName =
@@ -709,17 +712,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           setAuthSession(userObj);
           setAuthUser(userObj);
           loadData(userEmail);
-
-          const currentProfile = loadStudioProfile(userEmail);
-          const updatedProfile = {
-            ...currentProfile,
-            ownerName: userEmail.toLowerCase() === 'zyfxspace@gmail.com' ? (userObj.name || currentProfile.ownerName) : (currentProfile.ownerName || userObj.name || ''),
-            studioName: userEmail.toLowerCase() === 'zyfxspace@gmail.com' ? (userObj.studioName || currentProfile.studioName) : (currentProfile.studioName || userObj.studioName || ''),
-            email: currentProfile.email || userObj.email || '',
-          };
-          setStudioProfile(updatedProfile);
-          setProfileDraft(updatedProfile);
-          saveStudioProfile(updatedProfile, userEmail);
         }
       });
     });
@@ -842,7 +834,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
     const updated = { ...studioProfile, securityPin: cleanNew };
     setStudioProfile(updated);
-    saveStudioProfile(updated);
+    saveStudioProfile(updated, authUser?.email);
     setProfileDraft(updated);
     setIsSettingsUnlocked(true);
     setPinModalMode('none');
@@ -869,7 +861,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
     const updated = { ...studioProfile, securityPin: cleanNew };
     setStudioProfile(updated);
-    saveStudioProfile(updated);
+    saveStudioProfile(updated, authUser?.email);
     setProfileDraft(updated);
     setPinModalMode('none');
     setPinInput('');
@@ -880,7 +872,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   const handleSaveUnlockedSettings = () => {
     setStudioProfile(profileDraft);
-    saveStudioProfile(profileDraft);
+    saveStudioProfile(profileDraft, authUser?.email);
     setIsSettingsUnlocked(false);
     setProfileSavedFeedback(true);
     setTimeout(() => {
@@ -1411,7 +1403,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     projectId: number,
     planItemId: number,
     markPaid: boolean,
-    proofData?: { n: string; d: string } | null
+    proofData?: { n: string; d: string } | null,
+    paidDate?: string
   ) => {
     setProjects((prev) =>
       prev.map((p) => {
@@ -1423,7 +1416,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             return {
               ...item,
               paid: markPaid,
-              pd: markPaid ? (item.pd || today()) : '',
+              pd: markPaid ? (paidDate || item.pd || today()) : '',
               proof: proofData !== undefined ? proofData : markPaid ? item.proof : null,
             };
           }),
@@ -1435,7 +1428,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const handleProofUpload = async (
     projectId: number,
     planItemId: number,
-    file: File
+    file: File,
+    paidDate?: string
   ) => {
     setUploadingItemId(planItemId);
     try {
@@ -1448,12 +1442,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         handleTogglePaymentPaid(projectId, planItemId, true, {
           n: uploadedFile.name,
           d: fileUrl,
-        });
+        }, paidDate);
       } else {
         handleTogglePaymentPaid(projectId, planItemId, true, {
           n: file.name,
           d: '',
-        });
+        }, paidDate);
       }
     } catch (err) {
       console.error('UploadThing error:', err);
@@ -1462,34 +1456,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         handleTogglePaymentPaid(projectId, planItemId, true, {
           n: file.name,
           d: reader.result as string,
-        });
+        }, paidDate);
       };
       reader.readAsDataURL(file);
     } finally {
       setUploadingItemId(null);
     }
-  };
-
-  const handleUpdatePaymentDate = (
-    projectId: number,
-    planItemId: number,
-    newDate: string
-  ) => {
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id !== projectId) return p;
-        return {
-          ...p,
-          plan: p.plan.map((item) => {
-            if (item.id !== planItemId) return item;
-            return {
-              ...item,
-              pd: newDate,
-            };
-          }),
-        };
-      })
-    );
   };
 
   const handleUpdateDueDate = (
@@ -1514,13 +1486,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const handleAddAdditionalService = (projectId: number, label: string, cost: number, due: string) => {
+  const handleAddAdditionalService = (projectId: number, label: string, cost: number, paidAt: string) => {
     const targetProject = projects.find((p) => p.id === projectId);
-    if (!targetProject) return;
+    if (!targetProject) return null;
 
     const newItemId = Date.now() * 10 + targetProject.plan.length;
     const currentInvCount = allPayments.filter((x) => x.i.inv).length + 1;
-    const invDate = today();
+    const invDate = paidAt || today();
     const d = new Date(invDate + 'T00:00:00');
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
@@ -1532,7 +1504,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       l: label,
       pct: 0,
       a: cost,
-      due,
+      due: paidAt,
       paid: false,
       pd: '',
       proof: null,
@@ -1556,6 +1528,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         };
       })
     );
+    return newItemId;
   };
 
   const handleCreateOrViewInvoice = (projectId: number, planItemId: number) => {
@@ -1593,7 +1566,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       return;
     }
     setProjects((prev) => prev.filter((p) => p.id !== projectId));
-    deleteProjectFromSupabase(projectId);
+    deleteProjectFromSupabase(projectId, authUser?.email);
     closeDrawer();
   };
 
@@ -1603,13 +1576,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       return;
     }
     setClients((prev) => prev.filter((c) => c.id !== clientId));
-    deleteClientFromSupabase(clientId);
+    deleteClientFromSupabase(clientId, authUser?.email);
     closeDrawer();
   };
 
   const handleDeleteQuote = (quoteId: number) => {
     setQuotes((prev) => prev.filter((q) => q.id !== quoteId));
-    deleteQuoteFromSupabase(quoteId);
+    deleteQuoteFromSupabase(quoteId, authUser?.email);
     router.push('/dashboard/quotations');
   };
 
@@ -1622,7 +1595,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       const endD = new Date(refY, refM, 0);
       const start = `${startD.getFullYear()}-${String(startD.getMonth() + 1).padStart(2, '0')}-01`;
       const end = `${endD.getFullYear()}-${String(endD.getMonth() + 1).padStart(2, '0')}-${String(endD.getDate()).padStart(2, '0')}`;
-      return { start, end, label: '6 bulan terakhir' };
+      return { start, end, label: 'Last 6 months' };
     }
     if (chartMode === 'month') {
       const [y, m] = chartSelectedMonth.split('-').map(Number);
@@ -1800,10 +1773,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
     docState,
     setDocState,
-    collapsedInvoiceGroups,
-    setCollapsedInvoiceGroups,
-    collapsedQuoteGroups,
-    setCollapsedQuoteGroups,
 
     activeProjectDrawerId,
     setActiveProjectDrawerId,
@@ -1870,7 +1839,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     handleConvertQuoteToProject,
     handleTogglePaymentPaid,
     handleProofUpload,
-    handleUpdatePaymentDate,
     handleUpdateDueDate,
     handleCreateOrViewInvoice,
     handleAddAdditionalService,

@@ -15,6 +15,13 @@ interface LandingPageProps {
   onOpenDashboard?: () => void;
 }
 
+// Short chip labels so all three schemes fit on one line on phones
+const SCHEME_SHORT_LABELS: Record<string, string> = {
+  'Full payment': 'Full',
+  'DP 50 / 50': 'Split',
+  '3 installments': 'Installment',
+};
+
 const PRESET_SCHEMES: Record<string, [string, number][]> = {
   'Full payment': [['Full payment', 100]],
   'DP 50 / 50': [
@@ -426,14 +433,14 @@ export function LandingPage({
                       Booking automation
                       <div className="lp-mut">Final · due 12 Nov</div>
                     </span>
-                    <b>Rp 7 jt</b>
+                    <b>Rp 7M</b>
                   </div>
                   <div className="lp-row" style={{ padding: '7px 0', borderTop: '1px solid var(--line)' }}>
                     <span>
                       SEO content plan
                       <div className="lp-mut" style={{ color: 'var(--ac)' }}>Final · overdue</div>
                     </span>
-                    <b>Rp 3,6 jt</b>
+                    <b>Rp 3.6M</b>
                   </div>
                 </div>
 
@@ -492,8 +499,10 @@ export function LandingPage({
                   type="button"
                   className={`lp-chip ${schemeKey === currentScheme ? 'on' : ''}`}
                   onClick={() => handleSchemeChange(schemeKey)}
+                  aria-label={schemeKey}
                 >
-                  {schemeKey}
+                  <span className="lp-chip-long">{schemeKey}</span>
+                  <span className="lp-chip-short">{SCHEME_SHORT_LABELS[schemeKey] || schemeKey}</span>
                 </button>
               ))}
             </div>
@@ -589,8 +598,10 @@ export function LandingPage({
                 <div className="lp-ic">
                   <Icon name={feat.icon} size={24} />
                 </div>
-                <h3>{feat.title}</h3>
-                <p>{feat.desc}</p>
+                <div>
+                  <h3>{feat.title}</h3>
+                  <p>{feat.desc}</p>
+                </div>
               </div>
             ))}
           </div>

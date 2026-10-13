@@ -6,9 +6,8 @@ import { DotStudioPaperLogo } from '@/components/Logo';
 import { OtpInput } from '@/components/OtpInput';
 import {
   AuthUser,
-  verifyLogin,
-  registerUser,
   setAuthSession,
+  signInWithSupabase,
   signInWithGoogle,
   signUpWithSupabase,
   verifyOtpWithSupabase,
@@ -118,7 +117,7 @@ export function AuthScreen({
     }
     setIsVerifyingOtp(true);
     setOtpError('');
-    const res = await verifyOtpWithSupabase(email, code, name, studioName, password);
+    const res = await verifyOtpWithSupabase(email, code, name, studioName);
     setIsVerifyingOtp(false);
     if (res.success && res.user) {
       onSuccess(res.user);
@@ -173,7 +172,7 @@ export function AuthScreen({
     setIsSubmitting(true);
 
     if (mode === 'login') {
-      const res = verifyLogin(cleanEmail, password);
+      const res = await signInWithSupabase(cleanEmail, password);
       setIsSubmitting(false);
       if (res.success && res.user) {
         setAuthSession(res.user, rememberMe);
@@ -364,7 +363,7 @@ export function AuthScreen({
                     }}
                   >
                     <Icon name="clock" size={15} style={{ flexShrink: 0, color: 'var(--ac)' }} />
-                    <span>Sesi Anda telah berakhir setelah 24 jam tidak aktif. Silakan masuk kembali.</span>
+                    <span>Your session ended after 24 hours of inactivity. Please sign in again.</span>
                   </div>
                 )}
 
@@ -481,7 +480,7 @@ export function AuthScreen({
                         onClick={() => setShowPassword(!showPassword)}
                         aria-label={showPassword ? 'Hide password' : 'Show password'}
                       >
-                        <Icon name={showPassword ? 'eyeOff' : 'eye'} size={15} />
+                        <Icon name={showPassword ? 'eyeoff' : 'eye'} size={15} />
                       </button>
                     </div>
 

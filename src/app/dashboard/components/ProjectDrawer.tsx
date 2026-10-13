@@ -21,7 +21,6 @@ export function ProjectDrawer() {
     handleProofUpload,
     handleCreateOrViewInvoice,
     handleAddAdditionalService,
-    handleUpdatePaymentDate,
     quotes,
     handleStartNewQuote,
     openDoc,
@@ -38,7 +37,10 @@ export function ProjectDrawer() {
   const [showAddService, setShowAddService] = useState(false);
   const [addServiceLabel, setAddServiceLabel] = useState('');
   const [addServiceCost, setAddServiceCost] = useState('');
-  const [addServiceDue, setAddServiceDue] = useState('');
+  const [addServicePaidAt, setAddServicePaidAt] = useState('');
+  const [addServiceProof, setAddServiceProof] = useState<File | null>(null);
+  // Paid date picked per plan item before its proof can be uploaded
+  const [pendingPaidDates, setPendingPaidDates] = useState<Record<number, string>>({});
 
   return (
     <div className={`dr ${activeProjectDrawerId ? 'on' : ''}`} id="dr">
@@ -102,21 +104,21 @@ export function ProjectDrawer() {
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div className="ins-title">
                               {item.l}{' '}
-                              <span className="mut" style={{ fontWeight: 400, fontSize: '12.5px' }}>
-                                ({item.pct}%)
-                              </span>
+                              {/* Additional services are paid in full and stored with pct 0 */}
+                              {item.pct > 0 && (
+                                <span className="mut" style={{ fontWeight: 400, fontSize: '12.5px' }}>
+                                  ({item.pct}%)
+                                </span>
+                              )}
                             </div>
                             <div className="ins-date-pill">
                               <span className={overdue ? 'od' : 'mut'} style={{ fontSize: '12px' }}>
                                 {item.paid ? 'Paid date:' : overdue ? 'Overdue:' : 'Due date:'}
                               </span>
                               {item.paid ? (
-                                <DatePicker
-                                  value={item.pd || ''}
-                                  onChange={(val) => handleUpdatePaymentDate(activeProject.id, item.id, val)}
-                                  placeholder="Set paid date"
-                                  className="inline-date-edit"
-                                />
+                                <span style={{ fontSize: '12px', fontWeight: 500 }}>
+                                  {item.pd ? dt(item.pd) : '—'}
+                                </span>
                               ) : (
                                 <span style={{ fontSize: '12px', fontWeight: 500, color: overdue ? 'var(--red, #ef4444)' : 'inherit' }}>
                                   {item.due ? dt(item.due) : '—'}
@@ -155,29 +157,52 @@ export function ProjectDrawer() {
                                 <span className="mut" style={{ fontSize: '12px' }}>No proof</span>
                               )}
                             </>
-                          ) : (
-                            <label
-                              className="btn sm pri"
-                              style={{
-                                cursor: uploadingItemId === item.id ? 'wait' : 'pointer',
-                                opacity: uploadingItemId === item.id ? 0.7 : 1,
-                              }}
-                            >
-                              <Icon name="upload" size={14} />
-                              {uploadingItemId === item.id ? 'Uploading…' : 'Add Payment Proof'}
-                              <input
-                                type="file"
-                                accept="image/*,.pdf"
-                                disabled={uploadingItemId === item.id}
-                                onChange={(e) => {
-                                  const f = e.target.files?.[0];
-                                  if (f) {
-                                    handleProofUpload(activeProject.id, item.id, f);
+                          ) : (() => {
+                            const paidDate = pendingPaidDates[item.id] || '';
+                            const uploading = uploadingItemId === item.id;
+                            const canUpload = Boolean(paidDate) && !uploading;
+                            return (
+                              <>
+                                <DatePicker
+                                  value={paidDate}
+                                  onChange={(val) =>
+                                    setPendingPaidDates((prev) => ({ ...prev, [item.id]: val }))
                                   }
-                                }}
-                              />
-                            </label>
-                          )}
+                                  placeholder="Paid date"
+                                  className="ia-date"
+                                  disabled={uploading}
+                                />
+                                <label
+                                  className="btn sm pri"
+                                  title={paidDate ? undefined : 'Pick the paid date first'}
+                                  style={{
+                                    cursor: uploading ? 'wait' : canUpload ? 'pointer' : 'not-allowed',
+                                    opacity: canUpload ? 1 : uploading ? 0.7 : 0.4,
+                                  }}
+                                >
+                                  <Icon name="upload" size={14} />
+                                  {uploading ? 'Uploading…' : 'Payment'}
+                                  <input
+                                    type="file"
+                                    accept="image/*,.pdf"
+                                    disabled={!canUpload}
+                                    onChange={(e) => {
+                                      const f = e.target.files?.[0];
+                                      e.target.value = '';
+                                      if (f && paidDate) {
+                                        handleProofUpload(activeProject.id, item.id, f, paidDate);
+                                        setPendingPaidDates((prev) => {
+                                          const next = { ...prev };
+                                          delete next[item.id];
+                                          return next;
+                                        });
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </>
+                            );
+                          })()}
 
                           <button
                             className="btn sm"
@@ -195,36 +220,25 @@ export function ProjectDrawer() {
                       </div>
                     );
                   })}
-                </div>
 
-                {/* Additional Service */}
-                <div style={{ marginTop: '12px' }}>
+                  {/* Additional Service */}
                   {!showAddService ? (
                     <button
                       type="button"
-                      className="btn sm"
+                      className="add-svc-btn"
                       onClick={() => {
                         setShowAddService(true);
                         setAddServiceLabel('');
                         setAddServiceCost('');
-                        setAddServiceDue(today());
+                        setAddServicePaidAt(today());
+                        setAddServiceProof(null);
                       }}
                     >
                       <Icon name="plus" size={14} />
                       Additional service
                     </button>
                   ) : (
-                    <div
-                      style={{
-                        padding: '14px',
-                        borderRadius: '8px',
-                        border: '1px solid var(--line)',
-                        background: 'var(--soft)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '10px',
-                      }}
-                    >
+                    <div className="add-svc-form">
                       <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--fg)' }}>
                         New additional service
                       </div>
@@ -253,30 +267,59 @@ export function ProjectDrawer() {
                           />
                         </div>
                         <div className="f" style={{ margin: 0 }}>
-                          <label style={{ fontSize: '12px' }}>Due date</label>
+                          <label style={{ fontSize: '12px' }}>Paid at</label>
                           <DatePicker
-                            value={addServiceDue}
-                            onChange={(val) => setAddServiceDue(val)}
-                            placeholder="Due date"
+                            value={addServicePaidAt}
+                            onChange={(val) => setAddServicePaidAt(val)}
+                            placeholder="Paid at"
                           />
                         </div>
+                      </div>
+                      <div className="f" style={{ margin: 0 }}>
+                        <label style={{ fontSize: '12px' }}>Payment proof</label>
+                        <label className="btn sm add-svc-file" title={addServiceProof?.name}>
+                          <Icon name="upload" size={14} />
+                          <span className="add-svc-file-name">
+                            {addServiceProof ? addServiceProof.name : 'Choose file'}
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              e.target.value = '';
+                              if (f) setAddServiceProof(f);
+                            }}
+                          />
+                        </label>
                       </div>
                       <div style={{ display: 'flex', gap: '8px', marginTop: '2px' }}>
                         <button
                           type="button"
                           className="btn sm pri"
-                          disabled={!addServiceLabel.trim() || !addServiceCost || +addServiceCost <= 0}
+                          disabled={
+                            !addServiceLabel.trim() ||
+                            !addServiceCost ||
+                            +addServiceCost <= 0 ||
+                            !addServicePaidAt ||
+                            !addServiceProof
+                          }
                           onClick={() => {
-                            handleAddAdditionalService(
+                            if (!addServiceProof) return;
+                            const newItemId = handleAddAdditionalService(
                               activeProject.id,
                               addServiceLabel.trim(),
                               +addServiceCost,
-                              addServiceDue
+                              addServicePaidAt
                             );
+                            if (newItemId !== null) {
+                              handleProofUpload(activeProject.id, newItemId, addServiceProof, addServicePaidAt);
+                            }
                             setShowAddService(false);
                             setAddServiceLabel('');
                             setAddServiceCost('');
-                            setAddServiceDue('');
+                            setAddServicePaidAt('');
+                            setAddServiceProof(null);
                           }}
                         >
                           Save

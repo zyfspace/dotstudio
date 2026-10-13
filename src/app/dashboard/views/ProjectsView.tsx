@@ -148,10 +148,17 @@ export function ProjectsView() {
                       key={p.id}
                       onClick={() => setActiveProjectDrawerId(p.id)}
                     >
-                      <td>{p.name}</td>
-                      <td>
-                        <span>{c.name}</span>
-                        {c.co && <span className="mut"> · {c.co}</span>}
+                      <td className="wrap">
+                        <span className="proj-name">
+                          {p.name}
+                          <AddOnChip project={p} />
+                        </span>
+                      </td>
+                      <td className="wrap">
+                        <div className="cell-two">
+                          <span>{c.name}</span>
+                          {c.co && <span className="mut">{c.co}</span>}
+                        </div>
                       </td>
                       <td>
                         <span className={`st ${st}`}>
@@ -190,7 +197,10 @@ export function ProjectsView() {
                 >
                   <div className="mob-item-top">
                     <div style={{ minWidth: 0 }}>
-                      <div className="mob-item-title">{p.name}</div>
+                      <div className="mob-item-title proj-name">
+                        {p.name}
+                        <AddOnChip project={p} />
+                      </div>
                       <div className="mob-item-sub">
                         {c.name}{c.co ? ` · ${c.co}` : ''}
                       </div>
@@ -222,5 +232,17 @@ export function ProjectsView() {
         </>
       )}
     </div>
+  );
+}
+
+// Marks a main project that has additional services; details live in its drawer.
+function AddOnChip({ project }: { project: Project }) {
+  const count = (project.items || []).filter((it) => it.type === 'Additional').length;
+  if (!count) return null;
+  return (
+    <span className="addon-chip" title={`${count} additional service${count > 1 ? 's' : ''}`}>
+      <Icon name="plus" size={10} />
+      {count} add-on{count > 1 ? 's' : ''}
+    </span>
   );
 }

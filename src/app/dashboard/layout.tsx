@@ -9,7 +9,6 @@ import { ProjectDrawer } from './components/ProjectDrawer';
 import { ClientDrawer } from './components/ClientDrawer';
 import { Modals } from './components/Modals';
 import { AuthScreen } from '@/components/AuthScreen';
-import { loadStudioProfile, saveStudioProfile } from '@/lib/storage';
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const {
@@ -21,8 +20,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     loadData,
     theme,
     toggleTheme,
-    setStudioProfile,
-    setProfileDraft,
     isSidebarCollapsed,
     activeProjectDrawerId,
     activeClientDrawerId,
@@ -38,29 +35,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           onSuccess={(user) => {
             setAuthUser(user);
             loadData(user.email);
-            if (user.email?.toLowerCase() === 'zyfxspace@gmail.com') {
-              const currentProfile = loadStudioProfile(user.email);
-              const updatedProfile = {
-                ...currentProfile,
-                ownerName: user.name || currentProfile.ownerName,
-                studioName: user.studioName || currentProfile.studioName,
-                email: user.email || currentProfile.email,
-              };
-              setStudioProfile(updatedProfile);
-              setProfileDraft(updatedProfile);
-              saveStudioProfile(updatedProfile, user.email);
-            } else {
-              const currentProfile = loadStudioProfile(user.email);
-              const updatedProfile = {
-                ...currentProfile,
-                ownerName: currentProfile.ownerName || user.name || '',
-                studioName: currentProfile.studioName || user.studioName || '',
-                email: currentProfile.email || user.email || '',
-              };
-              setStudioProfile(updatedProfile);
-              setProfileDraft(updatedProfile);
-              saveStudioProfile(updatedProfile, user.email);
-            }
           }}
           theme={theme}
           onToggleTheme={toggleTheme}

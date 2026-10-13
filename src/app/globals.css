@@ -2,6 +2,7 @@
   --bg: #fff;
   --fg: #0a0a0a;
   --ac: #f16818;
+  --ok: #16a34a;
   --mut: color-mix(in srgb, var(--fg) 52%, var(--bg));
   --line: color-mix(in srgb, var(--fg) 11%, var(--bg));
   --soft: color-mix(in srgb, var(--fg) 4%, var(--bg));
@@ -12,17 +13,20 @@
   :root:not([data-theme="light"]) {
     --bg: #0a0a0a;
     --fg: #fff;
+    --ok: #22c55e;
   }
 }
 
 :root[data-theme="dark"] {
   --bg: #0a0a0a;
   --fg: #fff;
+  --ok: #22c55e;
 }
 
 :root[data-theme="light"] {
   --bg: #fff;
   --fg: #0a0a0a;
+  --ok: #16a34a;
 }
 
 html {
@@ -1285,32 +1289,37 @@ aside #tg {
   transform: translateX(-50%) translateY(0);
 }
 
-.bar-col:first-child .bar-tooltip {
+/* Anchor the tooltip to the bar edge facing the chart's middle so it never
+   runs off-screen (left-half bars open rightwards, right-half leftwards) */
+.bar-tooltip.tt-left {
   left: 0;
-  transform: translateX(0) translateY(4px);
+  transform: translateY(4px);
 }
-.bar-col:first-child .bar-tooltip::after {
+
+.bar-tooltip.tt-right {
+  left: auto;
+  right: 0;
+  transform: translateY(4px);
+}
+
+.bar-tooltip.tt-left::after {
   left: 18px;
   transform: none;
 }
-.bar-col:first-child:hover .bar-tooltip,
-.bar-col:first-child.hovered .bar-tooltip {
-  transform: translateX(0) translateY(0);
-}
 
-.bar-col:last-child .bar-tooltip {
-  left: auto;
-  right: 0;
-  transform: translateX(0) translateY(4px);
-}
-.bar-col:last-child .bar-tooltip::after {
+.bar-tooltip.tt-right::after {
   left: auto;
   right: 18px;
   transform: none;
 }
-.bar-col:last-child:hover .bar-tooltip,
-.bar-col:last-child.hovered .bar-tooltip {
-  transform: translateX(0) translateY(0);
+
+.bar-col:hover .bar-tooltip.tt-left,
+.bar-col.hovered .bar-tooltip.tt-left,
+.bar-tooltip.tt-left.active,
+.bar-col:hover .bar-tooltip.tt-right,
+.bar-col.hovered .bar-tooltip.tt-right,
+.bar-tooltip.tt-right.active {
+  transform: translateY(0);
 }
 
 .bar-tt-header {
@@ -1541,6 +1550,13 @@ td {
   color: var(--fg);
 }
 
+/* Text columns may wrap so narrow desktops keep amount/status columns in view */
+td.wrap {
+  white-space: normal;
+  min-width: 110px;
+  overflow-wrap: anywhere;
+}
+
 tr:last-child td {
   border: 0;
 }
@@ -1583,10 +1599,21 @@ tbody tr:hover {
   border-color: var(--ac);
 }
 
+.st.Done,
+.st.Finished {
+  color: var(--ok);
+  font-weight: 500;
+}
+
 .st.Done:before,
 .st.Finished:before {
-  background: var(--fg);
-  border-color: var(--fg);
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 0;
+  background: var(--ok);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .st.Review:before {
@@ -1742,6 +1769,27 @@ tbody tr:hover {
   letter-spacing: 0.02em;
 }
 
+.sec-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.sec-head > small {
+  color: var(--mut);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .drawer-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1772,6 +1820,23 @@ tbody tr:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
+}
+
+/* Three stat boxes can't fit large amounts on phones: stack them as rows */
+@media (max-width: 480px) {
+  .drawer-stats {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .drawer-stat {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .drawer-stat b {
+    margin-top: 0;
+  }
 }
 
 .drawer-client-box {
@@ -2437,6 +2502,101 @@ textarea:focus,
   align-items: center;
 }
 
+.cell-two {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.3;
+}
+
+.cell-two .mut {
+  font-size: 12px;
+}
+
+.proj-name {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.addon-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--mut);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.add-svc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 40px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--mut);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.add-svc-btn:hover {
+  border-color: color-mix(in srgb, var(--fg) 35%, var(--bg));
+  color: var(--fg);
+  background: var(--soft);
+}
+
+.add-svc-form {
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--soft);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.add-svc-file {
+  width: 100%;
+  height: 36px;
+  justify-content: flex-start;
+  cursor: pointer;
+  background: var(--bg);
+}
+
+.add-svc-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.ia .custom-datepicker-container.ia-date {
+  width: auto;
+}
+
+.ia .ia-date .custom-datepicker-trigger {
+  height: 28px;
+  padding: 0 9px;
+  font-size: 12px;
+  border-radius: 6px;
+  gap: 6px;
+}
+
 .client-project-item {
   display: flex;
   justify-content: space-between;
@@ -2806,6 +2966,33 @@ input[type="file"] {
     display: table;
     width: 100%;
   }
+
+  /* Stacked header blocks read better left-aligned than half right-aligned */
+  .docx-header-grid > div,
+  .docx-meta-grid > div {
+    text-align: left !important;
+  }
+
+  /* Let columns size to their content so amounts and the type label stay whole */
+  .docx-cost-table {
+    table-layout: auto !important;
+  }
+
+  .docx-cost-table thead th,
+  .docx-cost-table tbody td {
+    padding: 6px 7px !important;
+    font-size: 12px !important;
+  }
+
+  .docx-cost-table thead th.c,
+  .docx-cost-table tbody td.c {
+    word-break: normal !important;
+  }
+
+  .docx-cost-table th:last-child,
+  .docx-cost-table td:last-child {
+    white-space: nowrap !important;
+  }
 }
 
 /* PIN Security Modal */
@@ -2957,7 +3144,8 @@ input[type="file"] {
 
 .otp-digit-boxes {
   display: flex;
-  gap: 8px;
+  gap: clamp(4px, 2vw, 8px);
+  min-width: 0;
   justify-content: center;
   align-items: center;
   width: 100%;
@@ -2965,6 +3153,8 @@ input[type="file"] {
 
 .otp-digit-box {
   width: 44px;
+  flex: 0 1 44px;
+  min-width: 0;
   height: 48px;
   border-radius: 8px;
   border: 1px solid var(--line);
@@ -3603,8 +3793,8 @@ input[type="file"] {
 }
 
 .accordion-company-icon {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 7px;
   background: var(--bg);
   border: 1px solid var(--line);
@@ -3615,14 +3805,37 @@ input[type="file"] {
   flex-shrink: 0;
 }
 
-.accordion-company-name {
+.accordion-count-inline {
+  display: none;
+}
+
+.accordion-name-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.accordion-client-name {
   font-size: 14px;
   font-weight: 600;
+  line-height: 1.3;
   color: var(--fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.accordion-company-sub {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--mut);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 
 .accordion-count-badge {
   font-size: 11.5px;
@@ -3658,6 +3871,30 @@ input[type="file"] {
 
 .accordion-chevron.expanded {
   transform: rotate(180deg);
+}
+
+.accordion-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+
+.accordion-collapse.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.accordion-collapse-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accordion-collapse,
+  .accordion-chevron {
+    transition: none;
+  }
 }
 
 .accordion-body {
@@ -3699,6 +3936,7 @@ input[type="file"] {
 
 .auth-root .box {
   width: min(380px, 100%);
+  min-width: 0;
 }
 
 .auth-form-anim {
@@ -4533,6 +4771,18 @@ input[type="file"] {
     line-height: 1.3;
   }
 
+  /* Invoice numbers are all caps/digits, so they read larger than the
+     client name above them at the same size. */
+  .mob-item-title.mob-inv-no {
+    font-size: 12.5px;
+    letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mob-inv-date {
+    font-size: 11.5px;
+  }
+
   .mob-item-sub {
     font-size: 12px;
     color: var(--mut);
@@ -4550,6 +4800,8 @@ input[type="file"] {
   }
 
   .mob-item-val {
+    flex-shrink: 0;
+    white-space: nowrap;
     font-weight: 600;
     color: var(--fg);
     font-variant-numeric: tabular-nums;
@@ -4581,6 +4833,12 @@ input[type="file"] {
     padding: 8px 11px !important;
     line-height: 1.45 !important;
     font-size: 13.5px !important;
+  }
+
+  /* Keep room for the leading icon and the password eye button */
+  .auth-root .fi .in {
+    height: 40px !important;
+    padding: 0 40px 0 38px !important;
   }
 
   /* Responsive Cost Items / Quotation Items on Mobile */
@@ -4736,9 +4994,14 @@ input[type="file"] {
     gap: 8px !important;
   }
 
-  .accordion-company-name {
-    font-size: 13px !important;
-    max-width: 140px !important;
+  .accordion-client-name {
+    font-size: 13px;
+  }
+  .accordion-title-box .accordion-count-badge {
+    display: none;
+  }
+  .accordion-count-inline {
+    display: inline;
   }
 
   .accordion-total-amount {
@@ -4777,5 +5040,431 @@ input[type="file"] {
   .mob-menu-overlay {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* Document header: title and Print share one row on phones; any other
+   actions (quotations) drop to the next row */
+.doc-top .pt-short,
+.doc-top .doc-top-break {
+  display: none;
+}
+
+/* The global * rule resets weight, so the type label must inherit the title's */
+.doc-top .doc-kind {
+  font-weight: inherit;
+}
+
+@media (max-width: 768px) {
+  .doc-top {
+    flex-wrap: wrap;
+    column-gap: 8px;
+  }
+
+  .doc-top > * {
+    order: 2;
+  }
+
+  .doc-top > #bk,
+  .doc-top > h1,
+  .doc-top > #pt {
+    order: 0;
+  }
+
+  .doc-top > h1 {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 15px !important;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .doc-top > #pt {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .doc-top .pt-long {
+    display: none;
+  }
+
+  .doc-top .pt-short {
+    display: inline;
+  }
+
+  .doc-top .doc-top-break {
+    display: block;
+    order: 1;
+    flex-basis: 100%;
+    height: 0;
+  }
+}
+
+/* Very narrow phones: the breadcrumb already names the document type, so
+   drop it from the title and keep the number whole */
+@media (max-width: 360px) {
+  .doc-top .doc-kind {
+    display: none;
+  }
+}
+
+/* Income header: refresh is always the top-right item. On wide screens the
+   period filter sits just left of it; on tablets and phones the filter drops
+   to its own left-aligned row and the popover opens from the left. */
+.income-title-group {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.income-header > .income-filter-container {
+  order: 1;
+}
+
+.income-header > .income-refresh {
+  order: 2;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .income-header > .income-refresh {
+    order: 1;
+  }
+
+  .income-header > .income-filter-container {
+    order: 2;
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  .income-filter-trigger-group {
+    justify-content: flex-start;
+  }
+
+  .income-filter-popover {
+    left: 0 !important;
+    right: auto !important;
+    width: min(320px, 100%) !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+}
+
+/* The count-up number is a span inside the value; stat label rules such as
+   `.stat span` (12px, muted) and the global weight reset must not reach it */
+.count-up,
+.stat b > .count-up {
+  font: inherit !important;
+  color: inherit !important;
+  letter-spacing: inherit !important;
+}
+
+/* Small phones: date picker, Payment and View invoice share one row only
+   without their icons */
+@media (max-width: 380px) {
+  .dr .ia {
+    gap: 6px;
+  }
+
+  .dr .ia > .btn {
+    gap: 0;
+  }
+
+  .dr .ia > .btn svg,
+  .dr .ia .custom-datepicker-icon {
+    display: none;
+  }
+}
+
+@media (max-width: 340px) {
+  .dr .ia > .btn,
+  .dr .ia .ia-date .custom-datepicker-trigger {
+    padding: 0 8px;
+  }
+}
+
+/* iOS Safari zooms the page into any form field under 16px on focus, so
+   only there raise fields to 16px. -webkit-touch-callout is iOS-only, so
+   Android, desktop and macOS Safari keep the smaller design sizes. */
+@supports (-webkit-touch-callout: none) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Empty slots that pad a short last week in the month chart */
+.bar-col.placeholder,
+.x-month-label.placeholder {
+  pointer-events: none;
+  cursor: default;
+}
+
+/* Paid stamp under "Amount Due" on settled invoices (see PaidStamp.tsx).
+   Positions come from a 684×178 design scaled by --s. */
+.paid-stamp {
+  --s: 0.36;
+  position: relative;
+  width: calc(684px * var(--s));
+  height: calc(188px * var(--s));
+  margin: 14px 0 0 auto;
+  opacity: 0.2;
+  font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+  user-select: none;
+  pointer-events: none;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  -webkit-font-smoothing: antialiased;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.paid-stamp-logo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: calc(154px * var(--s));
+}
+
+.paid-stamp-dot {
+  position: absolute;
+  left: 0;
+  top: calc(28px * var(--s));
+  width: calc(98px * var(--s));
+  height: calc(98px * var(--s));
+  border-radius: 9999px;
+  background: #F16818;
+}
+
+.paid-stamp-word {
+  position: absolute;
+  left: calc(149px * var(--s));
+  top: 0;
+  font-size: calc(128px * var(--s));
+  font-weight: 500;
+  line-height: calc(154px * var(--s));
+  letter-spacing: -0.06em;
+  color: #000000;
+}
+
+.paid-stamp-text {
+  position: absolute;
+  left: 0;
+  top: calc(154px * var(--s));
+  /* 1.5× the Paper size so the date stays legible at stamp scale */
+  font-size: calc(30px * var(--s));
+  font-weight: 500;
+  line-height: calc(34px * var(--s));
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  color: #000000;
+}
+
+@media screen and (max-width: 360px) {
+  .paid-stamp {
+    --s: 0.33;
+  }
+}
+
+/* ── A4 document page (invoice / quotation view) ──────────────────────────
+   One layout for screen, phone and print: a 210×297mm page with real
+   margins and the footer pinned to the bottom. Phones get the same page
+   scaled down (see useA4Fit in DocView), so it matches the PDF exactly. */
+.docx-paper.docx-a4 {
+  width: 794px !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 1123px !important;
+  max-height: none !important;
+  padding: 22mm 20mm 16mm !important;
+  box-sizing: border-box !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.docx-a4 .docx-body-content {
+  flex: 1 0 auto !important;
+}
+
+.docx-a4 .docx-footer-wrap {
+  margin-top: auto !important;
+  padding-top: 28px !important;
+}
+
+.docx-a4 .docx-header-grid {
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 24px !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 18px !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.docx-a4 .docx-h-title {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.01em;
+  margin-bottom: 6px !important;
+}
+
+.docx-a4 .docx-h-sub {
+  font-size: 11px !important;
+  line-height: 1.6 !important;
+  color: #374151 !important;
+  margin-top: 0 !important;
+}
+
+.docx-a4 .docx-meta-grid {
+  flex-direction: row !important;
+  gap: 32px !important;
+  margin: 18px 0 6px !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+
+.docx-a4 .docx-header-grid > div:last-child,
+.docx-a4 .docx-meta-grid > div:last-child {
+  text-align: right !important;
+}
+
+/* Document number and dates keep their lines; a long studio name wraps instead */
+.docx-a4 .docx-header-grid > div:first-child {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.docx-a4 .docx-header-grid > div:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* "Dari: <studio>" stays on one line next to a long client name */
+.docx-a4 .docx-meta-grid > div:last-child {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.docx-a4 .docx-sec-title {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  margin: 20px 0 8px !important;
+}
+
+.docx-a4 .docx-list {
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+  gap: 3px !important;
+  margin: 0 !important;
+  padding-left: 18px !important;
+}
+
+.docx-a4 .docx-cost-table {
+  table-layout: fixed !important;
+  border: 0 !important;
+  margin: 0 !important;
+}
+
+.docx-a4 .docx-cost-table thead th {
+  background: #f1f5f9 !important;
+  color: #1f3864 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 7px 10px !important;
+  border: 0 !important;
+  border-top: 1px solid #cbd5e1 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.docx-a4 .docx-cost-table tbody td {
+  font-size: 12px !important;
+  padding: 7px 10px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  white-space: normal !important;
+}
+
+.docx-a4 .docx-cost-table thead th:last-child,
+.docx-a4 .docx-cost-table tbody td:last-child {
+  text-align: right !important;
+}
+
+.docx-a4 .docx-payment-summary-grid {
+  grid-template-columns: 1fr 1fr !important;
+  gap: 40px !important;
+  margin: 18px 0 0 !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+
+.docx-a4 .docx-calc-row {
+  font-size: 12px !important;
+}
+
+.docx-a4 .docx-calc-total {
+  font-size: 13.5px !important;
+}
+
+.docx-a4 .docx-footer {
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+}
+
+.docx-a4 .docx-footer > div:first-child {
+  margin-bottom: 16px !important;
+}
+
+.docx-a4 .docx-footer > div:nth-child(3) {
+  height: 36px !important;
+}
+
+.docx-a4 .docx-watermark-wrap {
+  margin-top: 20px !important;
+}
+
+@media print {
+  /* A long document continues on a second page instead of being cut off */
+  html:has(.docx-a4),
+  body:has(.docx-a4),
+  :has(> .docx-a4),
+  .app:has(.docx-a4),
+  main:has(.docx-a4) {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .docx-paper.docx-a4 {
+    zoom: 1 !important;
+    width: 210mm !important;
+    height: auto !important;
+    min-height: 297mm !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    /* Every printed page gets the page margins, not just the first */
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  .docx-a4 .docx-cost-table {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .docx-a4 .docx-cost-table tbody tr {
+    break-inside: avoid;
   }
 }
