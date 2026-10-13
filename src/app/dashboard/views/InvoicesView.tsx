@@ -266,7 +266,7 @@ export function InvoicesView() {
                           >
                             <div className="mob-item-top">
                               <div>
-                                <div className="mob-item-title">{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</div>
+                                <div className="mob-item-title mob-inv-no">{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</div>
                                 <div className="mob-item-sub">{x.p.name} · {x.i.l}</div>
                               </div>
                               <span style={{ fontSize: '12px', fontWeight: 500, color: x.i.paid ? '#10b981' : overdue ? '#ef4444' : 'var(--mut)' }}>
@@ -274,7 +274,7 @@ export function InvoicesView() {
                               </span>
                             </div>
                             <div className="mob-item-bottom">
-                              <span className="mut">{dt(x.i.inv!.date)}</span>
+                              <span className="mut mob-inv-date">{dt(x.i.inv!.date)}</span>
                               <span className="mob-item-val">{rp(x.i.a)}</span>
                             </div>
                           </div>
