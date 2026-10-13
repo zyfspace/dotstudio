@@ -656,10 +656,10 @@ body:has(.lp-root) {
   color: var(--ac);
 }
 
-/* Features Grid */
+/* Features: two columns of rows, icon beside the text */
 .lp-root .lp-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr;
   margin-top: 56px;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -667,19 +667,20 @@ body:has(.lp-root) {
 }
 
 .lp-root .lp-fc {
-  padding: 28px;
-  border-right: 1px solid var(--line);
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 26px 28px;
   border-bottom: 1px solid var(--line);
   transition: background 0.2s;
-  position: relative;
   background: var(--bg);
 }
 
-.lp-root .lp-fc:nth-child(3n) {
-  border-right: 0;
+.lp-root .lp-fc:nth-child(odd) {
+  border-right: 1px solid var(--line);
 }
 
-.lp-root .lp-fc:nth-last-child(-n+3) {
+.lp-root .lp-fc:nth-last-child(-n+2) {
   border-bottom: 0;
 }
 
@@ -688,26 +689,27 @@ body:has(.lp-root) {
 }
 
 .lp-root .lp-fc .lp-ic {
+  flex-shrink: 0;
+  display: flex;
   color: var(--fg);
-  margin-bottom: 56px;
-  transition: transform 0.3s, color 0.2s;
+  transition: color 0.2s;
 }
 
 .lp-root .lp-fc:hover .lp-ic {
   color: var(--ac);
-  transform: translateY(-4px);
 }
 
 .lp-root .lp-fc h3 {
   font-size: 16px;
   margin-bottom: 6px;
   font-weight: 500;
+  letter-spacing: -0.015em;
 }
 
 .lp-root .lp-fc p {
   color: var(--mut);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 /* Marquee Brand & Tech Stack Section */
@@ -1119,31 +1121,9 @@ body:has(.lp-root) {
   }
   
   .lp-root .lp-grid {
-    grid-template-columns: 1fr 1fr;
     margin-top: 44px;
   }
-  
-  .lp-root .lp-fc {
-    padding: 26px 24px;
-  }
 
-  .lp-root .lp-fc .lp-ic {
-    margin-bottom: 36px;
-  }
-  
-  .lp-root .lp-fc:nth-child(3n) {
-    border-right: 1px solid var(--line);
-  }
-  .lp-root .lp-fc:nth-child(2n) {
-    border-right: 0;
-  }
-  .lp-root .lp-fc:nth-last-child(-n+3) {
-    border-bottom: 1px solid var(--line);
-  }
-  .lp-root .lp-fc:nth-last-child(-n+2) {
-    border-bottom: 0;
-  }
-  
   .lp-root .lp-nav-links {
     display: none;
   }
@@ -1270,37 +1250,20 @@ body:has(.lp-root) {
   
   .lp-root .lp-grid {
     grid-template-columns: 1fr;
-    margin-top: 36px;
+    margin-top: 32px;
   }
-  
+
   .lp-root .lp-fc {
+    gap: 14px;
+    padding: 20px;
     border-right: 0 !important;
     border-bottom: 1px solid var(--line) !important;
-    padding: 24px 20px !important;
   }
-  
+
   .lp-root .lp-fc:last-child {
     border-bottom: 0 !important;
   }
-  
-  .lp-root .lp-fc .lp-ic {
-    margin-bottom: 24px;
-  }
 
-  .lp-root .lp-fc h3 {
-    font-size: 16px;
-    font-weight: 500;
-    letter-spacing: -0.015em;
-    margin-bottom: 8px;
-    color: var(--fg);
-  }
-
-  .lp-root .lp-fc p {
-    font-size: 14px;
-    line-height: 1.55;
-    color: var(--mut);
-  }
-  
   .lp-root .lp-steps {
     grid-template-columns: 1fr;
     gap: 24px;
@@ -1448,7 +1411,7 @@ body:has(.lp-root) {
   }
   
   .lp-root .lp-fc {
-    padding: 20px 16px !important;
+    padding: 18px 16px;
   }
   
   .lp-root .lp-stage {
@@ -1525,82 +1488,13 @@ body:has(.lp-root) {
   }
 }
 
-.lp-root .lp-grid-dots {
-  display: none;
-}
-
-/* Phones: features become one swipeable row with the next card peeking in,
-   instead of six stacked cards. The row bleeds to the screen edges. */
 @media (max-width: 640px) {
-  .lp-root .lp-grid {
-    --gutter: 18px;
-    display: flex;
-    gap: 12px;
-    margin: 28px calc(-1 * var(--gutter)) 0;
-    padding: 0 var(--gutter);
-    scroll-padding: 0 var(--gutter);
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    overscroll-behavior-x: contain;
-    border: 0;
-    border-radius: 0;
-    scrollbar-width: none;
-  }
-
-  .lp-root .lp-grid::-webkit-scrollbar {
-    display: none;
-  }
-
-  .lp-root .lp-fc {
-    flex: 0 0 82%;
-    scroll-snap-align: start;
-    border: 1px solid var(--line) !important;
-    border-radius: 14px;
-  }
-
-  .lp-root .lp-fc:last-child {
-    border-bottom: 1px solid var(--line) !important;
-  }
-
-  .lp-root .lp-fc .lp-ic {
-    margin-bottom: 20px;
-  }
-
-  .lp-root .lp-grid-dots {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    margin-top: 16px;
-  }
-
-  .lp-root .lp-grid-dots button {
-    width: 6px;
-    height: 6px;
-    padding: 0;
-    border: 0;
-    border-radius: 99px;
-    background: var(--line);
-    cursor: pointer;
-    transition: width 0.25s ease, background 0.25s ease;
-  }
-
-  .lp-root .lp-grid-dots button.on {
-    width: 18px;
-    background: var(--fg);
-  }
-
   /* Small screens move the nav button off the top edge */
   .lp-root .lp-nav .lp-wrap {
     height: 64px;
   }
 }
 
-@media (max-width: 380px) {
-  .lp-root .lp-grid {
-    --gutter: 14px;
-  }
-}
 
 /* Installed/standalone mode: keep the sticky nav clear of the status bar */
 .lp-root .lp-nav {
