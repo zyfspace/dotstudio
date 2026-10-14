@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
+import { DocActionButton } from '@/components/DocActionButton';
 import { PaidStamp } from '@/components/PaidStamp';
 import { dt } from '@/lib/formatters';
 
@@ -123,11 +124,7 @@ export function DocView() {
             <Icon name="back" size={18} />
           </button>
           <h1><span className="doc-kind">Invoice </span>{formatInvoiceNo(i.inv.no, i.inv.date)}</h1>
-          <button className="btn pri" id="pt" onClick={() => window.print()} aria-label="Print / PDF">
-            <Icon name="print" />
-            <span className="pt-long">Print / PDF</span>
-            <span className="pt-short">Print</span>
-          </button>
+          <DocActionButton filename={`Invoice ${formatInvoiceNo(i.inv.no, i.inv.date)}`} />
         </div>
 
         <div className="docx-paper docx-a4" ref={page.ref} style={page.style}>
@@ -431,11 +428,7 @@ export function DocView() {
           </button>
         )}
 
-        <button className="btn pri" id="pt" onClick={() => window.print()} aria-label="Print / PDF">
-          <Icon name="print" />
-          <span className="pt-long">Print / PDF</span>
-          <span className="pt-short">Print</span>
-        </button>
+        <DocActionButton filename={`Quotation ${formatQuoteNo(q.no, q.date, qSenderName)}`} />
 
         <button
           className="btn danger"
