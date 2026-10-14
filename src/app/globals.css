@@ -115,7 +115,8 @@ h3 {
   font-weight: 600;
 }
 
-b, th {
+b,
+th {
   font-weight: 500;
 }
 
@@ -411,7 +412,7 @@ aside #tg {
 }
 
 .top h1 {
-  font-size: 20px;
+  font-size: 18px;
   letter-spacing: -0.01em;
   margin-right: auto;
 }
@@ -766,6 +767,7 @@ aside #tg {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -1216,9 +1218,11 @@ aside #tg {
     transform: scaleY(0);
     opacity: 0.15;
   }
+
   60% {
     opacity: 1;
   }
+
   100% {
     transform: scaleY(1);
     opacity: 1;
@@ -1454,7 +1458,7 @@ aside #tg {
   font-size: 13px;
 }
 
-.lr > div:first-child > div:first-child {
+.lr>div:first-child>div:first-child {
   font-weight: 500;
   color: var(--fg);
   font-size: 13px;
@@ -1777,7 +1781,7 @@ tbody tr:hover {
   margin-bottom: 10px;
 }
 
-.sec-head > small {
+.sec-head>small {
   color: var(--mut);
   font-size: 11.5px;
   font-weight: 500;
@@ -1828,12 +1832,14 @@ tbody tr:hover {
     grid-template-columns: 1fr;
     gap: 6px;
   }
+
   .drawer-stat {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: 12px;
   }
+
   .drawer-stat b {
     margin-top: 0;
   }
@@ -2968,8 +2974,8 @@ input[type="file"] {
   }
 
   /* Stacked header blocks read better left-aligned than half right-aligned */
-  .docx-header-grid > div,
-  .docx-meta-grid > div {
+  .docx-header-grid>div,
+  .docx-meta-grid>div {
     text-align: left !important;
   }
 
@@ -3891,6 +3897,7 @@ input[type="file"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .accordion-collapse,
   .accordion-chevron {
     transition: none;
@@ -4428,6 +4435,7 @@ input[type="file"] {
 }
 
 @media (max-width: 768px) {
+
   html:has(.app),
   body:has(.app) {
     height: 100% !important;
@@ -4858,29 +4866,29 @@ input[type="file"] {
     align-items: center !important;
   }
 
-  .pl > input:first-child {
+  .pl>input:first-child {
     width: calc(100% - 38px) !important;
     flex: 1 1 auto !important;
     background: var(--bg) !important;
   }
 
-  .pl > .ib,
-  .pl > button:last-child {
+  .pl>.ib,
+  .pl>button:last-child {
     flex-shrink: 0 !important;
     width: 30px !important;
     height: 30px !important;
   }
 
-  .pl > select.in,
-  .pl > input[type="number"],
-  .pl > input.in:not(:first-child) {
+  .pl>select.in,
+  .pl>input[type="number"],
+  .pl>input.in:not(:first-child) {
     flex: 1 1 120px !important;
     min-width: 0 !important;
     width: auto !important;
     background: var(--bg) !important;
   }
 
-  .pl > .amt {
+  .pl>.amt {
     width: 100% !important;
     text-align: right !important;
     font-size: 13px !important;
@@ -4915,9 +4923,10 @@ input[type="file"] {
     display: none !important;
   }
 
-  .docx-paper, .paper {
+  .docx-paper,
+  .paper {
     min-width: 100% !important;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
     padding: 20px 14px !important;
   }
 
@@ -4997,9 +5006,11 @@ input[type="file"] {
   .accordion-client-name {
     font-size: 13px;
   }
+
   .accordion-title-box .accordion-count-badge {
     display: none;
   }
+
   .accordion-count-inline {
     display: inline;
   }
@@ -5029,6 +5040,7 @@ input[type="file"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .page-view-transition,
   .dash-view-transition,
   .auth-form-anim,
@@ -5061,17 +5073,17 @@ input[type="file"] {
     column-gap: 8px;
   }
 
-  .doc-top > * {
+  .doc-top>* {
     order: 2;
   }
 
-  .doc-top > #bk,
-  .doc-top > h1,
-  .doc-top > #pt {
+  .doc-top>#bk,
+  .doc-top>h1,
+  .doc-top>#pt {
     order: 0;
   }
 
-  .doc-top > h1 {
+  .doc-top>h1 {
     flex: 1 1 0;
     min-width: 0;
     font-size: 15px !important;
@@ -5081,7 +5093,7 @@ input[type="file"] {
     text-overflow: ellipsis;
   }
 
-  .doc-top > #pt {
+  .doc-top>#pt {
     height: 32px;
     padding: 0 12px;
     font-size: 13px;
@@ -5120,21 +5132,21 @@ input[type="file"] {
   min-width: 0;
 }
 
-.income-header > .income-filter-container {
+.income-header>.income-filter-container {
   order: 1;
 }
 
-.income-header > .income-refresh {
+.income-header>.income-refresh {
   order: 2;
   flex-shrink: 0;
 }
 
 @media (max-width: 1024px) {
-  .income-header > .income-refresh {
+  .income-header>.income-refresh {
     order: 1;
   }
 
-  .income-header > .income-filter-container {
+  .income-header>.income-filter-container {
     order: 2;
     flex-basis: 100%;
     width: 100%;
@@ -5156,7 +5168,7 @@ input[type="file"] {
 /* The count-up number is a span inside the value; stat label rules such as
    `.stat span` (12px, muted) and the global weight reset must not reach it */
 .count-up,
-.stat b > .count-up {
+.stat b>.count-up {
   font: inherit !important;
   color: inherit !important;
   letter-spacing: inherit !important;
@@ -5169,18 +5181,19 @@ input[type="file"] {
     gap: 6px;
   }
 
-  .dr .ia > .btn {
+  .dr .ia>.btn {
     gap: 0;
   }
 
-  .dr .ia > .btn svg,
+  .dr .ia>.btn svg,
   .dr .ia .custom-datepicker-icon {
     display: none;
   }
 }
 
 @media (max-width: 340px) {
-  .dr .ia > .btn,
+
+  .dr .ia>.btn,
   .dr .ia .ia-date .custom-datepicker-trigger {
     padding: 0 8px;
   }
@@ -5190,6 +5203,7 @@ input[type="file"] {
    only there raise fields to 16px. -webkit-touch-callout is iOS-only, so
    Android, desktop and macOS Safari keep the smaller design sizes. */
 @supports (-webkit-touch-callout: none) {
+
   input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
   select,
   textarea {
@@ -5330,24 +5344,24 @@ input[type="file"] {
   line-height: 1.6 !important;
 }
 
-.docx-a4 .docx-header-grid > div:last-child,
-.docx-a4 .docx-meta-grid > div:last-child {
+.docx-a4 .docx-header-grid>div:last-child,
+.docx-a4 .docx-meta-grid>div:last-child {
   text-align: right !important;
 }
 
 /* Document number and dates keep their lines; a long studio name wraps instead */
-.docx-a4 .docx-header-grid > div:first-child {
+.docx-a4 .docx-header-grid>div:first-child {
   flex-shrink: 0;
   white-space: nowrap;
 }
 
-.docx-a4 .docx-header-grid > div:last-child {
+.docx-a4 .docx-header-grid>div:last-child {
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
 /* "Dari: <studio>" stays on one line next to a long client name */
-.docx-a4 .docx-meta-grid > div:last-child {
+.docx-a4 .docx-meta-grid>div:last-child {
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -5420,11 +5434,11 @@ input[type="file"] {
   line-height: 1.55 !important;
 }
 
-.docx-a4 .docx-footer > div:first-child {
+.docx-a4 .docx-footer>div:first-child {
   margin-bottom: 16px !important;
 }
 
-.docx-a4 .docx-footer > div:nth-child(3) {
+.docx-a4 .docx-footer>div:nth-child(3) {
   height: 36px !important;
 }
 
@@ -5433,6 +5447,7 @@ input[type="file"] {
 }
 
 @media print {
+
   /* A long document continues on a second page instead of being cut off */
   html:has(.docx-a4),
   body:has(.docx-a4),
