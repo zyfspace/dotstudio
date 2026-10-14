@@ -5468,3 +5468,17 @@ input[type="file"] {
     break-inside: avoid;
   }
 }
+
+/* Live preview (new project / new quotation): the A4 page, scaled to the column */
+.project-preview-sticky-wrap .docx-paper.docx-a4 {
+  margin: 0 !important;
+  transform-origin: top left;
+}
+
+.project-preview-sticky-wrap .docx-a4 .docx-footer-wrap {
+  border-top: 0;
+}
+
+.project-preview-sticky-wrap .docx-a4 .docx-watermark {
+  margin-top: 0;
+}

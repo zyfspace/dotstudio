@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
@@ -8,29 +8,7 @@ import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { DocActionButton } from '@/components/DocActionButton';
 import { PaidStamp } from '@/components/PaidStamp';
 import { dt } from '@/lib/formatters';
-
-// Width of an A4 page at 96dpi; the page keeps this layout on every screen
-const A4_WIDTH = 794;
-
-/**
- * Shrinks the A4 page to fit narrow screens (like a PDF viewer), so phones
- * show exactly the layout that prints. Print resets the zoom in CSS.
- */
-function useA4Fit() {
-  const [el, setEl] = useState<HTMLDivElement | null>(null);
-  const [zoom, setZoom] = useState(1);
-  useLayoutEffect(() => {
-    const host = el?.parentElement;
-    if (!host) return;
-    const fit = () => setZoom(Math.min(1, host.clientWidth / A4_WIDTH));
-    fit();
-    const ro = new ResizeObserver(fit);
-    ro.observe(host);
-    return () => ro.disconnect();
-  }, [el]);
-  const ref = useCallback((node: HTMLDivElement | null) => setEl(node), []);
-  return { ref, style: zoom < 1 ? { zoom } : undefined };
-}
+import { useA4Fit } from '@/lib/useA4Fit';
 
 export function DocView() {
   const page = useA4Fit();
