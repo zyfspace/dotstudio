@@ -5469,14 +5469,22 @@ input[type="file"] {
   }
 }
 
-/* Live preview (new project / new quotation): the A4 page, scaled to the column */
+/* Live preview (new project / new quotation): A4 styling at the column's own
+   width, so text stays at its real size instead of shrinking with a zoom */
 .project-preview-sticky-wrap .docx-paper.docx-a4 {
+  width: 100% !important;
+  min-height: 800px !important;
   margin: 0 !important;
-  transform-origin: top left;
+  padding: 36px 40px 28px !important;
+}
+
+.project-preview-sticky-wrap .docx-a4 .docx-header-grid {
+  gap: 16px !important;
 }
 
 .project-preview-sticky-wrap .docx-a4 .docx-footer-wrap {
   border-top: 0;
+  padding-top: 20px !important;
 }
 
 .project-preview-sticky-wrap .docx-a4 .docx-watermark {

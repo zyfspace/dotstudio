@@ -7,11 +7,9 @@ import { Icon } from '@/components/Icons';
 import { AutoTextarea } from '@/components/AutoTextarea';
 import { DatePicker } from '@/components/DatePicker';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
-import { useA4Fit } from '@/lib/useA4Fit';
 import { rp, dt, today } from '@/lib/formatters';
 
 export function NewProjectView() {
-  const page = useA4Fit();
   const router = useRouter();
   const {
     quotes,
@@ -645,7 +643,7 @@ export function NewProjectView() {
         {/* Right Column: Live Invoice Preview */}
         <div className="project-preview-col">
           <div className="project-preview-sticky-wrap">
-            <div className="docx-paper docx-a4" ref={page.ref} style={page.style}>
+            <div className="docx-paper docx-a4">
               <div className="docx-body-content">
                 {/* Header */}
                 <div className="docx-header-grid">
