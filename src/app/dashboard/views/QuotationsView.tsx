@@ -259,7 +259,7 @@ export function QuotationsView() {
                                         </div>
                                       );
                                     }
-                                    return <span>{rp(oneTime)}</span>;
+                                    return <span className="mob-item-val">{rp(oneTime)}</span>;
                                   })()}
                                 </td>
                               </tr>
@@ -287,7 +287,7 @@ export function QuotationsView() {
                           >
                             <div className="mob-item-top">
                               <div>
-                                <div className="mob-item-title">{formatQuoteNo(x.no, x.date, x.senderName)}</div>
+                                <div className="mob-item-title mob-doc-no">{formatQuoteNo(x.no, x.date, x.senderName)}</div>
                                 <div className="mob-item-sub">
                                   {x.title} · {x.cn} {linkedProj ? ` · [${linkedProj.name}]` : ' · (Standalone)'}
                                 </div>
@@ -317,21 +317,21 @@ export function QuotationsView() {
                               <div className="mob-item-amount">
                                 {recurring > 0 && oneTime > 0 ? (
                                   <div>
-                                    <div>{rp(oneTime)}</div>
+                                    <div className="mob-item-val">{rp(oneTime)}</div>
                                     <div className="mut" style={{ fontSize: '11px', fontWeight: 400 }}>
                                       +{rp(recurring)}/bln recurring
                                     </div>
                                   </div>
                                 ) : recurring > 0 ? (
                                   <div>
-                                    <div>{rp(recurring)}</div>
+                                    <div className="mob-item-val">{rp(recurring)}</div>
                                     <div className="mut" style={{ fontSize: '11px', fontWeight: 400 }}>/bulan</div>
                                   </div>
                                 ) : (
-                                  <span>{rp(oneTime)}</span>
+                                  <span className="mob-item-val">{rp(oneTime)}</span>
                                 )}
                               </div>
-                              <span className="mut" style={{ fontSize: '12px' }}>
+                              <span className="mut mob-doc-date">
                                 Valid: {dt(x.valid)}
                               </span>
                             </div>

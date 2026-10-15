@@ -378,8 +378,8 @@ export function DocView() {
               router.push('/dashboard/projects');
             }}
           >
-            <Icon name="folder" size={14} style={{ marginRight: '6px' }} />
-            Project: {projects.find((p) => p.id === q.pid)?.name}
+            <Icon name="folder" size={14} />
+            <span className="btn-label">Project: {projects.find((p) => p.id === q.pid)?.name}</span>
           </button>
         ) : (
           q.s !== 'Accepted' && (
@@ -388,20 +388,22 @@ export function DocView() {
               id="cv"
               onClick={() => handleConvertQuoteToProject(q)}
             >
-              Convert to project
+              <span className="pt-long">Convert to project</span>
+              <span className="pt-short">To project</span>
             </button>
           )
         )}
 
         {q.s === 'Draft' && !q.pid && (
           <button
-            className="btn"
+            className="btn doc-icon-btn"
             id="edit-quote"
             onClick={() => handleStartEditQuote(q.id)}
             title="Edit quotation"
+            aria-label="Edit quotation"
           >
-            <Icon name="edit" size={14} style={{ marginRight: '6px' }} />
-            Edit quotation
+            <Icon name="edit" size={14} />
+            <span className="btn-label">Edit quotation</span>
           </button>
         )}
 
@@ -415,23 +417,25 @@ export function DocView() {
               );
             }}
           >
-            Mark as sent
+            <span className="pt-long">Mark as sent</span>
+            <span className="pt-short">Mark sent</span>
           </button>
         )}
 
         <DocActionButton filename={`Quotation ${formatQuoteNo(q.no, q.date, qSenderName)}`} />
 
         <button
-          className="btn danger"
+          className="btn danger doc-icon-btn"
           id="del-quote"
           onClick={() => {
             handleDeleteQuote(q.id);
             router.push('/dashboard/quotations');
           }}
           title="Delete quotation"
+          aria-label="Delete quotation"
         >
           <Icon name="trash" />
-          Delete
+          <span className="btn-label">Delete</span>
         </button>
       </div>
 
