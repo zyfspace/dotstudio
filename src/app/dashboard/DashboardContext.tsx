@@ -271,6 +271,7 @@ interface DashboardContextType {
     services: string[];
     paymentTerms: string;
     note: string;
+    terms: string[];
     senderName: string;
     senderTagline: string;
     senderEmail: string;
@@ -290,6 +291,7 @@ interface DashboardContextType {
     services: string[];
     paymentTerms: string;
     note: string;
+    terms: string[];
     senderName: string;
     senderTagline: string;
     senderEmail: string;
@@ -465,6 +467,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     scope: [''],
     items: [{ d: '', type: 'One-time', q: 1 as number | string, p: '' as number | string }],
     services: [''],
+    terms: [''],
     paymentTerms: '',
     note: '',
     senderName: '',
@@ -1189,6 +1192,19 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         ? targetProject.items.map((it) => ({ d: it.d, type: it.type || 'One-time', q: 1, p: it.p }))
         : [{ d: '', type: 'One-time', q: 1, p: '' }],
       services: [''],
+      terms: [
+        studioProfile.defaultPaymentTerms
+          ? `Syarat pembayaran: ${studioProfile.defaultPaymentTerms}`
+          : '',
+        studioProfile.defaultNotes || '',
+      ].filter(Boolean).length
+        ? [
+            studioProfile.defaultPaymentTerms
+              ? `Syarat pembayaran: ${studioProfile.defaultPaymentTerms}`
+              : '',
+            studioProfile.defaultNotes || '',
+          ].filter(Boolean)
+        : [''],
       paymentTerms: studioProfile.defaultPaymentTerms || '',
       note: studioProfile.defaultNotes || '',
       senderName: studioProfile.studioName || '',
@@ -1216,6 +1232,14 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setSelectedQuoteProjectId(q.pid || 0);
     setEditingQuoteId(quoteId);
 
+    const existingTerms =
+      q.terms && q.terms.length > 0
+        ? q.terms
+        : [
+            q.paymentTerms ? `Syarat pembayaran: ${q.paymentTerms}` : '',
+            q.note || '',
+          ].filter(Boolean);
+
     setNewQuoteData({
       cn: q.cn || '',
       co: q.co || '',
@@ -1235,6 +1259,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           }))
         : [{ d: '', type: 'One-time', q: 1, p: '' }],
       services: q.services && q.services.length ? q.services : [''],
+      terms: existingTerms.length ? existingTerms : [''],
       paymentTerms: q.paymentTerms || '',
       note: q.note || '',
       senderName: q.senderName || '',
@@ -1350,6 +1375,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
 
+    const validTerms = (newQuoteData.terms || [])
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
     if (editingQuoteId) {
       const existing = quotes.find((item) => item.id === editingQuoteId);
       if (existing && existing.s === 'Draft' && !existing.pid) {
@@ -1366,8 +1395,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           scope: validScope.length ? validScope : ['Lingkup pekerjaan sesuai kesepakatan'],
           items: validItems.length ? validItems : [{ d: 'Service Deliverable', type: 'One-time', q: 1, p: 0 }],
           services: validServices,
-          paymentTerms: newQuoteData.paymentTerms.trim(),
-          note: newQuoteData.note.trim(),
+          terms: validTerms,
+          paymentTerms: validTerms[0] || newQuoteData.paymentTerms.trim(),
+          note: validTerms.slice(1).join('\n') || newQuoteData.note.trim(),
           senderName: newQuoteData.senderName.trim(),
           senderTagline: newQuoteData.senderTagline.trim(),
           senderEmail: newQuoteData.senderEmail.trim(),
@@ -1400,8 +1430,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       scope: validScope.length ? validScope : ['Lingkup pekerjaan sesuai kesepakatan'],
       items: validItems.length ? validItems : [{ d: 'Service Deliverable', type: 'One-time', q: 1, p: 0 }],
       services: validServices,
-      paymentTerms: newQuoteData.paymentTerms.trim(),
-      note: newQuoteData.note.trim(),
+      terms: validTerms,
+      paymentTerms: validTerms[0] || newQuoteData.paymentTerms.trim(),
+      note: validTerms.slice(1).join('\n') || newQuoteData.note.trim(),
       senderName: newQuoteData.senderName.trim(),
       senderTagline: newQuoteData.senderTagline.trim(),
       senderEmail: newQuoteData.senderEmail.trim(),

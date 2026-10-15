@@ -229,7 +229,20 @@ export const fetchFromSupabase = async (
       scope: Array.isArray(q.scope) ? q.scope : [],
       items: Array.isArray(q.items) ? q.items : [],
       services: Array.isArray(q.services) ? q.services : [],
-      terms: Array.isArray(q.terms) ? q.terms : [],
+      terms: Array.isArray(q.terms) && q.terms.length > 0
+        ? q.terms
+        : (() => {
+            if (typeof q.note === 'string' && q.note.trim().startsWith('[') && q.note.trim().endsWith(']')) {
+              try {
+                const parsed = JSON.parse(q.note);
+                if (Array.isArray(parsed)) return parsed;
+              } catch {}
+            }
+            return [
+              q.paymentTerms || q.payment_terms ? `Syarat pembayaran: ${q.paymentTerms || q.payment_terms}` : '',
+              q.note || q.notes || '',
+            ].filter(Boolean);
+          })(),
       paymentTerms: q.paymentTerms || q.payment_terms || '',
       note: q.note || q.notes || '',
       s: q.s || q.status || 'Draft',
@@ -352,7 +365,7 @@ const quoteRow = (q: Quotation, owner: string) => ({
   items: q.items || [],
   services: q.services || [],
   payment_terms: q.paymentTerms || '',
-  note: q.note || '',
+  note: q.terms && q.terms.length ? JSON.stringify(q.terms) : (q.note || ''),
   total: (q.items || []).reduce((s, i) => s + (i.p || 0) * (i.q || 1), 0),
   status: q.s || 'Draft',
   valid_until: q.valid || '',

@@ -561,15 +561,37 @@ export function DocView() {
           {/* Section 4: Syarat & Ketentuan */}
           <div className="docx-sec-title">Syarat &amp; Ketentuan</div>
           <ol className="docx-list">
-            {q.note && <li>{q.note}</li>}
-            {q.paymentTerms && (
-              <li>
-                <b>Syarat pembayaran: {q.paymentTerms}</b>
-              </li>
-            )}
-            <li>
-              Quotation ini berlaku {q.validDays || 7} hari dari tanggal dikirimkan.
-            </li>
+            {(() => {
+              const activeTerms = (q.terms || []).filter((t) => t?.trim());
+              const hasValidity = activeTerms.some((t) => /berlaku/i.test(t));
+              if (activeTerms.length > 0) {
+                return (
+                  <>
+                    {activeTerms.map((t, idx) => (
+                      <li key={idx}>{t}</li>
+                    ))}
+                    {!hasValidity && (
+                      <li>
+                        Quotation ini berlaku {q.validDays || 7} hari dari tanggal dikirimkan.
+                      </li>
+                    )}
+                  </>
+                );
+              }
+              return (
+                <>
+                  {q.note && <li>{q.note}</li>}
+                  {q.paymentTerms && (
+                    <li>
+                      <b>Syarat pembayaran: {q.paymentTerms}</b>
+                    </li>
+                  )}
+                  <li>
+                    Quotation ini berlaku {q.validDays || 7} hari dari tanggal dikirimkan.
+                  </li>
+                </>
+              );
+            })()}
           </ol>
         </div>
 

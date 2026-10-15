@@ -80,6 +80,17 @@ export function NewQuoteView() {
             }))
           : [{ d: '', type: 'One-time', q: 1, p: '' }],
         services: q.services && q.services.length ? q.services : [''],
+        terms: (q.terms && q.terms.length > 0)
+          ? q.terms
+          : [
+              q.paymentTerms ? `Syarat pembayaran: ${q.paymentTerms}` : '',
+              q.note || '',
+            ].filter(Boolean).length
+            ? [
+                q.paymentTerms ? `Syarat pembayaran: ${q.paymentTerms}` : '',
+                q.note || '',
+              ].filter(Boolean)
+            : [''],
         paymentTerms: q.paymentTerms || '',
         note: q.note || '',
         senderName: q.senderName || '',
@@ -694,32 +705,61 @@ export function NewQuoteView() {
             ))}
           </div>
 
-          {/* Syarat & Ketentuan */}
+          {/* Terms & conditions */}
           <div className="panel">
-            <h3>Terms &amp; conditions</h3>
-            <div className="f">
-              <label htmlFor="qpt">Payment terms</label>
-              <input
-                id="qpt"
-                type="text"
-                placeholder="e.g. 50% upfront, 50% upon completion"
-                value={newQuoteData.paymentTerms}
-                onChange={(e) =>
-                  setNewQuoteData((prev) => ({ ...prev, paymentTerms: e.target.value }))
-                }
-              />
+            <div className="row" style={{ marginBottom: '10px' }}>
+              <h3 style={{ margin: 0 }}>Terms &amp; conditions</h3>
+              <button
+                type="button"
+                className="btn sm"
+                onClick={() => {
+                  setNewQuoteData((prev) => ({
+                    ...prev,
+                    terms: [...(prev.terms || []), ''],
+                  }));
+                }}
+              >
+                <Icon name="plus" size={14} />
+                Add term
+              </button>
             </div>
-            <div className="f" style={{ margin: 0 }}>
-              <label htmlFor="qo">Additional notes</label>
-              <AutoTextarea
-                id="qo"
-                placeholder="Special notes, revision limits, or additional terms…"
-                value={newQuoteData.note}
-                onChange={(e) =>
-                  setNewQuoteData((prev) => ({ ...prev, note: e.target.value }))
-                }
-              />
-            </div>
+            {(newQuoteData.terms && newQuoteData.terms.length > 0 ? newQuoteData.terms : ['']).map((term, i) => (
+              <div key={i} className="row" style={{ marginBottom: '8px' }}>
+                <span className="mut" style={{ width: '22px', fontSize: '13px' }}>
+                  {i + 1}.
+                </span>
+                <input
+                  className="in"
+                  placeholder={`Term / condition item ${i + 1}`}
+                  value={term}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNewQuoteData((prev) => {
+                      const next = [...(prev.terms || [''])];
+                      next[i] = val;
+                      return { ...prev, terms: next };
+                    });
+                  }}
+                />
+                <button
+                  type="button"
+                  className="ib"
+                  onClick={() => {
+                    setNewQuoteData((prev) => {
+                      const curr = prev.terms || [''];
+                      const next = curr.filter((_, idx) => idx !== i);
+                      return {
+                        ...prev,
+                        terms: next.length ? next : [''],
+                      };
+                    });
+                  }}
+                  aria-label="Remove term item"
+                >
+                  <Icon name="x" />
+                </button>
+              </div>
+            ))}
           </div>
 
           {/* Freelancer / Sender Profile */}
@@ -947,15 +987,37 @@ export function NewQuoteView() {
                 {/* Section 4: Syarat & Ketentuan */}
                 <div className="docx-sec-title">Syarat &amp; Ketentuan</div>
                 <ol className="docx-list">
-                  {newQuoteData.note && <li>{newQuoteData.note}</li>}
-                  {newQuoteData.paymentTerms && (
-                    <li>
-                      <b>Syarat pembayaran: {newQuoteData.paymentTerms}</b>
-                    </li>
-                  )}
-                  <li>
-                    Quotation ini berlaku {newQuoteData.validDays || 7} hari dari tanggal dikirimkan.
-                  </li>
+                  {(() => {
+                    const activeTerms = (newQuoteData.terms || []).filter((t) => t.trim());
+                    const hasValidity = activeTerms.some((t) => /berlaku/i.test(t));
+                    if (activeTerms.length > 0) {
+                      return (
+                        <>
+                          {activeTerms.map((t, idx) => (
+                            <li key={idx}>{t}</li>
+                          ))}
+                          {!hasValidity && (
+                            <li>
+                              Quotation ini berlaku {newQuoteData.validDays || 7} hari dari tanggal dikirimkan.
+                            </li>
+                          )}
+                        </>
+                      );
+                    }
+                    return (
+                      <>
+                        {newQuoteData.paymentTerms && (
+                          <li>
+                            <b>Syarat pembayaran: {newQuoteData.paymentTerms}</b>
+                          </li>
+                        )}
+                        {newQuoteData.note && <li>{newQuoteData.note}</li>}
+                        <li>
+                          Quotation ini berlaku {newQuoteData.validDays || 7} hari dari tanggal dikirimkan.
+                        </li>
+                      </>
+                    );
+                  })()}
                 </ol>
               </div>
 
