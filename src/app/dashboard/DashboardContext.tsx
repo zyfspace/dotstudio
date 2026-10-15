@@ -46,7 +46,7 @@ import {
   isRecurringBilling,
 } from '@/lib/formatters';
 import { ChartMode } from '@/components/IncomeChart';
-import { AuthUser, getActiveSession, setAuthSession, touchSession, clearAuthSession } from '@/lib/auth';
+import { AuthUser, completeOAuthSignIn, getActiveSession, setAuthSession, touchSession, clearAuthSession } from '@/lib/auth';
 import { uploadFiles } from '@/lib/uploadthing';
 
 
@@ -713,9 +713,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
 
     import('@/lib/supabase').then(({ supabase }) => {
-      supabase.auth.getSession().then(({ data: { session: sbSession } }) => {
-        // If 24-hour local session is expired or absent, ensure Supabase signs out
-        const activeSession = getActiveSession();
+      supabase.auth.getSession().then(async ({ data: { session: sbSession } }) => {
+        // If 24-hour local session is expired or absent, ensure Supabase signs out;
+        // returning from Google sign-in has no local session yet, so create it first
+        const activeSession = getActiveSession() || (await completeOAuthSignIn());
         if (!activeSession) {
           if (sbSession) {
             supabase.auth.signOut().catch(() => {});
