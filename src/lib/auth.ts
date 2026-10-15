@@ -8,6 +8,8 @@ export interface AuthUser {
 
 export const AUTH_SESSION_KEY = 'studio-auth-session';
 // Legacy client-side account list (stored plaintext passwords); removed on sign-in.
+const OAUTH_PENDING_KEY = 'studio-oauth-pending';
+const OAUTH_PENDING_MAX_MS = 10 * 60 * 1000;
 const LEGACY_USERS_KEY = 'studio-users-list';
 
 export const SESSION_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours strict inactivity limit
@@ -174,6 +176,11 @@ export const signInWithGoogle = async (): Promise<{ success: boolean; error?: st
   try {
     const { supabase } = await import('./supabase');
     const redirectUrl = typeof window !== 'undefined' ? window.location.origin : undefined;
+    // Marks the redirect back from Google, so the app can tell it apart from a
+    // Supabase session that has no local session on purpose ("remember me" off)
+    try {
+      localStorage.setItem(OAUTH_PENDING_KEY, String(Date.now()));
+    } catch {}
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -181,11 +188,40 @@ export const signInWithGoogle = async (): Promise<{ success: boolean; error?: st
       },
     });
     if (error) {
+      localStorage.removeItem(OAUTH_PENDING_KEY);
       return { success: false, error: error.message };
     }
     return { success: true };
   } catch (e: any) {
+    try {
+      localStorage.removeItem(OAUTH_PENDING_KEY);
+    } catch {}
     return { success: false, error: e?.message || 'Failed to initialize Google Sign-in.' };
+  }
+};
+
+// Finishes a Google sign-in after the redirect back: turns the Supabase session
+// into the local session. Returns null when no Google sign-in is pending.
+export const completeOAuthSignIn = async (): Promise<AuthUser | null> => {
+  if (typeof window === 'undefined') return null;
+  let startedAt = 0;
+  try {
+    startedAt = Number(localStorage.getItem(OAUTH_PENDING_KEY)) || 0;
+    if (!startedAt) return null;
+    localStorage.removeItem(OAUTH_PENDING_KEY);
+  } catch {
+    return null;
+  }
+  if (Date.now() - startedAt > OAUTH_PENDING_MAX_MS) return null;
+  try {
+    const { supabase } = await import('./supabase');
+    const { data } = await supabase.auth.getSession();
+    if (!data.session?.user) return null;
+    const user = toAuthUser(data.session.user, { email: data.session.user.email || '' });
+    setAuthSession(user, true);
+    return user;
+  } catch {
+    return null;
   }
 };
 

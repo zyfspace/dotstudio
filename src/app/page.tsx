@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LandingPage } from '@/components/LandingPage';
 import { AuthScreen } from '@/components/AuthScreen';
-import { AuthUser, getActiveSession } from '@/lib/auth';
+import { AuthUser, completeOAuthSignIn, getActiveSession } from '@/lib/auth';
 
 export default function RootHomePage() {
   const router = useRouter();
@@ -20,6 +20,13 @@ export default function RootHomePage() {
     const session = getActiveSession();
     if (session) {
       setAuthUser(session);
+    } else {
+      completeOAuthSignIn().then((user) => {
+        if (user) {
+          setAuthUser(user);
+          router.push('/dashboard');
+        }
+      });
     }
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark' || savedTheme === 'light') {
