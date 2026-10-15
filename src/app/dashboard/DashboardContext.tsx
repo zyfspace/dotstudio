@@ -323,6 +323,9 @@ interface DashboardContextType {
 
   handleStartNewProject: (targetClientId?: number, fromQuote?: Quotation | null) => void;
   handleStartNewQuote: (targetProjectId?: number, targetClientId?: number) => void;
+  handleStartEditQuote: (quoteId: number) => void;
+  editingQuoteId: number | null;
+  setEditingQuoteId: React.Dispatch<React.SetStateAction<number | null>>;
   handlePlanPresetChange: (presetKey: string) => void;
   handleCreateProjectSubmit: () => void;
   handleSaveQuotationSubmit: () => void;
@@ -432,6 +435,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [quoteClientMode, setQuoteClientMode] = useState<'existing' | 'new'>('existing');
   const [selectedQuoteClientId, setSelectedQuoteClientId] = useState<number | ''>('');
   const [selectedQuoteProjectId, setSelectedQuoteProjectId] = useState<number>(0);
+  const [editingQuoteId, setEditingQuoteId] = useState<number | null>(null);
 
   const [newProjectData, setNewProjectData] = useState({
     name: '',
@@ -1147,6 +1151,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   // Start creating new quotation
   const handleStartNewQuote = useCallback((targetProjectId?: number, targetClientId?: number) => {
+    setEditingQuoteId(null);
     if (!isProfileComplete) {
       setProfileRequiredModal('quote');
       return;
@@ -1193,6 +1198,52 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     });
     router.push('/dashboard/quote');
   }, [clients, isProfileComplete, projects, studioProfile, router]);
+
+  // Start editing existing quotation
+  const handleStartEditQuote = useCallback((quoteId: number) => {
+    const q = quotes.find((item) => item.id === quoteId);
+    if (!q) return;
+    if (q.s !== 'Draft' || q.pid) return;
+
+    const targetClient = clients.find(
+      (c) =>
+        (c.name && c.name.toLowerCase() === (q.cn || '').toLowerCase()) ||
+        (c.co && c.co.toLowerCase() === (q.co || '').toLowerCase())
+    );
+
+    setQuoteClientMode(targetClient ? 'existing' : 'new');
+    setSelectedQuoteClientId(targetClient ? targetClient.id : '');
+    setSelectedQuoteProjectId(q.pid || 0);
+    setEditingQuoteId(quoteId);
+
+    setNewQuoteData({
+      cn: q.cn || '',
+      co: q.co || '',
+      mail: q.mail || '',
+      tel: q.tel || '',
+      title: q.title || '',
+      date: q.date || today(),
+      valid: q.valid || addDays(today(), 7),
+      validDays: q.validDays || 7,
+      scope: q.scope && q.scope.length ? q.scope : [''],
+      items: q.items && q.items.length
+        ? q.items.map((it) => ({
+            d: it.d || '',
+            type: it.type || 'One-time',
+            q: it.q != null ? it.q : 1,
+            p: it.p != null ? it.p : '',
+          }))
+        : [{ d: '', type: 'One-time', q: 1, p: '' }],
+      services: q.services && q.services.length ? q.services : [''],
+      paymentTerms: q.paymentTerms || '',
+      note: q.note || '',
+      senderName: q.senderName || '',
+      senderTagline: q.senderTagline || '',
+      senderEmail: q.senderEmail || '',
+      senderPhone: q.senderPhone || '',
+    });
+    router.push(`/dashboard/quote?edit=${quoteId}`);
+  }, [quotes, clients, router]);
 
   const handlePlanPresetChange = (presetKey: string) => {
     setNewProjectData((prev) => ({
@@ -1298,6 +1349,41 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     const validServices = newQuoteData.services
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
+
+    if (editingQuoteId) {
+      const existing = quotes.find((item) => item.id === editingQuoteId);
+      if (existing && existing.s === 'Draft' && !existing.pid) {
+        const updatedQuote: Quotation = {
+          ...existing,
+          cn: newQuoteData.cn.trim(),
+          co: newQuoteData.co.trim(),
+          mail: newQuoteData.mail.trim(),
+          tel: newQuoteData.tel.trim(),
+          title: newQuoteData.title.trim(),
+          date: newQuoteData.date,
+          valid: newQuoteData.valid,
+          validDays: newQuoteData.validDays || 7,
+          scope: validScope.length ? validScope : ['Lingkup pekerjaan sesuai kesepakatan'],
+          items: validItems.length ? validItems : [{ d: 'Service Deliverable', type: 'One-time', q: 1, p: 0 }],
+          services: validServices,
+          paymentTerms: newQuoteData.paymentTerms.trim(),
+          note: newQuoteData.note.trim(),
+          senderName: newQuoteData.senderName.trim(),
+          senderTagline: newQuoteData.senderTagline.trim(),
+          senderEmail: newQuoteData.senderEmail.trim(),
+          senderPhone: newQuoteData.senderPhone.trim(),
+          pid: selectedQuoteProjectId || existing.pid || 0,
+        };
+
+        setQuotes((prev) =>
+          prev.map((item) => (item.id === editingQuoteId ? updatedQuote : item))
+        );
+        const savedId = editingQuoteId;
+        setEditingQuoteId(null);
+        openDoc('quo', savedId);
+        return;
+      }
+    }
 
     const qId = Date.now();
     const newQuote: Quotation = {
@@ -1831,6 +1917,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
     handleStartNewProject,
     handleStartNewQuote,
+    handleStartEditQuote,
+    editingQuoteId,
+    setEditingQuoteId,
     handlePlanPresetChange,
     handleCreateProjectSubmit,
     handleSaveQuotationSubmit,

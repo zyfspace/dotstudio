@@ -16,6 +16,7 @@ export function QuotationsView() {
     openDoc,
     setActiveProjectDrawerId,
     handleStartNewQuote,
+    handleStartEditQuote,
   } = useDashboard();
 
   // Groups start closed and only one is open at a time.
@@ -207,9 +208,26 @@ export function QuotationsView() {
                                 </td>
                                 <td className="mut">{dt(x.valid)}</td>
                                 <td>
-                                  <span className={`st ${QS[x.s]}`}>
-                                    {x.s}
-                                  </span>
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                    <span className={`st ${QS[x.s]}`}>
+                                      {x.s}
+                                    </span>
+                                    {x.s === 'Draft' && !x.pid && (
+                                      <button
+                                        type="button"
+                                        className="ib sm"
+                                        style={{ width: '24px', height: '24px', padding: 0 }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleStartEditQuote(x.id);
+                                        }}
+                                        title="Edit quotation"
+                                        aria-label="Edit quotation"
+                                      >
+                                        <Icon name="edit" size={13} />
+                                      </button>
+                                    )}
+                                  </div>
                                 </td>
                                 <td className="r">{rp(totalVal)}</td>
                               </tr>
@@ -240,9 +258,26 @@ export function QuotationsView() {
                                   {x.title} · {x.cn} {linkedProj ? ` · [${linkedProj.name}]` : ' · (Standalone)'}
                                 </div>
                               </div>
-                              <span className={`st ${QS[x.s]}`}>
-                                {x.s}
-                              </span>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                <span className={`st ${QS[x.s]}`}>
+                                  {x.s}
+                                </span>
+                                {x.s === 'Draft' && !x.pid && (
+                                  <button
+                                    type="button"
+                                    className="ib sm"
+                                    style={{ width: '24px', height: '24px', padding: 0 }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStartEditQuote(x.id);
+                                    }}
+                                    title="Edit quotation"
+                                    aria-label="Edit quotation"
+                                  >
+                                    <Icon name="edit" size={13} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                             <div className="mob-item-bottom">
                               <div className="mob-item-amount">{rp(totalVal)}</div>

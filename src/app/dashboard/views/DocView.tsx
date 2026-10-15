@@ -27,6 +27,7 @@ export function DocView() {
     formatQuoteNo,
     handleConvertQuoteToProject,
     handleDeleteQuote,
+    handleStartEditQuote,
     setActiveProjectDrawerId,
   } = useDashboard();
 
@@ -392,6 +393,18 @@ export function DocView() {
           )
         )}
 
+        {q.s === 'Draft' && !q.pid && (
+          <button
+            className="btn"
+            id="edit-quote"
+            onClick={() => handleStartEditQuote(q.id)}
+            title="Edit quotation"
+          >
+            <Icon name="edit" size={14} style={{ marginRight: '6px' }} />
+            Edit quotation
+          </button>
+        )}
+
         {q.s === 'Draft' && (
           <button
             className="btn"
@@ -503,16 +516,34 @@ export function DocView() {
               </tr>
             </thead>
             <tbody>
-              {q.items.map((it, idx) => (
+              {(q.items || []).map((it, idx) => (
                 <tr key={idx}>
-                  <td>{it.d}</td>
+                  <td>
+                    {it.d}
+                    {it.q && it.q > 1 ? ` (${it.q}x)` : ''}
+                  </td>
                   <td className="c">{it.type || 'One-time'}</td>
                   <td className="c" style={{ fontWeight: 700 }}>
-                    Rp{it.p.toLocaleString('id-ID')}
+                    Rp{((+it.q || 1) * (+it.p || 0)).toLocaleString('id-ID')}
                   </td>
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={2} style={{ textAlign: 'left', fontWeight: 700 }}>
+                  Total
+                </td>
+                <td style={{ fontWeight: 700 }}>
+                  Rp{(q.items || [])
+                    .reduce(
+                      (acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0),
+                      0
+                    )
+                    .toLocaleString('id-ID')}
+                </td>
+              </tr>
+            </tfoot>
           </table>
 
           {/* Section 3: Cakupan/Services */}

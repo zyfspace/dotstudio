@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { AutoTextarea } from '@/components/AutoTextarea';
@@ -11,7 +11,10 @@ import { rp, dt, today, addDays } from '@/lib/formatters';
 
 export function NewQuoteView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editParam = searchParams.get('edit');
   const {
+    quotes,
     clients,
     projects,
     getClient,
@@ -26,7 +29,79 @@ export function NewQuoteView() {
     handleSaveQuotationSubmit,
     studioProfile,
     getNextQuoteNo,
+    formatQuoteNo,
+    editingQuoteId,
+    setEditingQuoteId,
   } = useDashboard();
+
+  useEffect(() => {
+    if (!editParam) {
+      if (editingQuoteId) setEditingQuoteId(null);
+      return;
+    }
+    const editId = Number(editParam);
+    if (!editId) return;
+
+    if (editingQuoteId !== editId) {
+      const q = quotes.find((item) => item.id === editId);
+      if (!q) return;
+      if (q.s !== 'Draft' || q.pid) {
+        router.replace(`/dashboard/doc?t=quo&a=${editId}`);
+        return;
+      }
+
+      const targetClient = clients.find(
+        (c) =>
+          (c.name && c.name.toLowerCase() === (q.cn || '').toLowerCase()) ||
+          (c.co && c.co.toLowerCase() === (q.co || '').toLowerCase())
+      );
+
+      setQuoteClientMode(targetClient ? 'existing' : 'new');
+      setSelectedQuoteClientId(targetClient ? targetClient.id : '');
+      setSelectedQuoteProjectId(q.pid || 0);
+      setEditingQuoteId(editId);
+
+      setNewQuoteData({
+        cn: q.cn || '',
+        co: q.co || '',
+        mail: q.mail || '',
+        tel: q.tel || '',
+        title: q.title || '',
+        date: q.date || today(),
+        valid: q.valid || addDays(today(), 7),
+        validDays: q.validDays || 7,
+        scope: q.scope && q.scope.length ? q.scope : [''],
+        items: q.items && q.items.length
+          ? q.items.map((it) => ({
+              d: it.d || '',
+              type: it.type || 'One-time',
+              q: it.q != null ? it.q : 1,
+              p: it.p != null ? it.p : '',
+            }))
+          : [{ d: '', type: 'One-time', q: 1, p: '' }],
+        services: q.services && q.services.length ? q.services : [''],
+        paymentTerms: q.paymentTerms || '',
+        note: q.note || '',
+        senderName: q.senderName || '',
+        senderTagline: q.senderTagline || '',
+        senderEmail: q.senderEmail || '',
+        senderPhone: q.senderPhone || '',
+      });
+    }
+  }, [
+    editParam,
+    editingQuoteId,
+    quotes,
+    clients,
+    router,
+    setEditingQuoteId,
+    setQuoteClientMode,
+    setSelectedQuoteClientId,
+    setSelectedQuoteProjectId,
+    setNewQuoteData,
+  ]);
+
+  const existingQuote = editingQuoteId ? quotes.find((q) => q.id === editingQuoteId) : null;
 
   return (
     <div>
@@ -34,12 +109,18 @@ export function NewQuoteView() {
         <button
           className="ib"
           id="bk"
-          onClick={() => router.push('/dashboard/quotations')}
-          aria-label="Back to quotations"
+          onClick={() => {
+            if (editingQuoteId) {
+              router.push(`/dashboard/doc?t=quo&a=${editingQuoteId}`);
+            } else {
+              router.push('/dashboard/quotations');
+            }
+          }}
+          aria-label={editingQuoteId ? 'Back to document' : 'Back to quotations'}
         >
           <Icon name="back" size={18} />
         </button>
-        <h1>New quotation</h1>
+        <h1>{editingQuoteId ? 'Edit quotation' : 'New quotation'}</h1>
       </div>
 
       <div className="project-split-layout">
@@ -712,7 +793,9 @@ export function NewQuoteView() {
               </b>
             </div>
             <p className="note" style={{ margin: '0 0 12px' }}>
-              When the client accepts, convert it to a project in one click.
+              {editingQuoteId
+                ? 'Save your edits to this draft quotation.'
+                : 'When the client accepts, convert it to a project in one click.'}
             </p>
             <button
               className="btn pri"
@@ -720,7 +803,7 @@ export function NewQuoteView() {
               style={{ width: '100%', justifyContent: 'center' }}
               onClick={handleSaveQuotationSubmit}
             >
-              Save quotation
+              {editingQuoteId ? 'Save changes' : 'Save quotation'}
             </button>
           </div>
         </div>
@@ -735,7 +818,7 @@ export function NewQuoteView() {
                   <div>
                     <div className="docx-h-title">Quotation</div>
                     <div className="docx-h-sub" style={{ marginTop: '4px' }}>
-                      No. Quotation {getNextQuoteNo(newQuoteData.date)} (Draft)
+                      No. Quotation {existingQuote ? formatQuoteNo(existingQuote.no, newQuoteData.date, newQuoteData.senderName) : getNextQuoteNo(newQuoteData.date)} (Draft)
                     </div>
                     <div className="docx-h-sub">
                       Valid until {newQuoteData.valid ? dt(newQuoteData.valid) : '—'}
@@ -819,14 +902,32 @@ export function NewQuoteView() {
                   <tbody>
                     {newQuoteData.items.map((it, idx) => (
                       <tr key={idx}>
-                        <td>{it.d || `Item Layanan ${idx + 1}`}</td>
+                        <td>
+                          {it.d || `Item Layanan ${idx + 1}`}
+                          {+it.q > 1 ? ` (${it.q}x)` : ''}
+                        </td>
                         <td className="c">{it.type || 'One-time'}</td>
                         <td className="c" style={{ fontWeight: 700 }}>
-                          Rp{(+it.p || 0).toLocaleString('id-ID')}
+                          Rp{((+it.q || 1) * (+it.p || 0)).toLocaleString('id-ID')}
                         </td>
                       </tr>
                     ))}
                   </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={2} style={{ textAlign: 'left', fontWeight: 700 }}>
+                        Total
+                      </td>
+                      <td style={{ fontWeight: 700 }}>
+                        Rp{newQuoteData.items
+                          .reduce(
+                            (acc, curr) => acc + (+curr.q || 0) * (+curr.p || 0),
+                            0
+                          )
+                          .toLocaleString('id-ID')}
+                      </td>
+                    </tr>
+                  </tfoot>
                 </table>
 
                 {/* Section 3: Cakupan/Services */}
