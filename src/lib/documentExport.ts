@@ -45,12 +45,31 @@ const download: DocumentAction = async (page, { filename }) => {
       clone.style.setProperty('width', `${A4_PX.w}px`);
       clone.style.setProperty('box-shadow', 'none');
       clone.style.setProperty('margin', '0');
+
+      // Auto-fit to 1 page if document slightly overflows (up to 12% over 1 page)
+      const targetH = A4_PX.h;
+      if (clone.scrollHeight > targetH && clone.scrollHeight <= targetH * 1.15) {
+        clone.style.setProperty('padding', '13mm 16mm 10mm', 'important');
+        const footerWrap = clone.querySelector('.docx-footer-wrap') as HTMLElement;
+        if (footerWrap) {
+          footerWrap.style.setProperty('padding-top', '8px', 'important');
+        }
+        const watermark = clone.querySelector('.docx-watermark-wrap') as HTMLElement;
+        if (watermark) {
+          watermark.style.setProperty('margin-top', '6px', 'important');
+        }
+      }
     },
   });
 
   const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   const pageH = Math.round((canvas.width * A4_MM.h) / A4_MM.w);
-  const pages = Math.max(1, Math.ceil((canvas.height - 2) / pageH));
+  const scale = canvas.width / A4_PX.w;
+  // If the canvas only overflows by a small margin (<= 50px at 1x), keep it as 1 page
+  const singlePageThreshold = pageH + Math.round(50 * scale);
+  const effectiveHeight =
+    canvas.height > pageH && canvas.height <= singlePageThreshold ? pageH : canvas.height;
+  const pages = Math.max(1, Math.ceil((effectiveHeight - 2) / pageH));
 
   for (let n = 0; n < pages; n++) {
     const slice = document.createElement('canvas');
@@ -62,7 +81,7 @@ const download: DocumentAction = async (page, { filename }) => {
     ctx.fillRect(0, 0, slice.width, slice.height);
     ctx.drawImage(canvas, 0, -n * pageH);
     if (n > 0) pdf.addPage();
-    pdf.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, A4_MM.w, A4_MM.h);
+    pdf.addImage(slice.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, A4_MM.w, A4_MM.h);
   }
 
   pdf.save(`${safeFilename(filename)}.pdf`);

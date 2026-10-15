@@ -7,7 +7,7 @@ import { Icon } from '@/components/Icons';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { DocActionButton } from '@/components/DocActionButton';
 import { PaidStamp } from '@/components/PaidStamp';
-import { dt } from '@/lib/formatters';
+import { dt, isRecurringBilling, getBillingTypeDocLabel } from '@/lib/formatters';
 import { useA4Fit } from '@/lib/useA4Fit';
 
 export function DocView() {
@@ -506,8 +506,8 @@ export function DocView() {
           <table className="docx-cost-table">
             <thead>
               <tr>
-                <th style={{ width: '52%' }}>Item</th>
-                <th className="c" style={{ width: '24%' }}>
+                <th style={{ width: '46%' }}>Item</th>
+                <th className="c" style={{ width: '30%' }}>
                   Jenis Biaya
                 </th>
                 <th className="c" style={{ width: '24%' }}>
@@ -522,7 +522,9 @@ export function DocView() {
                     {it.d}
                     {it.q && it.q > 1 ? ` (${it.q}x)` : ''}
                   </td>
-                  <td className="c">{it.type || 'One-time'}</td>
+                  <td className="c">
+                    {getBillingTypeDocLabel(it.type)}
+                  </td>
                   <td className="c" style={{ fontWeight: 700 }}>
                     Rp{((+it.q || 1) * (+it.p || 0)).toLocaleString('id-ID')}
                   </td>
@@ -530,19 +532,65 @@ export function DocView() {
               ))}
             </tbody>
             <tfoot>
-              <tr>
-                <td colSpan={2} style={{ textAlign: 'left', fontWeight: 700 }}>
-                  Total
-                </td>
-                <td style={{ fontWeight: 700 }}>
-                  Rp{(q.items || [])
-                    .reduce(
-                      (acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0),
-                      0
-                    )
-                    .toLocaleString('id-ID')}
-                </td>
-              </tr>
+              {(() => {
+                const oneTimeItems = (q.items || []).filter((it) => !isRecurringBilling(it.type));
+                const recurringItems = (q.items || []).filter((it) => isRecurringBilling(it.type));
+                const oneTimeTot = oneTimeItems.reduce(
+                  (acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0),
+                  0
+                );
+                const recurringTot = recurringItems.reduce(
+                  (acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0),
+                  0
+                );
+
+                if (recurringItems.length > 0 && oneTimeItems.length > 0) {
+                  return (
+                    <>
+                      <tr>
+                        <td colSpan={2} style={{ textAlign: 'left', fontWeight: 700 }}>
+                          Total
+                        </td>
+                        <td style={{ fontWeight: 700 }}>
+                          Rp{oneTimeTot.toLocaleString('id-ID')}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colSpan={2} style={{ textAlign: 'left', fontWeight: 700, color: '#475569' }}>
+                          Recurring
+                        </td>
+                        <td style={{ fontWeight: 700, color: '#475569' }}>
+                          Rp{recurringTot.toLocaleString('id-ID')} / bulan
+                        </td>
+                      </tr>
+                    </>
+                  );
+                }
+
+                if (recurringItems.length > 0) {
+                  return (
+                    <tr>
+                      <td colSpan={2} style={{ textAlign: 'left', fontWeight: 700 }}>
+                        Recurring
+                      </td>
+                      <td style={{ fontWeight: 700 }}>
+                        Rp{recurringTot.toLocaleString('id-ID')} / bulan
+                      </td>
+                    </tr>
+                  );
+                }
+
+                return (
+                  <tr>
+                    <td colSpan={2} style={{ textAlign: 'left', fontWeight: 700 }}>
+                      Total
+                    </td>
+                    <td style={{ fontWeight: 700 }}>
+                      Rp{oneTimeTot.toLocaleString('id-ID')}
+                    </td>
+                  </tr>
+                );
+              })()}
             </tfoot>
           </table>
 

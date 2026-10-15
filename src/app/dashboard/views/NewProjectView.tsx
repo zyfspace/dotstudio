@@ -7,7 +7,7 @@ import { Icon } from '@/components/Icons';
 import { AutoTextarea } from '@/components/AutoTextarea';
 import { DatePicker } from '@/components/DatePicker';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
-import { rp, dt, today } from '@/lib/formatters';
+import { rp, dt, today, isRecurringBilling } from '@/lib/formatters';
 
 export function NewProjectView() {
   const router = useRouter();
@@ -28,6 +28,30 @@ export function NewProjectView() {
     studioProfile,
     getNextInvoiceNo,
   } = useDashboard();
+
+  const [draggedProjectItemIdx, setDraggedProjectItemIdx] = React.useState<number | null>(null);
+  const [dragOverProjectItemIdx, setDragOverProjectItemIdx] = React.useState<number | null>(null);
+  const [dragHandleProjectIdx, setDragHandleProjectIdx] = React.useState<number | null>(null);
+
+  const moveProjectItem = (fromIdx: number, toIdx: number) => {
+    setNewProjectData((prev) => {
+      if (toIdx < 0 || toIdx >= prev.items.length) return prev;
+      const next = [...prev.items];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return { ...prev, items: next };
+    });
+  };
+
+  const moveProjectPlan = (fromIdx: number, toIdx: number) => {
+    setNewProjectData((prev) => {
+      if (toIdx < 0 || toIdx >= prev.plan.length) return prev;
+      const next = [...prev.plan];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return { ...prev, pre: 'custom', plan: next };
+    });
+  };
 
   return (
     <div>
@@ -77,7 +101,9 @@ export function NewProjectView() {
                     if (chosenQid > 0) {
                       const foundQ = quotes.find((q) => q.id === chosenQid);
                       if (foundQ) {
-                        const qTot = foundQ.items.reduce((acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0), 0);
+                        const oneTimeItems = (foundQ.items || []).filter((it) => !isRecurringBilling(it.type));
+                        const projectItems = oneTimeItems.length > 0 ? oneTimeItems : foundQ.items;
+                        const qTot = projectItems.reduce((acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0), 0);
                         const matchedClient = clients.find(
                           (c) =>
                             c.name.toLowerCase() === foundQ.cn.toLowerCase() ||
@@ -91,8 +117,8 @@ export function NewProjectView() {
                           ...prev,
                           name: foundQ.title,
                           v: String(qTot),
-                          billingType: foundQ.items[0]?.type || 'One-time',
-                          items: foundQ.items.map((it) => ({
+                          billingType: projectItems[0]?.type || 'One-time',
+                          items: projectItems.map((it) => ({
                             d: it.d,
                             type: it.type || 'One-time',
                             p: it.p,
@@ -114,10 +140,15 @@ export function NewProjectView() {
                 >
                   <option value={0}>None (Create project from scratch)</option>
                   {quotes.map((q) => {
-                    const qTot = q.items.reduce((acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0), 0);
+                    const oneTimeTot = (q.items || [])
+                      .filter((it) => !isRecurringBilling(it.type))
+                      .reduce((acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0), 0);
+                    const totalVal = oneTimeTot > 0
+                      ? oneTimeTot
+                      : (q.items || []).reduce((acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0), 0);
                     return (
                       <option key={q.id} value={q.id}>
-                        {formatQuoteNo(q.no, q.date, q.senderName)} — {q.title} ({q.cn} · {rp(qTot)}) {q.pid > 0 ? '· Linked' : ''}
+                        {formatQuoteNo(q.no, q.date, q.senderName)} — {q.title} ({q.cn} · {rp(totalVal)}) {q.pid > 0 ? '· Linked' : ''}
                       </option>
                     );
                   })}
@@ -233,91 +264,152 @@ export function NewProjectView() {
             <div id="project-items-table">
               <div
                 className="pl hd"
-                style={{ gridTemplateColumns: '2fr 1.2fr 1.2fr 30px' }}
+                style={{ gridTemplateColumns: '24px 2fr 1.2fr 1.2fr 72px' }}
               >
+                <span />
                 <span>Item</span>
                 <span>Billing type</span>
                 <span>Cost (Rp)</span>
                 <span />
               </div>
-              {newProjectData.items.map((r, i) => (
-                <div
-                  key={i}
-                  className="pl"
-                  style={{ gridTemplateColumns: '2fr 1.2fr 1.2fr 30px' }}
-                >
-                  <input
-                    className="in"
-                    placeholder="Item description"
-                    value={r.d}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setNewProjectData((prev) => {
-                        const nextItems = [...prev.items];
-                        nextItems[i] = { ...nextItems[i], d: val };
-                        return { ...prev, items: nextItems };
-                      });
+              {newProjectData.items.map((r, i) => {
+                const isDragging = draggedProjectItemIdx === i;
+                const isDragOver = dragOverProjectItemIdx === i;
+                return (
+                  <div
+                    key={i}
+                    className={`pl ${isDragging ? 'item-dragging' : ''} ${isDragOver ? 'item-drag-over' : ''}`}
+                    style={{ gridTemplateColumns: '24px 2fr 1.2fr 1.2fr 72px' }}
+                    draggable={dragHandleProjectIdx === i}
+                    onDragStart={() => setDraggedProjectItemIdx(i)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (dragOverProjectItemIdx !== i) setDragOverProjectItemIdx(i);
                     }}
-                  />
-                  <select
-                    className="in"
-                    value={r.type || 'One-time'}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setNewProjectData((prev) => {
-                        const nextItems = [...prev.items];
-                        nextItems[i] = { ...nextItems[i], type: val };
-                        return { ...prev, items: nextItems };
-                      });
+                    onDrop={() => {
+                      if (draggedProjectItemIdx !== null && draggedProjectItemIdx !== i) {
+                        moveProjectItem(draggedProjectItemIdx, i);
+                      }
+                      setDraggedProjectItemIdx(null);
+                      setDragOverProjectItemIdx(null);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedProjectItemIdx(null);
+                      setDragOverProjectItemIdx(null);
                     }}
                   >
-                    <option value="One-time">One-time</option>
-                    <option value="Bulanan">Monthly</option>
-                    <option value="Per Project">Per Project</option>
-                    <option value="Retainer">Retainer</option>
-                    <option value="Hourly">Hourly</option>
-                  </select>
-                  <input
-                    className="in"
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    value={r.p}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setNewProjectData((prev) => {
-                        const nextItems = [...prev.items];
-                        nextItems[i] = { ...nextItems[i], p: val };
-                        const sumVal = nextItems.reduce((acc, curr) => acc + (+curr.p || 0), 0);
-                        return {
-                          ...prev,
-                          items: nextItems,
-                          v: sumVal > 0 ? String(sumVal) : prev.v,
-                        };
-                      });
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="ib"
-                    onClick={() => {
-                      setNewProjectData((prev) => {
-                        const nextItems = prev.items.filter((_, idx) => idx !== i);
-                        const fallback = nextItems.length ? nextItems : [{ d: '', type: 'One-time', p: '' }];
-                        const sumVal = fallback.reduce((acc, curr) => acc + (+curr.p || 0), 0);
-                        return {
-                          ...prev,
-                          items: fallback,
-                          v: sumVal > 0 ? String(sumVal) : prev.v,
-                        };
-                      });
-                    }}
-                    aria-label="Remove item"
-                  >
-                    <Icon name="x" />
-                  </button>
-                </div>
-              ))}
+                    <button
+                      type="button"
+                      className="drag-handle-btn"
+                      title="Drag to reorder"
+                      aria-label="Drag to reorder"
+                      onMouseEnter={() => setDragHandleProjectIdx(i)}
+                      onMouseLeave={() => setDragHandleProjectIdx(null)}
+                      onTouchStart={() => setDragHandleProjectIdx(i)}
+                      tabIndex={-1}
+                    >
+                      <Icon name="grip-vertical" size={14} />
+                    </button>
+                    <input
+                      className="in"
+                      placeholder="Item description"
+                      value={r.d}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewProjectData((prev) => {
+                          const nextItems = [...prev.items];
+                          nextItems[i] = { ...nextItems[i], d: val };
+                          return { ...prev, items: nextItems };
+                        });
+                      }}
+                    />
+                    <select
+                      className="in"
+                      value={r.type || 'One-time'}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewProjectData((prev) => {
+                          const nextItems = [...prev.items];
+                          nextItems[i] = { ...nextItems[i], type: val };
+                          return { ...prev, items: nextItems };
+                        });
+                      }}
+                    >
+                      <option value="One-time">One-time</option>
+                      <option value="Bulanan">Monthly</option>
+                      <option value="Per Project">Per Project</option>
+                      <option value="Retainer">Retainer</option>
+                      <option value="Hourly">Hourly</option>
+                    </select>
+                    <input
+                      className="in"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={r.p}
+                      onWheel={(e) => e.currentTarget.blur()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
+                      }}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewProjectData((prev) => {
+                          const nextItems = [...prev.items];
+                          nextItems[i] = { ...nextItems[i], p: val };
+                          const sumVal = nextItems.reduce((acc, curr) => acc + (+curr.p || 0), 0);
+                          return {
+                            ...prev,
+                            items: nextItems,
+                            v: sumVal > 0 ? String(sumVal) : prev.v,
+                          };
+                        });
+                      }}
+                    />
+                    <div className="item-actions">
+                      <button
+                        type="button"
+                        className="ib"
+                        disabled={i === 0}
+                        onClick={() => moveProjectItem(i, i - 1)}
+                        title="Move up"
+                        aria-label="Move up"
+                      >
+                        <Icon name="arrow-up" size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className="ib"
+                        disabled={i === newProjectData.items.length - 1}
+                        onClick={() => moveProjectItem(i, i + 1)}
+                        title="Move down"
+                        aria-label="Move down"
+                      >
+                        <Icon name="arrow-down" size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className="ib"
+                        onClick={() => {
+                          setNewProjectData((prev) => {
+                            const nextItems = prev.items.filter((_, idx) => idx !== i);
+                            const fallback = nextItems.length ? nextItems : [{ d: '', type: 'One-time', p: '' }];
+                            const sumVal = fallback.reduce((acc, curr) => acc + (+curr.p || 0), 0);
+                            return {
+                              ...prev,
+                              items: fallback,
+                              v: sumVal > 0 ? String(sumVal) : prev.v,
+                            };
+                          });
+                        }}
+                        aria-label="Remove item"
+                        title="Remove item"
+                      >
+                        <Icon name="x" size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="row" style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--line)' }}>
@@ -515,7 +607,10 @@ export function NewProjectView() {
             </div>
 
             <div id="plan">
-              <div className="pl hd">
+              <div
+                className="pl hd"
+                style={{ gridTemplateColumns: '1.4fr 72px 1fr 1.3fr 72px' }}
+              >
                 <span>Label</span>
                 <span>%</span>
                 <span>Amount</span>
@@ -528,7 +623,11 @@ export function NewProjectView() {
                   (totalVal * (+r.pct || 0)) / 100
                 );
                 return (
-                  <div key={i} className="pl">
+                  <div
+                    key={i}
+                    className="pl"
+                    style={{ gridTemplateColumns: '1.4fr 72px 1fr 1.3fr 72px' }}
+                  >
                     <input
                       className="in"
                       value={r.l}
@@ -548,6 +647,10 @@ export function NewProjectView() {
                       min="0"
                       max="100"
                       value={r.pct}
+                      onWheel={(e) => e.currentTarget.blur()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
+                      }}
                       onChange={(e) => {
                         const val = +e.target.value;
                         setNewProjectData((prev) => {
@@ -570,18 +673,42 @@ export function NewProjectView() {
                       placeholder="Due date"
                       className="plan-row-datepicker"
                     />
-                    <button
-                      className="ib"
-                      onClick={() => {
-                        setNewProjectData((prev) => {
-                          const nextPlan = prev.plan.filter((_, idx) => idx !== i);
-                          return { ...prev, pre: 'custom', plan: nextPlan };
-                        });
-                      }}
-                      aria-label="Remove installment"
-                    >
-                      <Icon name="x" />
-                    </button>
+                    <div className="item-actions">
+                      <button
+                        type="button"
+                        className="ib"
+                        disabled={i === 0}
+                        onClick={() => moveProjectPlan(i, i - 1)}
+                        title="Move up"
+                        aria-label="Move up"
+                      >
+                        <Icon name="arrow-up" size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className="ib"
+                        disabled={i === newProjectData.plan.length - 1}
+                        onClick={() => moveProjectPlan(i, i + 1)}
+                        title="Move down"
+                        aria-label="Move down"
+                      >
+                        <Icon name="arrow-down" size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className="ib"
+                        onClick={() => {
+                          setNewProjectData((prev) => {
+                            const nextPlan = prev.plan.filter((_, idx) => idx !== i);
+                            return { ...prev, pre: 'custom', plan: nextPlan };
+                          });
+                        }}
+                        aria-label="Remove installment"
+                        title="Remove installment"
+                      >
+                        <Icon name="x" size={14} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}

@@ -43,6 +43,7 @@ import {
   sh,
   dt,
   pad,
+  isRecurringBilling,
 } from '@/lib/formatters';
 import { ChartMode } from '@/components/IncomeChart';
 import { AuthUser, getActiveSession, setAuthSession, touchSession, clearAuthSession } from '@/lib/auth';
@@ -1145,8 +1146,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setSelectedProjectClientId(targetClient ? targetClient.id : '');
     setSelectedProjectQuoteId(fromQuote ? fromQuote.id : 0);
 
-    const quoteTotal = fromQuote
+    const quoteOneTimeItems = fromQuote
+      ? fromQuote.items.filter((it) => !isRecurringBilling(it.type))
+      : [];
+    const quoteOneTimeTotal = quoteOneTimeItems.reduce(
+      (acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0),
+      0
+    );
+    const quoteAllTotal = fromQuote
       ? fromQuote.items.reduce((acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0), 0)
+      : 0;
+    const quoteTotal = fromQuote
+      ? String(quoteOneTimeTotal > 0 ? quoteOneTimeTotal : quoteAllTotal)
       : '';
 
     const quoteItems = fromQuote && fromQuote.items.length > 0
@@ -1498,7 +1509,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       tel: q.tel,
     });
     const id = Date.now();
-    const tot = q.items.reduce((acc, curr) => acc + curr.q * curr.p, 0);
+    const oneTimeItems = q.items.filter((it) => !isRecurringBilling(it.type));
+    const oneTimeTotal = oneTimeItems.reduce((acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0), 0);
+    const tot = oneTimeTotal > 0 ? oneTimeTotal : q.items.reduce((acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0), 0);
     const planItems = generatePlanFromPreset('dp', '');
     let rem = tot;
     const plan: PlanItem[] = planItems.map((pi, i) => {

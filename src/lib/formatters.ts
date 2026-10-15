@@ -66,3 +66,31 @@ export const pad = (n: number | string): string => String(n).padStart(3, '0');
 export const isOverdue = (due?: string, paid?: boolean): boolean => {
   return !paid && !!due && due < today();
 };
+
+export const isRecurringBilling = (type?: string): boolean => {
+  if (!type) return false;
+  return /recurring|monthly|bulanan|yearly|tahunan|quarterly|kuartal|3 bulan|weekly|mingguan|retainer/i.test(type);
+};
+
+export const normalizeBillingType = (type?: string): string => {
+  if (!type) return 'One-time';
+  const clean = type.trim();
+  if (/^monthly$|^bulanan$/i.test(clean)) return 'Monthly (Recurring)';
+  if (/^tahunan$|^yearly$/i.test(clean)) return 'Tahunan (Recurring)';
+  if (/^mingguan$|^weekly$/i.test(clean)) return 'Mingguan (Recurring)';
+  if (/^quarterly$|^per 3 bulan$|^kuartal$/i.test(clean)) return 'Quarterly (Recurring)';
+  if (/^retainer$/i.test(clean)) return 'Retainer (Recurring)';
+  return clean;
+};
+
+export const getBillingTypeDocLabel = (type?: string): string => {
+  return normalizeBillingType(type);
+};
+
+export const getRecurringIntervalLabel = (type?: string): string => {
+  const t = (type || '').toLowerCase();
+  if (t.includes('year') || t.includes('tahun')) return '/ tahun';
+  if (t.includes('quarter') || t.includes('kuartal') || t.includes('3 bulan')) return '/ 3 bln';
+  if (t.includes('week') || t.includes('minggu')) return '/ minggu';
+  return '/ bulan';
+};

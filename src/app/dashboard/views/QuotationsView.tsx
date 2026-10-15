@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
-import { rp, dt } from '@/lib/formatters';
+import { rp, dt, isRecurringBilling } from '@/lib/formatters';
 
 export function QuotationsView() {
   const {
@@ -92,8 +92,11 @@ export function QuotationsView() {
             const isOpen = openGroup === company;
             const toggle = () => setOpenGroup(isOpen ? null : company);
             const totalGroupAmount = items.reduce((acc, curr) => {
-              const val = curr.items.reduce((a, it) => a + (it.q * it.p), 0);
-              return acc + val;
+              const oneTime = curr.items
+                .filter((it) => !isRecurringBilling(it.type))
+                .reduce((a, it) => a + (it.q || 1) * (it.p || 0), 0);
+              const all = curr.items.reduce((a, it) => a + (it.q || 1) * (it.p || 0), 0);
+              return acc + (oneTime > 0 ? oneTime : all);
             }, 0);
 
             return (
@@ -229,7 +232,36 @@ export function QuotationsView() {
                                     )}
                                   </div>
                                 </td>
-                                <td className="r">{rp(totalVal)}</td>
+                                <td className="r">
+                                  {(() => {
+                                    const oneTime = x.items
+                                      .filter((it) => !isRecurringBilling(it.type))
+                                      .reduce((acc, curr) => acc + (curr.q || 1) * (curr.p || 0), 0);
+                                    const recurring = x.items
+                                      .filter((it) => isRecurringBilling(it.type))
+                                      .reduce((acc, curr) => acc + (curr.q || 1) * (curr.p || 0), 0);
+
+                                    if (recurring > 0 && oneTime > 0) {
+                                      return (
+                                        <div>
+                                          <div style={{ fontWeight: 600 }}>{rp(oneTime)}</div>
+                                          <div className="mut" style={{ fontSize: '11px' }}>
+                                            +{rp(recurring)}/bln
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                    if (recurring > 0) {
+                                      return (
+                                        <div>
+                                          <div style={{ fontWeight: 600 }}>{rp(recurring)}</div>
+                                          <div className="mut" style={{ fontSize: '11px' }}>/bulan</div>
+                                        </div>
+                                      );
+                                    }
+                                    return <span>{rp(oneTime)}</span>;
+                                  })()}
+                                </td>
                               </tr>
                             );
                           })}
@@ -240,11 +272,13 @@ export function QuotationsView() {
                     {/* Mobile Quotations Card List */}
                     <div className="mob-card-list">
                       {items.map((x) => {
-                        const totalVal = x.items.reduce(
-                          (acc, curr) => acc + curr.q * curr.p,
-                          0
-                        );
                         const linkedProj = x.pid > 0 ? projects.find((p) => p.id === x.pid) : null;
+                        const oneTime = x.items
+                          .filter((it) => !isRecurringBilling(it.type))
+                          .reduce((acc, curr) => acc + (curr.q || 1) * (curr.p || 0), 0);
+                        const recurring = x.items
+                          .filter((it) => isRecurringBilling(it.type))
+                          .reduce((acc, curr) => acc + (curr.q || 1) * (curr.p || 0), 0);
                         return (
                           <div
                             key={x.id}
@@ -280,7 +314,23 @@ export function QuotationsView() {
                               </div>
                             </div>
                             <div className="mob-item-bottom">
-                              <div className="mob-item-amount">{rp(totalVal)}</div>
+                              <div className="mob-item-amount">
+                                {recurring > 0 && oneTime > 0 ? (
+                                  <div>
+                                    <div>{rp(oneTime)}</div>
+                                    <div className="mut" style={{ fontSize: '11px', fontWeight: 400 }}>
+                                      +{rp(recurring)}/bln recurring
+                                    </div>
+                                  </div>
+                                ) : recurring > 0 ? (
+                                  <div>
+                                    <div>{rp(recurring)}</div>
+                                    <div className="mut" style={{ fontSize: '11px', fontWeight: 400 }}>/bulan</div>
+                                  </div>
+                                ) : (
+                                  <span>{rp(oneTime)}</span>
+                                )}
+                              </div>
                               <span className="mut" style={{ fontSize: '12px' }}>
                                 Valid: {dt(x.valid)}
                               </span>

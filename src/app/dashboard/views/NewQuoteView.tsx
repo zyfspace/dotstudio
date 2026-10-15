@@ -7,7 +7,15 @@ import { Icon } from '@/components/Icons';
 import { AutoTextarea } from '@/components/AutoTextarea';
 import { DatePicker } from '@/components/DatePicker';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
-import { rp, dt, today, addDays } from '@/lib/formatters';
+import {
+  rp,
+  dt,
+  today,
+  addDays,
+  isRecurringBilling,
+  normalizeBillingType,
+  getBillingTypeDocLabel,
+} from '@/lib/formatters';
 
 export function NewQuoteView() {
   const router = useRouter();
@@ -33,6 +41,51 @@ export function NewQuoteView() {
     editingQuoteId,
     setEditingQuoteId,
   } = useDashboard();
+
+  const [draggedQuoteItemIdx, setDraggedQuoteItemIdx] = React.useState<number | null>(null);
+  const [dragOverQuoteItemIdx, setDragOverQuoteItemIdx] = React.useState<number | null>(null);
+  const [dragHandleActiveIdx, setDragHandleActiveIdx] = React.useState<number | null>(null);
+
+  const moveQuoteItem = (fromIdx: number, toIdx: number) => {
+    setNewQuoteData((prev) => {
+      if (toIdx < 0 || toIdx >= prev.items.length) return prev;
+      const next = [...prev.items];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return { ...prev, items: next };
+    });
+  };
+
+  const moveQuoteScope = (fromIdx: number, toIdx: number) => {
+    setNewQuoteData((prev) => {
+      if (toIdx < 0 || toIdx >= prev.scope.length) return prev;
+      const next = [...prev.scope];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return { ...prev, scope: next };
+    });
+  };
+
+  const moveQuoteService = (fromIdx: number, toIdx: number) => {
+    setNewQuoteData((prev) => {
+      if (toIdx < 0 || toIdx >= prev.services.length) return prev;
+      const next = [...prev.services];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return { ...prev, services: next };
+    });
+  };
+
+  const moveQuoteTerm = (fromIdx: number, toIdx: number) => {
+    setNewQuoteData((prev) => {
+      const curr = prev.terms || [''];
+      if (toIdx < 0 || toIdx >= curr.length) return prev;
+      const next = [...curr];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return { ...prev, terms: next };
+    });
+  };
 
   useEffect(() => {
     if (!editParam) {
@@ -516,21 +569,45 @@ export function NewQuoteView() {
                     });
                   }}
                 />
-                <button
-                  className="ib"
-                  onClick={() => {
-                    setNewQuoteData((prev) => {
-                      const next = prev.scope.filter((_, idx) => idx !== i);
-                      return {
-                        ...prev,
-                        scope: next.length ? next : [''],
-                      };
-                    });
-                  }}
-                  aria-label="Remove scope item"
-                >
-                  <Icon name="x" />
-                </button>
+                <div className="item-actions">
+                  <button
+                    type="button"
+                    className="ib"
+                    disabled={i === 0}
+                    onClick={() => moveQuoteScope(i, i - 1)}
+                    title="Move up"
+                    aria-label="Move up"
+                  >
+                    <Icon name="arrow-up" size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className="ib"
+                    disabled={i === newQuoteData.scope.length - 1}
+                    onClick={() => moveQuoteScope(i, i + 1)}
+                    title="Move down"
+                    aria-label="Move down"
+                  >
+                    <Icon name="arrow-down" size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className="ib"
+                    onClick={() => {
+                      setNewQuoteData((prev) => {
+                        const next = prev.scope.filter((_, idx) => idx !== i);
+                        return {
+                          ...prev,
+                          scope: next.length ? next : [''],
+                        };
+                      });
+                    }}
+                    aria-label="Remove scope item"
+                    title="Remove scope item"
+                  >
+                    <Icon name="x" size={14} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -556,8 +633,9 @@ export function NewQuoteView() {
             <div id="its">
               <div
                 className="pl hd"
-                style={{ gridTemplateColumns: '2fr 1.1fr 60px 1.2fr 1fr 30px' }}
+                style={{ gridTemplateColumns: '24px 2fr 1.1fr 60px 1.2fr 1fr 72px' }}
               >
+                <span />
                 <span>Item</span>
                 <span>Billing type</span>
                 <span>Qty</span>
@@ -567,12 +645,43 @@ export function NewQuoteView() {
               </div>
               {newQuoteData.items.map((r, i) => {
                 const amount = (+r.q || 0) * (+r.p || 0);
+                const isDragging = draggedQuoteItemIdx === i;
+                const isDragOver = dragOverQuoteItemIdx === i;
                 return (
                   <div
                     key={i}
-                    className="pl"
-                    style={{ gridTemplateColumns: '2fr 1.1fr 60px 1.2fr 1fr 30px' }}
+                    className={`pl ${isDragging ? 'item-dragging' : ''} ${isDragOver ? 'item-drag-over' : ''}`}
+                    style={{ gridTemplateColumns: '24px 2fr 1.1fr 60px 1.2fr 1fr 72px' }}
+                    draggable={dragHandleActiveIdx === i}
+                    onDragStart={() => setDraggedQuoteItemIdx(i)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (dragOverQuoteItemIdx !== i) setDragOverQuoteItemIdx(i);
+                    }}
+                    onDrop={() => {
+                      if (draggedQuoteItemIdx !== null && draggedQuoteItemIdx !== i) {
+                        moveQuoteItem(draggedQuoteItemIdx, i);
+                      }
+                      setDraggedQuoteItemIdx(null);
+                      setDragOverQuoteItemIdx(null);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedQuoteItemIdx(null);
+                      setDragOverQuoteItemIdx(null);
+                    }}
                   >
+                    <button
+                      type="button"
+                      className="drag-handle-btn"
+                      title="Drag to reorder"
+                      aria-label="Drag to reorder"
+                      onMouseEnter={() => setDragHandleActiveIdx(i)}
+                      onMouseLeave={() => setDragHandleActiveIdx(null)}
+                      onTouchStart={() => setDragHandleActiveIdx(i)}
+                      tabIndex={-1}
+                    >
+                      <Icon name="grip-vertical" size={14} />
+                    </button>
                     <input
                       className="in"
                       placeholder="Item description"
@@ -588,7 +697,7 @@ export function NewQuoteView() {
                     />
                     <select
                       className="in"
-                      value={r.type || 'One-time'}
+                      value={normalizeBillingType(r.type)}
                       onChange={(e) => {
                         const val = e.target.value;
                         setNewQuoteData((prev) => {
@@ -599,10 +708,14 @@ export function NewQuoteView() {
                       }}
                     >
                       <option value="One-time">One-time</option>
-                      <option value="Bulanan">Monthly</option>
                       <option value="Per Project">Per Project</option>
-                      <option value="Retainer">Retainer</option>
+                      <option value="Milestone">Milestone / Termin</option>
                       <option value="Hourly">Hourly</option>
+                      <option value="Mingguan (Recurring)">Mingguan (Recurring)</option>
+                      <option value="Monthly (Recurring)">Monthly (Recurring)</option>
+                      <option value="Quarterly (Recurring)">Quarterly (Recurring)</option>
+                      <option value="Tahunan (Recurring)">Tahunan (Recurring)</option>
+                      <option value="Retainer (Recurring)">Retainer (Recurring)</option>
                     </select>
                     <input
                       className="in"
@@ -642,25 +755,95 @@ export function NewQuoteView() {
                       }}
                     />
                     <span className="amt">{rp(amount)}</span>
-                    <button
-                      className="ib"
-                      onClick={() => {
-                        setNewQuoteData((prev) => {
-                          const next = prev.items.filter((_, idx) => idx !== i);
-                          return {
-                            ...prev,
-                            items: next.length ? next : [{ d: '', type: 'One-time', q: 1, p: '' }],
-                          };
-                        });
-                      }}
-                      aria-label="Remove item"
-                    >
-                      <Icon name="x" />
-                    </button>
+                    <div className="item-actions">
+                      <button
+                        type="button"
+                        className="ib"
+                        disabled={i === 0}
+                        onClick={() => moveQuoteItem(i, i - 1)}
+                        title="Move up"
+                        aria-label="Move up"
+                      >
+                        <Icon name="arrow-up" size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className="ib"
+                        disabled={i === newQuoteData.items.length - 1}
+                        onClick={() => moveQuoteItem(i, i + 1)}
+                        title="Move down"
+                        aria-label="Move down"
+                      >
+                        <Icon name="arrow-down" size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className="ib"
+                        onClick={() => {
+                          setNewQuoteData((prev) => {
+                            const next = prev.items.filter((_, idx) => idx !== i);
+                            return {
+                              ...prev,
+                              items: next.length ? next : [{ d: '', type: 'One-time', q: 1, p: '' }],
+                            };
+                          });
+                        }}
+                        aria-label="Remove item"
+                        title="Remove item"
+                      >
+                        <Icon name="x" size={14} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
             </div>
+
+            {(() => {
+              const oneTimeItems = newQuoteData.items.filter((it) => !isRecurringBilling(it.type));
+              const recurringItems = newQuoteData.items.filter((it) => isRecurringBilling(it.type));
+              const oneTimeTot = oneTimeItems.reduce(
+                (acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0),
+                0
+              );
+              const recurringTot = recurringItems.reduce(
+                (acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0),
+                0
+              );
+
+              return (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '12px 14px',
+                    background: 'var(--soft)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--line)',
+                    marginTop: '12px',
+                    fontSize: '12.5px',
+                  }}
+                >
+                  <div>
+                    <span className="mut" style={{ marginRight: '6px' }}>Total:</span>
+                    <span style={{ fontWeight: 700, color: 'var(--fg)', fontSize: '13px' }}>
+                      {rp(oneTimeTot)}
+                    </span>
+                  </div>
+                  {recurringItems.length > 0 && (
+                    <div>
+                      <span className="mut" style={{ marginRight: '6px' }}>Recurring:</span>
+                      <span style={{ fontWeight: 700, color: 'var(--ac, #f16818)', fontSize: '13px' }}>
+                        {rp(recurringTot)} / bln
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Cakupan/Services */}
@@ -698,21 +881,45 @@ export function NewQuoteView() {
                     });
                   }}
                 />
-                <button
-                  className="ib"
-                  onClick={() => {
-                    setNewQuoteData((prev) => {
-                      const next = prev.services.filter((_, idx) => idx !== i);
-                      return {
-                        ...prev,
-                        services: next.length ? next : [''],
-                      };
-                    });
-                  }}
-                  aria-label="Remove service item"
-                >
-                  <Icon name="x" />
-                </button>
+                <div className="item-actions">
+                  <button
+                    type="button"
+                    className="ib"
+                    disabled={i === 0}
+                    onClick={() => moveQuoteService(i, i - 1)}
+                    title="Move up"
+                    aria-label="Move up"
+                  >
+                    <Icon name="arrow-up" size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className="ib"
+                    disabled={i === newQuoteData.services.length - 1}
+                    onClick={() => moveQuoteService(i, i + 1)}
+                    title="Move down"
+                    aria-label="Move down"
+                  >
+                    <Icon name="arrow-down" size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className="ib"
+                    onClick={() => {
+                      setNewQuoteData((prev) => {
+                        const next = prev.services.filter((_, idx) => idx !== i);
+                        return {
+                          ...prev,
+                          services: next.length ? next : [''],
+                        };
+                      });
+                    }}
+                    aria-label="Remove service item"
+                    title="Remove service item"
+                  >
+                    <Icon name="x" size={14} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -753,23 +960,46 @@ export function NewQuoteView() {
                     });
                   }}
                 />
-                <button
-                  type="button"
-                  className="ib"
-                  onClick={() => {
-                    setNewQuoteData((prev) => {
-                      const curr = prev.terms || [''];
-                      const next = curr.filter((_, idx) => idx !== i);
-                      return {
-                        ...prev,
-                        terms: next.length ? next : [''],
-                      };
-                    });
-                  }}
-                  aria-label="Remove term item"
-                >
-                  <Icon name="x" />
-                </button>
+                <div className="item-actions">
+                  <button
+                    type="button"
+                    className="ib"
+                    disabled={i === 0}
+                    onClick={() => moveQuoteTerm(i, i - 1)}
+                    title="Move up"
+                    aria-label="Move up"
+                  >
+                    <Icon name="arrow-up" size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className="ib"
+                    disabled={i === (newQuoteData.terms?.length || 1) - 1}
+                    onClick={() => moveQuoteTerm(i, i + 1)}
+                    title="Move down"
+                    aria-label="Move down"
+                  >
+                    <Icon name="arrow-down" size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className="ib"
+                    onClick={() => {
+                      setNewQuoteData((prev) => {
+                        const curr = prev.terms || [''];
+                        const next = curr.filter((_, idx) => idx !== i);
+                        return {
+                          ...prev,
+                          terms: next.length ? next : [''],
+                        };
+                      });
+                    }}
+                    aria-label="Remove term item"
+                    title="Remove term item"
+                  >
+                    <Icon name="x" size={14} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -942,8 +1172,8 @@ export function NewQuoteView() {
                 <table className="docx-cost-table">
                   <thead>
                     <tr>
-                      <th style={{ width: '52%' }}>Item</th>
-                      <th className="c" style={{ width: '24%' }}>
+                      <th style={{ width: '46%' }}>Item</th>
+                      <th className="c" style={{ width: '30%' }}>
                         Jenis Biaya
                       </th>
                       <th className="c" style={{ width: '24%' }}>
@@ -958,7 +1188,9 @@ export function NewQuoteView() {
                           {it.d || `Item Layanan ${idx + 1}`}
                           {+it.q > 1 ? ` (${it.q}x)` : ''}
                         </td>
-                        <td className="c">{it.type || 'One-time'}</td>
+                        <td className="c">
+                          {getBillingTypeDocLabel(it.type)}
+                        </td>
                         <td className="c" style={{ fontWeight: 700 }}>
                           Rp{((+it.q || 1) * (+it.p || 0)).toLocaleString('id-ID')}
                         </td>
@@ -966,19 +1198,65 @@ export function NewQuoteView() {
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr>
-                      <td colSpan={2} style={{ textAlign: 'left', fontWeight: 700 }}>
-                        Total
-                      </td>
-                      <td style={{ fontWeight: 700 }}>
-                        Rp{newQuoteData.items
-                          .reduce(
-                            (acc, curr) => acc + (+curr.q || 0) * (+curr.p || 0),
-                            0
-                          )
-                          .toLocaleString('id-ID')}
-                      </td>
-                    </tr>
+                    {(() => {
+                      const oneTimeItems = newQuoteData.items.filter((it) => !isRecurringBilling(it.type));
+                      const recurringItems = newQuoteData.items.filter((it) => isRecurringBilling(it.type));
+                      const oneTimeTot = oneTimeItems.reduce(
+                        (acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0),
+                        0
+                      );
+                      const recurringTot = recurringItems.reduce(
+                        (acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0),
+                        0
+                      );
+
+                      if (recurringItems.length > 0 && oneTimeItems.length > 0) {
+                        return (
+                          <>
+                            <tr>
+                              <td colSpan={2} style={{ textAlign: 'left', fontWeight: 700 }}>
+                                Total
+                              </td>
+                              <td style={{ fontWeight: 700 }}>
+                                Rp{oneTimeTot.toLocaleString('id-ID')}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td colSpan={2} style={{ textAlign: 'left', fontWeight: 700, color: '#475569' }}>
+                                Recurring
+                              </td>
+                              <td style={{ fontWeight: 700, color: '#475569' }}>
+                                Rp{recurringTot.toLocaleString('id-ID')} / bulan
+                              </td>
+                            </tr>
+                          </>
+                        );
+                      }
+
+                      if (recurringItems.length > 0) {
+                        return (
+                          <tr>
+                            <td colSpan={2} style={{ textAlign: 'left', fontWeight: 700 }}>
+                              Recurring
+                            </td>
+                            <td style={{ fontWeight: 700 }}>
+                              Rp{recurringTot.toLocaleString('id-ID')} / bulan
+                            </td>
+                          </tr>
+                        );
+                      }
+
+                      return (
+                        <tr>
+                          <td colSpan={2} style={{ textAlign: 'left', fontWeight: 700 }}>
+                            Total
+                          </td>
+                          <td style={{ fontWeight: 700 }}>
+                            Rp{oneTimeTot.toLocaleString('id-ID')}
+                          </td>
+                        </tr>
+                      );
+                    })()}
                   </tfoot>
                 </table>
 

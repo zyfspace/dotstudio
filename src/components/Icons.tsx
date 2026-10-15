@@ -273,6 +273,30 @@ const paths: Record<string, React.ReactNode> = {
       <path d="M13 6l6 6" />
     </>
   ),
+  'arrow-up': (
+    <>
+      <path d="M12 5l0 14" />
+      <path d="M18 11l-6 -6" />
+      <path d="M6 11l6 -6" />
+    </>
+  ),
+  'arrow-down': (
+    <>
+      <path d="M12 5l0 14" />
+      <path d="M18 13l-6 6" />
+      <path d="M6 13l6 6" />
+    </>
+  ),
+  'grip-vertical': (
+    <>
+      <path d="M9 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+      <path d="M9 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+      <path d="M9 19m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+      <path d="M15 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+      <path d="M15 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+      <path d="M15 19m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+    </>
+  ),
   external: (
     <>
       <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />
