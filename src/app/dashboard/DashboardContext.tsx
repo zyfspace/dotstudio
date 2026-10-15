@@ -546,6 +546,35 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [previewProof]);
 
+  // Prevent unintentional increment/decrement on number inputs from mouse wheel or arrow keys
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'number') {
+        if (document.activeElement === target) {
+          target.blur();
+        }
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'number') {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: true, capture: true });
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel, { capture: true });
+      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+    };
+  }, []);
+
   // Load and sync data from LocalStorage & Supabase
   const loadData = useCallback(async (email?: string) => {
     // Mount and sign-in can both start a load; only the latest one may mark

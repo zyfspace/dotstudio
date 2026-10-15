@@ -458,6 +458,10 @@ export function NewQuoteView() {
                     min="1"
                     max="365"
                     value={newQuoteData.validDays === 0 ? '' : newQuoteData.validDays}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
+                    }}
                     onChange={(e) => {
                       const raw = e.target.value;
                       const days = raw === '' ? 0 : Math.max(0, parseInt(raw, 10) || 0);
@@ -605,6 +609,10 @@ export function NewQuoteView() {
                       type="number"
                       min="0"
                       value={r.q}
+                      onWheel={(e) => e.currentTarget.blur()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
+                      }}
                       onChange={(e) => {
                         const val = +e.target.value;
                         setNewQuoteData((prev) => {
@@ -620,6 +628,10 @@ export function NewQuoteView() {
                       min="0"
                       placeholder="0"
                       value={r.p}
+                      onWheel={(e) => e.currentTarget.blur()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
+                      }}
                       onChange={(e) => {
                         const val = e.target.value;
                         setNewQuoteData((prev) => {
