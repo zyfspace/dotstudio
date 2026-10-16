@@ -756,10 +756,16 @@ export function NewProjectView() {
             <p className="note" style={{ margin: '0 0 12px' }}>
               Status updates automatically: Pending → In progress → Finished as each payment is confirmed.
             </p>
+            {!newProjectData.cn.trim() && (
+              <div className="od" style={{ fontSize: '12px', marginBottom: '10px' }}>
+                Choose or enter a client name.
+              </div>
+            )}
             <button
               className="btn pri"
               id="mk"
               style={{ width: '100%', justifyContent: 'center' }}
+              disabled={!newProjectData.cn.trim()}
               onClick={handleCreateProjectSubmit}
             >
               Create project

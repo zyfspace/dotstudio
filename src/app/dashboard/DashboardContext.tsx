@@ -1326,7 +1326,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     const totalPct = newProjectData.plan.reduce((acc, r) => acc + (+r.pct || 0), 0);
     if (!newProjectData.plan.length || totalPct !== 100) return;
 
-    const c = ensureClient(newProjectData);
+    const selectedClient =
+      projectClientMode === 'existing'
+        ? clients.find((x) => x.id === selectedProjectClientId)
+        : undefined;
+    const c = selectedClient || ensureClient(newProjectData);
+    // Every project needs a client: its invoices are addressed to them
+    if (!c) return;
     const id = Date.now();
     let rem = val;
     let currentInvCount = allPayments.filter((x) => x.i.inv).length;
