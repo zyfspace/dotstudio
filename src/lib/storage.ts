@@ -213,7 +213,6 @@ export const fetchFromSupabase = async (
       desc: p.desc || p.notes || '',
       n: p.n || '',
       plan: Array.isArray(p.plan) ? p.plan : (Array.isArray(p.p) ? p.p : []),
-      cancelled: p.cancelled === true || p.status === 'Cancelled',
     }));
 
     const quotes: Quotation[] = quotesRaw.map((q: any) => ({
@@ -351,7 +350,6 @@ const projectRow = (p: Project, clients: Client[], owner: string) => {
     deadline: p.due || '',
     notes: p.desc || '',
     plan: p.plan || [],
-    status: p.cancelled ? 'Cancelled' : 'In Progress',
     owner_email: owner,
   };
 };

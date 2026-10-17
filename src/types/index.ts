@@ -46,7 +46,6 @@ export interface Project {
   items?: ProjectCostItem[];
   n: string;
   plan: PlanItem[];
-  cancelled?: boolean;
 }
 
 export interface QuotationItem {
@@ -113,4 +112,4 @@ export interface DocState {
   b?: number; // plan item id (for invoice)
 }
 
-export type ProjectStatus = 'Pending' | 'Progress' | 'Finished' | 'Cancelled';
+export type ProjectStatus = 'Pending' | 'Progress' | 'Finished';

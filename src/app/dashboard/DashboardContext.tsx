@@ -129,7 +129,6 @@ export const STATUS_LABELS: Record<ProjectStatus, string> = {
   Pending: 'Pending',
   Progress: 'In progress',
   Finished: 'Finished',
-  Cancelled: 'Cancelled',
 };
 
 interface DashboardContextType {
@@ -348,7 +347,6 @@ interface DashboardContextType {
   handleCreateOrViewInvoice: (projectId: number, planItemId: number) => void;
   handleAddAdditionalService: (projectId: number, label: string, cost: number, paidAt: string) => number | null;
   handleDeleteProject: (projectId: number) => void;
-  handleCancelProject: (projectId: number) => void;
   handleDeleteClient: (clientId: number) => void;
   handleDeleteQuote: (quoteId: number) => void;
   handleManualCloudSync: () => Promise<void>;
@@ -1028,7 +1026,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [getProjectPaidAmount]);
 
   const getProjectStatus = useCallback((p: Project): ProjectStatus => {
-    if (p.cancelled) return 'Cancelled';
     const paidCount = p.plan.filter((i) => i.paid).length;
     if (p.plan.length > 0 && paidCount === p.plan.length) return 'Finished';
     if (paidCount > 0) return 'Progress';
@@ -1739,23 +1736,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     closeDrawer();
   };
 
-  // Client backs out after paying: keep only what was received, drop the unpaid
-  // installments and shrink the contract value to the paid amount.
-  const handleCancelProject = (projectId: number) => {
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id !== projectId || p.cancelled) return p;
-        const paidPlan = p.plan.filter((i) => i.paid);
-        return {
-          ...p,
-          v: paidPlan.reduce((acc, i) => acc + i.a, 0),
-          plan: paidPlan,
-          cancelled: true,
-        };
-      })
-    );
-  };
-
   const handleDeleteClient = (clientId: number) => {
     if (!deleteArmed) {
       setDeleteArmed(true);
@@ -1852,7 +1832,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       .slice(0, 5);
 
     const activeProjs = projects
-      .filter((p) => !['Finished', 'Cancelled'].includes(getProjectStatus(p)))
+      .filter((p) => getProjectStatus(p) !== 'Finished')
       .map((p) => {
         const nextDueItem = p.plan
           .filter((i) => !i.paid)
@@ -2032,7 +2012,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     handleCreateOrViewInvoice,
     handleAddAdditionalService,
     handleDeleteProject,
-    handleCancelProject,
     handleDeleteClient,
     handleDeleteQuote,
     handleManualCloudSync,

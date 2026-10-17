@@ -1628,15 +1628,6 @@ tbody tr:hover {
   background: transparent;
 }
 
-.st.Cancelled {
-  color: var(--mut);
-}
-
-.st.Cancelled:before {
-  background: var(--mut);
-  border-color: var(--mut);
-}
-
 .pg {
   display: flex;
   align-items: center;
