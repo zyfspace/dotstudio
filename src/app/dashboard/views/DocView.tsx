@@ -6,10 +6,10 @@ import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { DocActionButton } from '@/components/DocActionButton';
-import { DocLangSwitch } from '@/components/DocLangSwitch';
 import { PaidStamp } from '@/components/PaidStamp';
 import { dt, isRecurringBilling, getBillingTypeDocLabel } from '@/lib/formatters';
 import { useA4Fit } from '@/lib/useA4Fit';
+import { DocViewEn } from './DocViewEn';
 
 export function DocView() {
   const page = useA4Fit();
@@ -64,6 +64,12 @@ export function DocView() {
 
   const isInvoice = currentDoc.t === 'inv';
 
+  // The language chosen when the document was created; Indonesian when unset
+  const docLang = isInvoice
+    ? projects.find((x) => x.id === currentDoc.a)?.lang
+    : quotes.find((x) => x.id === currentDoc.a)?.lang;
+  if (docLang === 'en') return <DocViewEn />;
+
   if (isInvoice) {
     const p = projects.find((x) => x.id === currentDoc.a);
     const i = p?.plan.find((x) => x.id === currentDoc.b);
@@ -104,7 +110,6 @@ export function DocView() {
             <Icon name="back" size={18} />
           </button>
           <h1><span className="doc-kind">Invoice </span>{formatInvoiceNo(i.inv.no, i.inv.date)}</h1>
-          <DocLangSwitch lang="id" />
           <DocActionButton filename={`Invoice ${formatInvoiceNo(i.inv.no, i.inv.date)}`} />
         </div>
 
@@ -423,8 +428,6 @@ export function DocView() {
             <span className="pt-short">Mark sent</span>
           </button>
         )}
-
-        <DocLangSwitch lang="id" />
 
         <DocActionButton filename={`Quotation ${formatQuoteNo(q.no, q.date, qSenderName)}`} />
 

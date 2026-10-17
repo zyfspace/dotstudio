@@ -6,16 +6,16 @@ import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { DocActionButton } from '@/components/DocActionButton';
-import { DocLangSwitch } from '@/components/DocLangSwitch';
 import { PaidStamp } from '@/components/PaidStamp';
 import { dt, isRecurringBilling, getBillingTypeDocLabel } from '@/lib/formatters';
 import { useA4Fit } from '@/lib/useA4Fit';
 
 /**
- * English version of DocView (invoice + quotation). Same layout and data as the
- * default Indonesian document; only the static copy, number grouping and the
- * stored "Syarat pembayaran" prefix differ. Keep both files in step when the
- * layout changes.
+ * English version of DocView (invoice + quotation), shown when the project or
+ * quotation was created with lang 'en'. Same layout and data as the default
+ * Indonesian document; only the static copy, number grouping and the stored
+ * "Syarat pembayaran" prefix differ. Keep both files in step when the layout
+ * changes.
  */
 
 const money = (n: number) => `Rp${n.toLocaleString('en-US')}`;
@@ -121,8 +121,7 @@ export function DocViewEn() {
             <Icon name="back" size={18} />
           </button>
           <h1><span className="doc-kind">Invoice </span>{formatInvoiceNo(i.inv.no, i.inv.date)}</h1>
-          <DocLangSwitch lang="en" />
-          <DocActionButton filename={`Invoice ${formatInvoiceNo(i.inv.no, i.inv.date)} EN`} />
+          <DocActionButton filename={`Invoice ${formatInvoiceNo(i.inv.no, i.inv.date)}`} />
         </div>
 
         <div className="docx-paper docx-a4" ref={page.ref} style={page.style}>
@@ -441,9 +440,7 @@ export function DocViewEn() {
           </button>
         )}
 
-        <DocLangSwitch lang="en" />
-
-        <DocActionButton filename={`Quotation ${formatQuoteNo(q.no, q.date, qSenderName)} EN`} />
+        <DocActionButton filename={`Quotation ${formatQuoteNo(q.no, q.date, qSenderName)}`} />
 
         <button
           className="btn danger doc-icon-btn"
