@@ -1,3 +1,6 @@
+/** Language of the generated invoice / quotation document; Indonesian is the default */
+export type DocLang = 'id' | 'en';
+
 export interface Client {
   id: number;
   name: string;
@@ -45,6 +48,7 @@ export interface Project {
   desc: string;
   billingType?: string;
   items?: ProjectCostItem[];
+  lang?: DocLang;
   n: string;
   plan: PlanItem[];
 }
@@ -77,6 +81,7 @@ export interface Quotation {
   senderTagline?: string;
   senderEmail?: string;
   senderPhone?: string;
+  lang?: DocLang;
   s: 'Draft' | 'Sent' | 'Accepted';
   pid: number;
 }

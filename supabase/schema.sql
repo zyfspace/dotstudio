@@ -62,6 +62,10 @@ CREATE TABLE IF NOT EXISTS public.quotes (
 -- Older databases created before quotes.note existed
 ALTER TABLE public.quotes ADD COLUMN IF NOT EXISTS note TEXT DEFAULT '';
 
+-- Document language ('id' default, 'en' for the English invoice / quotation)
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS lang TEXT DEFAULT 'id';
+ALTER TABLE public.quotes ADD COLUMN IF NOT EXISTS lang TEXT DEFAULT 'id';
+
 -- 4. STUDIO PROFILES TABLE
 CREATE TABLE IF NOT EXISTS public.studio_profiles (
   email TEXT PRIMARY KEY,

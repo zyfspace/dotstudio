@@ -213,6 +213,7 @@ export const fetchFromSupabase = async (
       desc: p.desc || p.notes || '',
       n: p.n || '',
       plan: Array.isArray(p.plan) ? p.plan : (Array.isArray(p.p) ? p.p : []),
+      ...(p.lang === 'en' || p.lang === 'id' ? { lang: p.lang as 'en' | 'id' } : {}),
     }));
 
     const quotes: Quotation[] = quotesRaw.map((q: any) => ({
@@ -251,6 +252,7 @@ export const fetchFromSupabase = async (
       senderTagline: q.senderTagline || q.sender_tagline || '',
       senderEmail: q.senderEmail || q.sender_email || '',
       senderPhone: q.senderPhone || q.sender_phone || '',
+      ...(q.lang === 'en' || q.lang === 'id' ? { lang: q.lang as 'en' | 'id' } : {}),
     }));
 
     let profile: StudioProfile | undefined = undefined;
@@ -350,6 +352,7 @@ const projectRow = (p: Project, clients: Client[], owner: string) => {
     deadline: p.due || '',
     notes: p.desc || '',
     plan: p.plan || [],
+    ...(p.lang ? { lang: p.lang } : {}),
     owner_email: owner,
   };
 };
@@ -374,6 +377,7 @@ const quoteRow = (q: Quotation, owner: string) => ({
   sender_tagline: q.senderTagline || '',
   sender_email: q.senderEmail || '',
   sender_phone: q.senderPhone || '',
+  ...(q.lang ? { lang: q.lang } : {}),
   owner_email: owner,
 });
 

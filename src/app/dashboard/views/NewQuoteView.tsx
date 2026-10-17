@@ -7,6 +7,8 @@ import { Icon } from '@/components/Icons';
 import { AutoTextarea } from '@/components/AutoTextarea';
 import { DatePicker } from '@/components/DatePicker';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
+import { DocLangToggle } from '@/components/DocLangToggle';
+import { NewQuotePreviewEn } from './NewDocPreviewEn';
 import {
   rp,
   dt,
@@ -150,6 +152,7 @@ export function NewQuoteView() {
         senderTagline: q.senderTagline || '',
         senderEmail: q.senderEmail || '',
         senderPhone: q.senderPhone || '',
+        lang: q.lang || 'id',
       });
     }
   }, [
@@ -1093,6 +1096,13 @@ export function NewQuoteView() {
         {/* Right Column: Live Quotation Preview */}
         <div className="project-preview-col">
           <div className="project-preview-sticky-wrap">
+            <DocLangToggle
+              value={newQuoteData.lang}
+              onChange={(lang) => setNewQuoteData((prev) => ({ ...prev, lang }))}
+            />
+            {newQuoteData.lang === 'en' ? (
+              <NewQuotePreviewEn />
+            ) : (
             <div className="docx-paper docx-a4">
               <div className="docx-body-content">
                 {/* Header */}
@@ -1331,6 +1341,7 @@ export function NewQuoteView() {
                 <DocumentWatermark />
               </div>
             </div>
+            )}
           </div>
         </div>
       </div>

@@ -7,6 +7,8 @@ import { Icon } from '@/components/Icons';
 import { AutoTextarea } from '@/components/AutoTextarea';
 import { DatePicker } from '@/components/DatePicker';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
+import { DocLangToggle } from '@/components/DocLangToggle';
+import { NewInvoicePreviewEn } from './NewDocPreviewEn';
 import { rp, dt, today, isRecurringBilling } from '@/lib/formatters';
 
 export function NewProjectView() {
@@ -776,6 +778,13 @@ export function NewProjectView() {
         {/* Right Column: Live Invoice Preview */}
         <div className="project-preview-col">
           <div className="project-preview-sticky-wrap">
+            <DocLangToggle
+              value={newProjectData.lang}
+              onChange={(lang) => setNewProjectData((prev) => ({ ...prev, lang }))}
+            />
+            {newProjectData.lang === 'en' ? (
+              <NewInvoicePreviewEn />
+            ) : (
             <div className="docx-paper docx-a4">
               <div className="docx-body-content">
                 {/* Header */}
@@ -935,6 +944,7 @@ export function NewProjectView() {
                 <DocumentWatermark />
               </div>
             </div>
+            )}
           </div>
         </div>
       </div>

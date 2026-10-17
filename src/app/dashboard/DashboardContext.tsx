@@ -20,6 +20,7 @@ import {
   DocState,
   ProjectStatus,
   StudioProfile,
+  DocLang,
 } from '@/types';
 import {
   loadStoredData,
@@ -242,6 +243,7 @@ interface DashboardContextType {
     tel: string;
     pre: string;
     plan: { l: string; pct: number; due: string }[];
+    lang: DocLang;
   };
   setNewProjectData: React.Dispatch<React.SetStateAction<{
     name: string;
@@ -257,6 +259,7 @@ interface DashboardContextType {
     tel: string;
     pre: string;
     plan: { l: string; pct: number; due: string }[];
+    lang: DocLang;
   }>>;
 
   newQuoteData: {
@@ -278,6 +281,7 @@ interface DashboardContextType {
     senderTagline: string;
     senderEmail: string;
     senderPhone: string;
+    lang: DocLang;
   };
   setNewQuoteData: React.Dispatch<React.SetStateAction<{
     cn: string;
@@ -298,6 +302,7 @@ interface DashboardContextType {
     senderTagline: string;
     senderEmail: string;
     senderPhone: string;
+    lang: DocLang;
   }>>;
 
   uploadingItemId: number | null;
@@ -456,6 +461,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     tel: '',
     pre: 'dp',
     plan: generatePlanFromPreset('dp', ''),
+    lang: 'id' as DocLang,
   });
 
   const [newQuoteData, setNewQuoteData] = useState({
@@ -477,6 +483,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     senderTagline: '',
     senderEmail: '',
     senderPhone: '',
+    lang: 'id' as DocLang,
   });
 
   const [uploadingItemId, setUploadingItemId] = useState<number | null>(null);
@@ -1194,6 +1201,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       tel: fromQuote ? fromQuote.tel : targetClient ? targetClient.tel : '',
       pre: 'dp',
       plan: generatePlanFromPreset('dp', ''),
+      lang: fromQuote?.lang || 'id',
     });
     router.push('/dashboard/new');
   }, [clients, isProfileComplete, router]);
@@ -1257,6 +1265,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       senderTagline: studioProfile.tagline || '',
       senderEmail: studioProfile.email || '',
       senderPhone: studioProfile.phone || '',
+      lang: 'id',
     });
     router.push('/dashboard/quote');
   }, [clients, isProfileComplete, projects, studioProfile, router]);
@@ -1312,6 +1321,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       senderTagline: q.senderTagline || '',
       senderEmail: q.senderEmail || '',
       senderPhone: q.senderPhone || '',
+      lang: q.lang || 'id',
     });
     router.push(`/dashboard/quote?edit=${quoteId}`);
   }, [quotes, clients, router]);
@@ -1387,6 +1397,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       desc: newProjectData.desc,
       n: selectedProjectQuoteId ? `From Quotation` : '',
       plan,
+      ...(newProjectData.lang === 'en' ? { lang: 'en' as const } : {}),
     };
 
     setProjects((prev) => [...prev, createdProj]);
@@ -1455,6 +1466,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           senderEmail: newQuoteData.senderEmail.trim(),
           senderPhone: newQuoteData.senderPhone.trim(),
           pid: selectedQuoteProjectId || existing.pid || 0,
+          // Keep an explicit 'id' once the row has carried a language, so a synced 'en' is overwritten
+          lang: newQuoteData.lang === 'en' ? 'en' : existing.lang ? 'id' : undefined,
         };
 
         setQuotes((prev) =>
@@ -1491,6 +1504,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       senderPhone: newQuoteData.senderPhone.trim(),
       s: selectedQuoteProjectId ? 'Accepted' : 'Draft',
       pid: selectedQuoteProjectId || 0,
+      ...(newQuoteData.lang === 'en' ? { lang: 'en' as const } : {}),
     };
 
     setQuotes((prev) => [...prev, newQuote]);
@@ -1558,6 +1572,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       desc: q.scope && q.scope.filter((s) => s.trim()).length ? q.scope.filter((s) => s.trim()).join('\n') : '',
       n: `From ${q.no}`,
       plan,
+      ...(q.lang === 'en' ? { lang: 'en' as const } : {}),
     };
 
     setProjects((prev) => [...prev, newProj]);

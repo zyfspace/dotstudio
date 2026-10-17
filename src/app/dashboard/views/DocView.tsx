@@ -9,6 +9,7 @@ import { DocActionButton } from '@/components/DocActionButton';
 import { PaidStamp } from '@/components/PaidStamp';
 import { dt, isRecurringBilling, getBillingTypeDocLabel } from '@/lib/formatters';
 import { useA4Fit } from '@/lib/useA4Fit';
+import { DocViewEn } from './DocViewEn';
 
 export function DocView() {
   const page = useA4Fit();
@@ -62,6 +63,12 @@ export function DocView() {
   }
 
   const isInvoice = currentDoc.t === 'inv';
+
+  // The language chosen when the document was created; Indonesian when unset
+  const docLang = isInvoice
+    ? projects.find((x) => x.id === currentDoc.a)?.lang
+    : quotes.find((x) => x.id === currentDoc.a)?.lang;
+  if (docLang === 'en') return <DocViewEn />;
 
   if (isInvoice) {
     const p = projects.find((x) => x.id === currentDoc.a);
