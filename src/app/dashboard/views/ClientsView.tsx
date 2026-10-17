@@ -119,8 +119,8 @@ export function ClientsView() {
                   </span>
                 </div>
 
-                {isOpen && (
-                  <>
+                <div className="client-body" aria-hidden={!isOpen}>
+                  <div className="client-body-in">
 
                 {/* Contact Details */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -175,12 +175,13 @@ export function ClientsView() {
                 <button
                   className="btn"
                   onClick={() => setActiveClientDrawerId(c.id)}
+                  tabIndex={isOpen ? 0 : -1}
                   style={{ alignSelf: 'flex-start' }}
                 >
                   View details
                 </button>
-                  </>
-                )}
+                  </div>
+                </div>
               </div>
             );
           })}
