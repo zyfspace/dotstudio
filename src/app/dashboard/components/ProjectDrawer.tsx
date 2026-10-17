@@ -32,8 +32,10 @@ export function ProjectDrawer() {
     setProjects,
     deleteArmed,
     handleDeleteProject,
+    handleCancelProject,
   } = useDashboard();
 
+  const [cancelArmed, setCancelArmed] = useState(false);
   const [showAddService, setShowAddService] = useState(false);
   const [addServiceLabel, setAddServiceLabel] = useState('');
   const [addServiceCost, setAddServiceCost] = useState('');
@@ -90,7 +92,11 @@ export function ProjectDrawer() {
                 </div>
 
                 <div className="mut">
-                  {b > 0 ? `Remaining ${rp(b)}` : 'All payments received'}
+                  {activeProject.cancelled
+                    ? 'Project cancelled, value adjusted to payments received'
+                    : b > 0
+                      ? `Remaining ${rp(b)}`
+                      : 'All payments received'}
                 </div>
 
                 {/* Payment schedule */}
@@ -222,7 +228,7 @@ export function ProjectDrawer() {
                   })}
 
                   {/* Additional Service */}
-                  {!showAddService ? (
+                  {activeProject.cancelled ? null : !showAddService ? (
                     <button
                       type="button"
                       className="add-svc-btn"
@@ -617,6 +623,28 @@ export function ProjectDrawer() {
                     />
                   </div>
                 </div>
+
+                {/* Cancel button */}
+                {!activeProject.cancelled && (
+                  <button
+                    className={`btn danger ${cancelArmed ? 'arm' : ''}`}
+                    style={{ marginBottom: '8px' }}
+                    onClick={() => {
+                      if (!cancelArmed) {
+                        setCancelArmed(true);
+                        return;
+                      }
+                      handleCancelProject(activeProject.id);
+                      setCancelArmed(false);
+                    }}
+                    onBlur={() => setCancelArmed(false)}
+                  >
+                    <Icon name="x" />
+                    {cancelArmed
+                      ? `Confirm: value becomes ${rp(g)}`
+                      : 'Cancel project'}
+                  </button>
+                )}
 
                 {/* Delete button */}
                 <button

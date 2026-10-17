@@ -87,7 +87,7 @@ export function ProjectsView() {
       {/* Filter chips */}
       <div style={{ margin: '0 0 14px' }}>
         <div className="chips" style={{ marginTop: 0 }}>
-          {(['All', 'Pending', 'Progress', 'Finished'] as const).map(
+          {(['All', 'Pending', 'Progress', 'Finished', 'Cancelled'] as const).map(
             (s) => {
               const count =
                 s === 'All'
