@@ -62,9 +62,9 @@ const FEATURES = [
     desc: 'Contact details, notes, total value, what’s paid and what’s left.',
   },
   {
-    icon: 'sun',
-    title: 'Light and dark',
-    desc: 'Calm in both. Follows your system, or switch it yourself.',
+    icon: 'user',
+    title: 'Build your identity',
+    desc: 'Your studio name, contact, and WhatsApp on every invoice and quotation you send.',
   },
 ];
 
