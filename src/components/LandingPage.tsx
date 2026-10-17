@@ -62,7 +62,7 @@ const FEATURES = [
     desc: 'Contact details, notes, total value, what’s paid and what’s left.',
   },
   {
-    icon: 'bld',
+    icon: 'user',
     title: 'Build your identity',
     desc: 'Your studio name, contact, and WhatsApp on every invoice and quotation you send.',
   },
