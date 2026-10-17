@@ -6,6 +6,7 @@ import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { DocActionButton } from '@/components/DocActionButton';
+import { DocLangSwitch } from '@/components/DocLangSwitch';
 import { PaidStamp } from '@/components/PaidStamp';
 import { dt, isRecurringBilling, getBillingTypeDocLabel } from '@/lib/formatters';
 import { useA4Fit } from '@/lib/useA4Fit';
@@ -103,6 +104,7 @@ export function DocView() {
             <Icon name="back" size={18} />
           </button>
           <h1><span className="doc-kind">Invoice </span>{formatInvoiceNo(i.inv.no, i.inv.date)}</h1>
+          <DocLangSwitch lang="id" />
           <DocActionButton filename={`Invoice ${formatInvoiceNo(i.inv.no, i.inv.date)}`} />
         </div>
 
@@ -421,6 +423,8 @@ export function DocView() {
             <span className="pt-short">Mark sent</span>
           </button>
         )}
+
+        <DocLangSwitch lang="id" />
 
         <DocActionButton filename={`Quotation ${formatQuoteNo(q.no, q.date, qSenderName)}`} />
 

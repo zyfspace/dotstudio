@@ -1,7 +1,15 @@
 'use client';
 
 import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { DocView } from '../views/DocView';
+import { DocViewEn } from '../views/DocViewEn';
+
+// Indonesian is the default; `?lang=en` opens the English version
+function DocByLang() {
+  const lang = useSearchParams()?.get('lang');
+  return lang === 'en' ? <DocViewEn /> : <DocView />;
+}
 
 export default function DocPage() {
   return (
@@ -12,7 +20,7 @@ export default function DocPage() {
         </div>
       }
     >
-      <DocView />
+      <DocByLang />
     </Suspense>
   );
 }
