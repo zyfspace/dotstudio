@@ -143,7 +143,7 @@ export function InvoicesView() {
                         </thead>
                         <tbody>
                           {items.map((x) => {
-                            const overdue = isOverdue(x.i.due, x.i.paid);
+                            const overdue = isOverdue(x.i.due, x.i.paid || x.i.cancelled);
                             return (
                               <tr
                                 key={x.i.id}
@@ -199,6 +199,8 @@ export function InvoicesView() {
                                       </span>
                                       Paid
                                     </span>
+                                  ) : x.i.cancelled ? (
+                                    <span style={{ color: 'var(--mut)', fontSize: '13px' }}>Cancelled</span>
                                   ) : overdue ? (
                                     <span
                                       style={{
@@ -257,7 +259,7 @@ export function InvoicesView() {
                     {/* Mobile Invoices Card List */}
                     <div className="mob-card-list">
                       {items.map((x) => {
-                        const overdue = isOverdue(x.i.due, x.i.paid);
+                        const overdue = isOverdue(x.i.due, x.i.paid || x.i.cancelled);
                         return (
                           <div
                             key={x.i.id}
@@ -270,7 +272,7 @@ export function InvoicesView() {
                                 <div className="mob-item-sub">{x.p.name} · {x.i.l}</div>
                               </div>
                               <span style={{ fontSize: '12px', fontWeight: 500, color: x.i.paid ? '#10b981' : overdue ? '#ef4444' : 'var(--mut)' }}>
-                                {x.i.paid ? 'Paid' : overdue ? 'Overdue' : 'Unpaid'}
+                                {x.i.paid ? 'Paid' : x.i.cancelled ? 'Cancelled' : overdue ? 'Overdue' : 'Unpaid'}
                               </span>
                             </div>
                             <div className="mob-item-bottom">

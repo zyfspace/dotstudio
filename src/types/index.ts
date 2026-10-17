@@ -27,6 +27,7 @@ export interface PlanItem {
   pd: string;
   proof: Proof | null;
   inv: InvoiceMeta | null;
+  cancelled?: boolean;
 }
 
 export interface ProjectCostItem {
@@ -112,4 +113,4 @@ export interface DocState {
   b?: number; // plan item id (for invoice)
 }
 
-export type ProjectStatus = 'Pending' | 'Progress' | 'Finished';
+export type ProjectStatus = 'Pending' | 'Progress' | 'Finished' | 'Cancelled';
