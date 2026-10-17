@@ -1694,6 +1694,41 @@ tbody tr:hover {
   background: var(--soft);
 }
 
+.clients-grid {
+  max-width: none;
+  align-items: start;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1280px) {
+  .clients-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 960px) {
+  .clients-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .clients-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.client-card {
+  min-height: 0;
+}
+
+.client-card > [role='button'] {
+  cursor: pointer;
+}
+
+.client-chev {
+  display: inline-flex;
+  color: var(--mut);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.client-card.open .client-chev {
+  transform: rotate(180deg);
+}
+
 .row {
   display: flex;
   justify-content: space-between;

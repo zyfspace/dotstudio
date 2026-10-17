@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { rp } from '@/lib/formatters';
@@ -16,6 +16,15 @@ export function ClientsView() {
     setActiveClientDrawerId,
     handleStartNewProject,
   } = useDashboard();
+
+  const [openIds, setOpenIds] = useState<Set<number>>(new Set());
+  const toggle = (id: number) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const q = searchQuery.toLowerCase();
   const filtered = clients.filter(
@@ -51,7 +60,7 @@ export function ClientsView() {
       {!filtered.length ? (
         <div className="empty">No clients found</div>
       ) : (
-        <div className="grid">
+        <div className="grid clients-grid">
           {filtered.map((c) => {
             const ps = projects.filter((p) => p.c === c.id);
             const v = ps.reduce((acc, p) => acc + p.v, 0);
@@ -60,20 +69,26 @@ export function ClientsView() {
               0
             );
             const progress = v ? Math.round((g / v) * 100) : 0;
+            const isOpen = openIds.has(c.id);
             return (
               <div
                 key={c.id}
-                className="card"
-                onClick={() => setActiveClientDrawerId(c.id)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  gap: '14px',
-                }}
+                className={`card client-card${isOpen ? ' open' : ''}`}
               >
-                {/* Header: Name, Company, & Project Count Badge */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                {/* Header (toggle): Name, Company, Project Count, Chevron */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isOpen}
+                  onClick={() => toggle(c.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggle(c.id);
+                    }
+                  }}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}
+                >
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <b style={{ fontSize: '15px', fontWeight: 600, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {c.name}
@@ -99,7 +114,13 @@ export function ClientsView() {
                   >
                     {ps.length} {ps.length === 1 ? 'project' : 'projects'}
                   </span>
+                  <span className="client-chev" aria-hidden>
+                    <Icon name="chevron" size={16} />
+                  </span>
                 </div>
+
+                {isOpen && (
+                  <>
 
                 {/* Contact Details */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -150,6 +171,16 @@ export function ClientsView() {
                     </div>
                   </div>
                 </div>
+
+                <button
+                  className="btn"
+                  onClick={() => setActiveClientDrawerId(c.id)}
+                  style={{ alignSelf: 'flex-start' }}
+                >
+                  View details
+                </button>
+                  </>
+                )}
               </div>
             );
           })}
