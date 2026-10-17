@@ -1,8 +1,14 @@
 'use client';
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { useDashboard, PRESETS, PRESET_NAMES, generatePlanFromPreset } from '../DashboardContext';
+import React, { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  useDashboard,
+  PRESETS,
+  PRESET_NAMES,
+  generatePlanFromPreset,
+  isProjectAmountLocked,
+} from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { AutoTextarea } from '@/components/AutoTextarea';
 import { DatePicker } from '@/components/DatePicker';
@@ -13,6 +19,8 @@ import { rp, dt, today, isRecurringBilling } from '@/lib/formatters';
 
 export function NewProjectView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editParam = searchParams.get('edit');
   const {
     quotes,
     clients,
@@ -29,11 +37,35 @@ export function NewProjectView() {
     handleCreateProjectSubmit,
     studioProfile,
     getNextInvoiceNo,
+    formatInvoiceNo,
+    projects,
+    docState,
+    editingProjectId,
+    setEditingProjectId,
+    loadProjectForEdit,
   } = useDashboard();
 
   const [draggedProjectItemIdx, setDraggedProjectItemIdx] = React.useState<number | null>(null);
   const [dragOverProjectItemIdx, setDragOverProjectItemIdx] = React.useState<number | null>(null);
   const [dragHandleProjectIdx, setDragHandleProjectIdx] = React.useState<number | null>(null);
+
+  // /dashboard/new?edit=<id> edits an existing project (and its invoices)
+  useEffect(() => {
+    if (!editParam) {
+      if (editingProjectId) setEditingProjectId(null);
+      return;
+    }
+    const editId = Number(editParam);
+    if (!editId) return;
+    if (editingProjectId !== editId) loadProjectForEdit(editId);
+  }, [editParam, editingProjectId, setEditingProjectId, loadProjectForEdit]);
+
+  const editingProject = editingProjectId
+    ? projects.find((x) => x.id === editingProjectId)
+    : undefined;
+  // Amounts and payment scheme are fixed once money has moved
+  const amountsLocked = !!editingProject && isProjectAmountLocked(editingProject);
+  const backToDoc = docState?.t === 'inv' && docState.a === editingProjectId;
 
   const moveProjectItem = (fromIdx: number, toIdx: number) => {
     setNewProjectData((prev) => {
@@ -61,19 +93,25 @@ export function NewProjectView() {
         <button
           className="ib"
           id="bk"
-          onClick={() => router.push('/dashboard/projects')}
-          aria-label="Back to projects"
+          onClick={() => {
+            if (editingProject && backToDoc && docState) {
+              router.push(`/dashboard/doc?t=inv&a=${docState.a}&b=${docState.b}`);
+            } else {
+              router.push('/dashboard/projects');
+            }
+          }}
+          aria-label={editingProject && backToDoc ? 'Back to invoice' : 'Back to projects'}
         >
           <Icon name="back" size={18} />
         </button>
-        <h1>New project</h1>
+        <h1>{editingProject ? 'Edit invoice' : 'New project'}</h1>
       </div>
 
       <div className="project-split-layout">
         {/* Left Column: Form Details */}
         <div className="project-form-col">
           {/* Reference Quotation Panel (Optional) */}
-          {quotes.length > 0 && (
+          {quotes.length > 0 && !editingProject && (
             <div className="panel">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <h3 style={{ margin: 0 }}>Reference quotation (Optional)</h3>
@@ -248,6 +286,7 @@ export function NewProjectView() {
           <div className="panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <h3 style={{ margin: 0 }}>Cost items</h3>
+              {!amountsLocked && (
               <button
                 type="button"
                 className="btn sm"
@@ -261,6 +300,7 @@ export function NewProjectView() {
                 <Icon name="plus" size={14} />
                 Add item
               </button>
+              )}
             </div>
 
             <div id="project-items-table">
@@ -328,6 +368,7 @@ export function NewProjectView() {
                     <select
                       className="in"
                       value={r.type || 'One-time'}
+                      disabled={amountsLocked}
                       onChange={(e) => {
                         const val = e.target.value;
                         setNewProjectData((prev) => {
@@ -342,12 +383,14 @@ export function NewProjectView() {
                       <option value="Per Project">Per Project</option>
                       <option value="Retainer">Retainer</option>
                       <option value="Hourly">Hourly</option>
+                      {r.type === 'Additional' && <option value="Additional">Additional</option>}
                     </select>
                     <input
                       className="in"
                       type="number"
                       min="0"
                       placeholder="0"
+                      disabled={amountsLocked}
                       value={r.p}
                       onWheel={(e) => e.currentTarget.blur()}
                       onKeyDown={(e) => {
@@ -391,6 +434,7 @@ export function NewProjectView() {
                       <button
                         type="button"
                         className="ib"
+                        disabled={amountsLocked}
                         onClick={() => {
                           setNewProjectData((prev) => {
                             const nextItems = prev.items.filter((_, idx) => idx !== i);
@@ -594,6 +638,16 @@ export function NewProjectView() {
           </div>
 
           {/* Payment Scheme Panel */}
+          {amountsLocked ? (
+            <div className="panel">
+              <h3>Payment scheme</h3>
+              <p className="note" style={{ margin: 0 }}>
+                Amounts and payment scheme are locked because a payment has been recorded or an
+                additional invoice exists. You can still edit the title, scope, item descriptions,
+                deadline, client, and language.
+              </p>
+            </div>
+          ) : (
           <div className="panel">
             <h3>Payment scheme</h3>
             <div className="chips" style={{ marginTop: 0 }}>
@@ -731,9 +785,11 @@ export function NewProjectView() {
               </button>
             </div>
           </div>
+          )}
 
           {/* Submit Panel */}
           <div className="panel">
+            {!amountsLocked && (
             <div className="row" style={{ marginBottom: '8px' }}>
               <span className="mut">Total Scheme</span>
               {(() => {
@@ -744,7 +800,8 @@ export function NewProjectView() {
                 return <b className={sumPct === 100 ? '' : 'od'}>{sumPct}%</b>;
               })()}
             </div>
-            {(() => {
+            )}
+            {!amountsLocked && (() => {
               const sumPct = newProjectData.plan.reduce(
                 (acc, r) => acc + (+r.pct || 0),
                 0
@@ -770,7 +827,7 @@ export function NewProjectView() {
               disabled={!newProjectData.cn.trim()}
               onClick={handleCreateProjectSubmit}
             >
-              Create project
+              {editingProject ? 'Save changes' : 'Create project'}
             </button>
           </div>
         </div>
@@ -792,7 +849,9 @@ export function NewProjectView() {
                   <div>
                     <div className="docx-h-title">Invoice</div>
                     <div className="docx-h-sub" style={{ marginTop: '4px' }}>
-                      No. Invoice {getNextInvoiceNo(newProjectData.invoiceDate || today())} (Draft)
+                      No. Invoice {editingProject?.plan[0]?.inv
+                        ? formatInvoiceNo(editingProject.plan[0].inv.no, editingProject.plan[0].inv.date)
+                        : `${getNextInvoiceNo(newProjectData.invoiceDate || today())} (Draft)`}
                     </div>
                     <div className="docx-h-sub">Invoice Date: {dt(newProjectData.invoiceDate || today())}</div>
                     <div className="docx-h-sub">

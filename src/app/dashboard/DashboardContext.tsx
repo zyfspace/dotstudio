@@ -126,6 +126,11 @@ export const generatePlanFromPreset = (
   }));
 };
 
+// Once money has moved (or an extra / cancelled installment exists) the amounts and
+// payment scheme are fixed; only the descriptive fields of the project stay editable
+export const isProjectAmountLocked = (p: Project): boolean =>
+  p.plan.some((x) => x.paid || x.cancelled || x.pct === 0);
+
 export const STATUS_LABELS: Record<ProjectStatus, string> = {
   Pending: 'Pending',
   Progress: 'In progress',
@@ -333,6 +338,10 @@ interface DashboardContextType {
   handleStartNewProject: (targetClientId?: number, fromQuote?: Quotation | null) => void;
   handleStartNewQuote: (targetProjectId?: number, targetClientId?: number) => void;
   handleStartEditQuote: (quoteId: number) => void;
+  editingProjectId: number | null;
+  setEditingProjectId: React.Dispatch<React.SetStateAction<number | null>>;
+  loadProjectForEdit: (projectId: number) => boolean;
+  handleStartEditProject: (projectId: number) => void;
   editingQuoteId: number | null;
   setEditingQuoteId: React.Dispatch<React.SetStateAction<number | null>>;
   handlePlanPresetChange: (presetKey: string) => void;
@@ -446,6 +455,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [selectedQuoteClientId, setSelectedQuoteClientId] = useState<number | ''>('');
   const [selectedQuoteProjectId, setSelectedQuoteProjectId] = useState<number>(0);
   const [editingQuoteId, setEditingQuoteId] = useState<number | null>(null);
+  const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
 
   const [newProjectData, setNewProjectData] = useState({
     name: '',
@@ -1137,6 +1147,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   // Start creating new project
   const handleStartNewProject = useCallback((targetClientId?: number, fromQuote?: Quotation | null) => {
+    setEditingProjectId(null);
     if (!isProfileComplete) {
       setProfileRequiredModal('project');
       return;
@@ -1326,6 +1337,44 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     router.push(`/dashboard/quote?edit=${quoteId}`);
   }, [quotes, clients, router]);
 
+  // Fill the project form from an existing project (without navigating)
+  const loadProjectForEdit = useCallback((projectId: number): boolean => {
+    const p = projects.find((x) => x.id === projectId);
+    if (!p) return false;
+    const client = clients.find((x) => x.id === p.c);
+
+    setProjectClientMode(client ? 'existing' : 'new');
+    setSelectedProjectClientId(client ? client.id : '');
+    setSelectedProjectQuoteId(0);
+    setEditingProjectId(projectId);
+
+    setNewProjectData({
+      name: p.name,
+      v: String(p.v),
+      billingType: p.billingType || 'One-time',
+      items: p.items && p.items.length
+        ? p.items.map((it) => ({ d: it.d, type: it.type || 'One-time', p: it.p }))
+        : [{ d: p.name, type: p.billingType || 'One-time', p: p.v }],
+      invoiceDate: p.plan[0]?.inv?.date || today(),
+      due: p.due || '',
+      desc: p.desc || '',
+      cn: client ? client.name : '',
+      co: client ? client.co : '',
+      mail: client ? client.mail : '',
+      tel: client ? client.tel : '',
+      pre: 'custom',
+      plan: p.plan.map((x) => ({ l: x.l, pct: x.pct, due: x.due })),
+      lang: p.lang || 'id',
+    });
+    return true;
+  }, [projects, clients]);
+
+  // Edit a project (and with it its invoices) from the invoice page
+  const handleStartEditProject = useCallback((projectId: number) => {
+    if (!loadProjectForEdit(projectId)) return;
+    router.push(`/dashboard/new?edit=${projectId}`);
+  }, [loadProjectForEdit, router]);
+
   const handlePlanPresetChange = (presetKey: string) => {
     setNewProjectData((prev) => ({
       ...prev,
@@ -1336,10 +1385,14 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   const handleCreateProjectSubmit = () => {
     const val = +newProjectData.v;
+    const editingProject = editingProjectId
+      ? projects.find((x) => x.id === editingProjectId)
+      : undefined;
+    const amountsLocked = !!editingProject && isProjectAmountLocked(editingProject);
     if (!newProjectData.name.trim()) return;
     if (!val || val <= 0) return;
     const totalPct = newProjectData.plan.reduce((acc, r) => acc + (+r.pct || 0), 0);
-    if (!newProjectData.plan.length || totalPct !== 100) return;
+    if (!amountsLocked && (!newProjectData.plan.length || totalPct !== 100)) return;
 
     const selectedClient =
       projectClientMode === 'existing'
@@ -1348,6 +1401,95 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     const c = selectedClient || ensureClient(newProjectData);
     // Every project needs a client: its invoices are addressed to them
     if (!c) return;
+
+    if (editingProject) {
+      const items = newProjectData.items
+        .filter((i) => i.d.trim() || +i.p > 0)
+        .map((i, idx) => ({
+          d: i.d.trim() || `Item Layanan ${idx + 1}`,
+          type: i.type || 'One-time',
+          p: +i.p || 0,
+        }));
+
+      let nextPlan: PlanItem[] = editingProject.plan;
+      let nextValue = editingProject.v;
+      if (!amountsLocked) {
+        nextValue = val;
+        const invDate = newProjectData.invoiceDate || today();
+        const originalDate = editingProject.plan[0]?.inv?.date;
+        const prefix = getBrandInitials(studioProfile.studioName);
+        const [mm, dd] = invDate.split('-').slice(1);
+        let invCount = allPayments.filter((x) => x.i.inv).length;
+        let rem = val;
+        nextPlan = newProjectData.plan.map((r, i) => {
+          const a =
+            i === newProjectData.plan.length - 1
+              ? rem
+              : Math.round((val * +r.pct) / 100);
+          rem -= a;
+          const old = editingProject.plan[i];
+          if (old) {
+            // Keep the installment (id, invoice number); only its content changes
+            return {
+              ...old,
+              l: r.l || `Payment ${i + 1}`,
+              pct: +r.pct,
+              a,
+              due: r.due,
+              inv: old.inv
+                ? { ...old.inv, date: old.inv.date === originalDate ? invDate : old.inv.date }
+                : null,
+            };
+          }
+          invCount += 1;
+          return {
+            id: editingProject.id * 10 + i,
+            l: r.l || `Payment ${i + 1}`,
+            pct: +r.pct,
+            a,
+            due: r.due,
+            paid: false,
+            pd: '',
+            proof: null,
+            inv: { no: `INV/${prefix}/${mm}/${dd}/${pad(invCount)}`, date: invDate },
+          };
+        });
+      }
+
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === editingProject.id
+            ? {
+                ...p,
+                name: newProjectData.name.trim(),
+                c: c.id,
+                v: nextValue,
+                billingType: newProjectData.billingType || (items[0]?.type || 'One-time'),
+                items: items.length > 0 ? items : p.items,
+                due: newProjectData.due,
+                desc: newProjectData.desc,
+                plan: nextPlan,
+                // Keep an explicit 'id' once the row has carried a language, so a synced 'en' is overwritten
+                lang: newProjectData.lang === 'en' ? 'en' : p.lang ? 'id' : undefined,
+              }
+            : p
+        )
+      );
+      setEditingProjectId(null);
+
+      const backItem =
+        docState?.t === 'inv' && docState.a === editingProject.id
+          ? nextPlan.find((x) => x.id === docState.b && x.inv) || nextPlan.find((x) => x.inv)
+          : undefined;
+      if (backItem) {
+        openDoc('inv', editingProject.id, backItem.id);
+      } else {
+        setActiveProjectDrawerId(editingProject.id);
+        router.push('/dashboard/projects');
+      }
+      return;
+    }
+
     const id = Date.now();
     let rem = val;
     let currentInvCount = allPayments.filter((x) => x.i.inv).length;
@@ -2037,6 +2179,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     handleStartEditQuote,
     editingQuoteId,
     setEditingQuoteId,
+    editingProjectId,
+    setEditingProjectId,
+    loadProjectForEdit,
+    handleStartEditProject,
     handlePlanPresetChange,
     handleCreateProjectSubmit,
     handleSaveQuotationSubmit,
