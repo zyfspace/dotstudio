@@ -693,6 +693,81 @@ aside #tg {
   margin-bottom: 14px;
 }
 
+/* Collapsible panels: a closed panel shrinks instead of stretching to its row */
+.cols-collapsible {
+  align-items: start;
+}
+
+.panel-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  color: var(--mut);
+  cursor: pointer;
+}
+
+.panel-toggle h3 {
+  margin-bottom: 0;
+}
+
+.panel-toggle:hover {
+  color: var(--fg);
+}
+
+.panel-toggle:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.panel-chevron {
+  flex-shrink: 0;
+  transform: rotate(-90deg);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.panel-collapsible.is-open .panel-chevron {
+  transform: rotate(0deg);
+}
+
+.panel-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.2s ease;
+}
+
+.panel-collapsible.is-open .panel-body {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.panel-body-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel-body-inner > :first-child {
+  margin-top: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-chevron,
+  .panel-body {
+    transition: none;
+  }
+}
+
 .income-panel {
   position: relative;
 }

@@ -1,11 +1,58 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { IncomeChart } from '@/components/IncomeChart';
 import { CountUp } from '@/components/CountUp';
 import { sh, dt, isOverdue, today } from '@/lib/formatters';
+
+// Panel whose body folds open/closed; state is remembered per panel
+function CollapsiblePanel({
+  id,
+  title,
+  children,
+}: {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  const storageKey = `ov-panel-${id}`;
+  const [open, setOpen] = useState(true);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(storageKey) === '0') setOpen(false);
+    } catch {}
+  }, [storageKey]);
+
+  const toggle = () => {
+    setOpen((o) => {
+      try {
+        localStorage.setItem(storageKey, o ? '0' : '1');
+      } catch {}
+      return !o;
+    });
+  };
+
+  return (
+    <div className={`panel panel-collapsible${open ? ' is-open' : ''}`}>
+      <button
+        type="button"
+        className="panel-toggle"
+        onClick={toggle}
+        aria-expanded={open}
+        aria-controls={`${storageKey}-body`}
+      >
+        <h3>{title}</h3>
+        <Icon name="chevron" size={16} className="panel-chevron" />
+      </button>
+      <div className="panel-body" id={`${storageKey}-body`} inert={!open}>
+        <div className="panel-body-inner">{children}</div>
+      </div>
+    </div>
+  );
+}
 
 export function OverviewView() {
   const {
@@ -179,10 +226,9 @@ export function OverviewView() {
       </div>
 
       {/* Bottom Cols */}
-      <div className="cols">
+      <div className="cols cols-collapsible">
         {/* Active projects */}
-        <div className="panel">
-          <h3>Active projects</h3>
+        <CollapsiblePanel id="active-projects" title="Active projects">
           {overviewMetrics.activeProjs.length > 0 ? (
             overviewMetrics.activeProjs.map((x) => {
               const { p, n } = x;
@@ -228,11 +274,10 @@ export function OverviewView() {
           ) : (
             <div className="mut">No active projects.</div>
           )}
-        </div>
+        </CollapsiblePanel>
 
         {/* Open quotations */}
-        <div className="panel">
-          <h3>Open quotations</h3>
+        <CollapsiblePanel id="open-quotations" title="Open quotations">
           {overviewMetrics.openQuotes.length > 0 ? (
             overviewMetrics.openQuotes.map((x) => {
               const expired = x.valid && x.valid < today();
@@ -266,7 +311,7 @@ export function OverviewView() {
           ) : (
             <div className="mut">No open quotations.</div>
           )}
-        </div>
+        </CollapsiblePanel>
       </div>
     </div>
   );
