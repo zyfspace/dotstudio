@@ -18,11 +18,11 @@ function CollapsiblePanel({
   children: React.ReactNode;
 }) {
   const storageKey = `ov-panel-${id}`;
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     try {
-      if (localStorage.getItem(storageKey) === '0') setOpen(false);
+      if (localStorage.getItem(storageKey) === '1') setOpen(true);
     } catch {}
   }, [storageKey]);
 
