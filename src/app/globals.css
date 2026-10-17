@@ -1712,6 +1712,32 @@ tbody tr:hover {
 
 .client-card {
   min-height: 0;
+  gap: 0;
+}
+
+.client-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+}
+
+.client-body-in {
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 14px;
+}
+
+.client-card.open .client-body {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .client-body, .client-chev { transition: none; }
 }
 
 .client-card > [role='button'] {
@@ -1721,7 +1747,7 @@ tbody tr:hover {
 .client-chev {
   display: inline-flex;
   color: var(--mut);
-  transition: transform 0.15s ease;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
 }
 
