@@ -1,12 +1,13 @@
 /* Isolated, scoped styles for Landing Page (prefix: lp-) */
 /* Guarantees 0% collision with dashboard/backend styles */
 
+/* overflow-x: clip (not hidden) so body/root never become scroll containers, which breaks the sticky nav */
 html:has(.lp-root),
 body:has(.lp-root) {
   height: auto !important;
   min-height: 100vh !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  overflow-x: clip !important;
   touch-action: pan-y !important;
   -webkit-overflow-scrolling: touch !important;
 }
@@ -24,8 +25,7 @@ body:has(.lp-root) {
   line-height: 1.55;
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-  overflow-y: visible;
+  overflow-x: clip;
   touch-action: pan-y;
   width: 100%;
   min-height: 100vh;
