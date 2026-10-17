@@ -62,9 +62,9 @@ const FEATURES = [
     desc: 'Contact details, notes, total value, what’s paid and what’s left.',
   },
   {
-    icon: 'sun',
-    title: 'Light and dark',
-    desc: 'Calm in both. Follows your system, or switch it yourself.',
+    icon: 'chart',
+    title: 'Income at a glance',
+    desc: 'See what came in and what’s still pending, by month or any date range.',
   },
 ];
 
