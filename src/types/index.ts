@@ -27,6 +27,7 @@ export interface PlanItem {
   pd: string;
   proof: Proof | null;
   inv: InvoiceMeta | null;
+  cancelled?: boolean;
 }
 
 export interface ProjectCostItem {
@@ -46,7 +47,6 @@ export interface Project {
   items?: ProjectCostItem[];
   n: string;
   plan: PlanItem[];
-  cancelled?: boolean;
 }
 
 export interface QuotationItem {

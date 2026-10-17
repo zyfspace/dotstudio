@@ -216,7 +216,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     if (selectedMonth === currentYearMonth) return weekOfDay(today());
     const dues = projects
       .flatMap((p) => p.plan)
-      .filter((it) => !it.paid && it.due && it.due.startsWith(selectedMonth))
+      .filter((it) => !it.paid && !it.cancelled && it.due && it.due.startsWith(selectedMonth))
       .map((it) => it.due as string)
       .sort();
     return dues.length ? weekOfDay(dues[0]) : 0;
@@ -279,7 +279,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
 
           if (isCreatedInMonth || hasActivityInMonth) {
             const projectUnpaid = p.plan
-              .filter((it) => !it.paid)
+              .filter((it) => !it.paid && !it.cancelled)
               .reduce((sum, it) => sum + it.a, 0);
 
             // Add unpaid amount from this project
@@ -333,7 +333,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
       // Pending on specific due dates or project creation dates
       projects.forEach((p) => {
         p.plan.forEach((it) => {
-          if (!it.paid && it.due && it.due.startsWith(selectedMonth)) {
+          if (!it.paid && !it.cancelled && it.due && it.due.startsWith(selectedMonth)) {
             const match = daysList.find((b) => b.k === it.due);
             if (match) {
               match.pending += it.a;
@@ -396,7 +396,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
 
         projects.forEach((p) => {
           p.plan.forEach((it) => {
-            if (!it.paid && it.due && it.due >= start && it.due <= end) {
+            if (!it.paid && !it.cancelled && it.due && it.due >= start && it.due <= end) {
               const match = daysList.find((b) => b.k === it.due);
               if (match) {
                 match.pending += it.a;
@@ -447,7 +447,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
           projects.forEach((p) => {
             const isCreatedInMonth = p.id > 1000000000000 && formatDateYM(new Date(p.id)) === ym;
             if (isCreatedInMonth) {
-              monthPending += p.plan.filter((it) => !it.paid).reduce((s, it) => s + it.a, 0);
+              monthPending += p.plan.filter((it) => !it.paid && !it.cancelled).reduce((s, it) => s + it.a, 0);
             }
           });
           b.pending = monthPending;

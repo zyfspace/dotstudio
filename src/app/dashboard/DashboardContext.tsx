@@ -348,7 +348,7 @@ interface DashboardContextType {
   handleCreateOrViewInvoice: (projectId: number, planItemId: number) => void;
   handleAddAdditionalService: (projectId: number, label: string, cost: number, paidAt: string) => number | null;
   handleDeleteProject: (projectId: number) => void;
-  handleCancelProject: (projectId: number) => void;
+  handleCancelPlanItem: (projectId: number, planItemId: number) => void;
   handleDeleteClient: (clientId: number) => void;
   handleDeleteQuote: (quoteId: number) => void;
   handleManualCloudSync: () => Promise<void>;
@@ -1028,9 +1028,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [getProjectPaidAmount]);
 
   const getProjectStatus = useCallback((p: Project): ProjectStatus => {
-    if (p.cancelled) return 'Cancelled';
-    const paidCount = p.plan.filter((i) => i.paid).length;
-    if (p.plan.length > 0 && paidCount === p.plan.length) return 'Finished';
+    const live = p.plan.filter((i) => !i.cancelled);
+    const paidCount = live.filter((i) => i.paid).length;
+    // Stopped midway: some installments were cancelled and everything left is paid
+    if (live.length < p.plan.length && paidCount === live.length) return 'Cancelled';
+    if (p.plan.length > 0 && paidCount === live.length) return 'Finished';
     if (paidCount > 0) return 'Progress';
     return 'Pending';
   }, []);
@@ -1739,18 +1741,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     closeDrawer();
   };
 
-  // Client backs out after paying: keep only what was received, drop the unpaid
-  // installments and shrink the contract value to the paid amount.
-  const handleCancelProject = (projectId: number) => {
+  // Client stops midway (e.g. paid the DP, drops the final payment): the
+  // installment stays on record as cancelled and leaves the contract value.
+  const handleCancelPlanItem = (projectId: number, planItemId: number) => {
     setProjects((prev) =>
       prev.map((p) => {
-        if (p.id !== projectId || p.cancelled) return p;
-        const paidPlan = p.plan.filter((i) => i.paid);
+        if (p.id !== projectId) return p;
+        const target = p.plan.find((i) => i.id === planItemId);
+        if (!target || target.paid || target.cancelled) return p;
         return {
           ...p,
-          v: paidPlan.reduce((acc, i) => acc + i.a, 0),
-          plan: paidPlan,
-          cancelled: true,
+          v: Math.max(0, p.v - target.a),
+          plan: p.plan.map((i) => (i.id === planItemId ? { ...i, cancelled: true } : i)),
         };
       })
     );
@@ -1822,7 +1824,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     } else {
       totalOutstanding = activeProjectsInPeriod.reduce((acc, p) => {
         const remaining = p.plan
-          .filter((item) => !item.paid && item.due && item.due >= startDate && item.due <= endDate)
+          .filter((item) => !item.paid && !item.cancelled && item.due && item.due >= startDate && item.due <= endDate)
           .reduce((sum, item) => sum + item.a, 0);
         return acc + remaining;
       }, 0);
@@ -1847,7 +1849,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     const periodTxCount = periodPaidPayments.length;
 
     const upcoming = allPayments
-      .filter((x) => !x.i.paid)
+      .filter((x) => !x.i.paid && !x.i.cancelled)
       .sort((a, b) => (a.i.due || '9') > (b.i.due || '9') ? 1 : -1)
       .slice(0, 5);
 
@@ -1855,7 +1857,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       .filter((p) => !['Finished', 'Cancelled'].includes(getProjectStatus(p)))
       .map((p) => {
         const nextDueItem = p.plan
-          .filter((i) => !i.paid)
+          .filter((i) => !i.paid && !i.cancelled)
           .sort((a, b) => (a.due || '9') > (b.due || '9') ? 1 : -1)[0];
         return { p, n: nextDueItem };
       })
@@ -2032,7 +2034,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     handleCreateOrViewInvoice,
     handleAddAdditionalService,
     handleDeleteProject,
-    handleCancelProject,
+    handleCancelPlanItem,
     handleDeleteClient,
     handleDeleteQuote,
     handleManualCloudSync,

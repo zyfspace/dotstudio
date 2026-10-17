@@ -32,10 +32,10 @@ export function ProjectDrawer() {
     setProjects,
     deleteArmed,
     handleDeleteProject,
-    handleCancelProject,
+    handleCancelPlanItem,
   } = useDashboard();
 
-  const [cancelArmed, setCancelArmed] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<{ projectId: number; itemId: number; label: string; amount: number } | null>(null);
   const [showAddService, setShowAddService] = useState(false);
   const [addServiceLabel, setAddServiceLabel] = useState('');
   const [addServiceCost, setAddServiceCost] = useState('');
@@ -92,8 +92,8 @@ export function ProjectDrawer() {
                 </div>
 
                 <div className="mut">
-                  {activeProject.cancelled
-                    ? 'Project cancelled, value adjusted to payments received'
+                  {k === 'Cancelled'
+                    ? 'Stopped midway, remaining payments cancelled'
                     : b > 0
                       ? `Remaining ${rp(b)}`
                       : 'All payments received'}
@@ -103,7 +103,7 @@ export function ProjectDrawer() {
                 <div className="sec" style={{ marginTop: '18px' }}>
                   <small>Payment schedule</small>
                   {activeProject.plan.map((item) => {
-                    const overdue = isOverdue(item.due, item.paid);
+                    const overdue = isOverdue(item.due, item.paid || item.cancelled);
                     return (
                       <div key={item.id} className="ins">
                         <div className="ih">
@@ -119,7 +119,7 @@ export function ProjectDrawer() {
                             </div>
                             <div className="ins-date-pill">
                               <span className={overdue ? 'od' : 'mut'} style={{ fontSize: '12px' }}>
-                                {item.paid ? 'Paid date:' : overdue ? 'Overdue:' : 'Due date:'}
+                                {item.paid ? 'Paid date:' : item.cancelled ? 'Was due:' : overdue ? 'Overdue:' : 'Due date:'}
                               </span>
                               {item.paid ? (
                                 <span style={{ fontSize: '12px', fontWeight: 500 }}>
@@ -132,7 +132,10 @@ export function ProjectDrawer() {
                               )}
                             </div>
                           </div>
-                          <span className={`ins-amount ${item.paid ? 'mut' : ''}`}>
+                          <span
+                            className={`ins-amount ${item.paid || item.cancelled ? 'mut' : ''}`}
+                            style={item.cancelled ? { textDecoration: 'line-through' } : undefined}
+                          >
                             {rp(item.a)}
                           </span>
                         </div>
@@ -163,6 +166,8 @@ export function ProjectDrawer() {
                                 <span className="mut" style={{ fontSize: '12px' }}>No proof</span>
                               )}
                             </>
+                          ) : item.cancelled ? (
+                            <span className="mut" style={{ fontSize: '12px' }}>Cancelled</span>
                           ) : (() => {
                             const paidDate = pendingPaidDates[item.id] || '';
                             const uploading = uploadingItemId === item.id;
@@ -222,13 +227,30 @@ export function ProjectDrawer() {
                             <Icon name="file" size={14} />
                             {item.inv ? 'View invoice' : 'Create invoice'}
                           </button>
+
+                          {!item.paid && !item.cancelled && (
+                            <button
+                              type="button"
+                              className="btn sm out"
+                              onClick={() =>
+                                setCancelTarget({
+                                  projectId: activeProject.id,
+                                  itemId: item.id,
+                                  label: item.l,
+                                  amount: item.a,
+                                })
+                              }
+                            >
+                              Cancel
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
                   })}
 
                   {/* Additional Service */}
-                  {activeProject.cancelled ? null : !showAddService ? (
+                  {!showAddService ? (
                     <button
                       type="button"
                       className="add-svc-btn"
@@ -624,28 +646,6 @@ export function ProjectDrawer() {
                   </div>
                 </div>
 
-                {/* Cancel button */}
-                {!activeProject.cancelled && (
-                  <button
-                    className={`btn danger ${cancelArmed ? 'arm' : ''}`}
-                    style={{ marginBottom: '8px' }}
-                    onClick={() => {
-                      if (!cancelArmed) {
-                        setCancelArmed(true);
-                        return;
-                      }
-                      handleCancelProject(activeProject.id);
-                      setCancelArmed(false);
-                    }}
-                    onBlur={() => setCancelArmed(false)}
-                  >
-                    <Icon name="x" />
-                    {cancelArmed
-                      ? `Confirm: value becomes ${rp(g)}`
-                      : 'Cancel project'}
-                  </button>
-                )}
-
                 {/* Delete button */}
                 <button
                   className={`btn danger ${deleteArmed ? 'arm' : ''}`}
@@ -658,6 +658,40 @@ export function ProjectDrawer() {
               </>
             );
           })()}
+        </div>
+      )}
+
+      {cancelTarget && (
+        <div
+          className="pin-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setCancelTarget(null);
+          }}
+        >
+          <div className="pin-modal-card" role="dialog" aria-modal="true" style={{ maxWidth: '420px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 600, margin: 0, color: 'var(--fg)' }}>
+              Cancel {cancelTarget.label}?
+            </h3>
+            <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '6px 0 0', lineHeight: 1.45 }}>
+              Pembayaran {rp(cancelTarget.amount)} dibatalkan dan nilai project berkurang sebesar itu.
+              Invoice dan pembayaran yang sudah masuk tetap tercatat.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '14px' }}>
+              <button type="button" className="btn out" onClick={() => setCancelTarget(null)}>
+                Keep
+              </button>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={() => {
+                  handleCancelPlanItem(cancelTarget.projectId, cancelTarget.itemId);
+                  setCancelTarget(null);
+                }}
+              >
+                Yes, cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
