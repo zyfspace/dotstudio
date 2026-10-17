@@ -23,7 +23,11 @@ const billingLabelEn = (type?: string) =>
 const termEn = (t: string) => t.replace(/^Syarat pembayaran:/i, 'Payment terms:');
 
 export function NewInvoicePreviewEn() {
-  const { newProjectData, studioProfile, getNextInvoiceNo } = useDashboard();
+  const { newProjectData, studioProfile, getNextInvoiceNo, formatInvoiceNo, projects, editingProjectId } =
+    useDashboard();
+  const editingInv = editingProjectId
+    ? projects.find((x) => x.id === editingProjectId)?.plan[0]?.inv
+    : null;
 
   const firstPay = Math.round(
     ((+newProjectData.v || 0) * (+newProjectData.plan[0]?.pct || 100)) / 100
@@ -37,7 +41,10 @@ export function NewInvoicePreviewEn() {
           <div>
             <div className="docx-h-title">Invoice</div>
             <div className="docx-h-sub" style={{ marginTop: '4px' }}>
-              Invoice No. {getNextInvoiceNo(newProjectData.invoiceDate || today())} (Draft)
+              Invoice No.{' '}
+              {editingInv
+                ? formatInvoiceNo(editingInv.no, editingInv.date)
+                : `${getNextInvoiceNo(newProjectData.invoiceDate || today())} (Draft)`}
             </div>
             <div className="docx-h-sub">Invoice Date: {dt(newProjectData.invoiceDate || today())}</div>
             <div className="docx-h-sub">

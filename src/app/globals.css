@@ -5311,6 +5311,7 @@ input[type="file"] {
   }
 
   .doc-top>#edit-quote,
+  .doc-top>#edit-invoice,
   .doc-top:not(:has(#edit-quote))>#del-quote {
     margin-left: auto;
   }

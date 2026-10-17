@@ -46,6 +46,7 @@ export function DocViewEn() {
     handleConvertQuoteToProject,
     handleDeleteQuote,
     handleStartEditQuote,
+    handleStartEditProject,
     setActiveProjectDrawerId,
   } = useDashboard();
 
@@ -121,6 +122,19 @@ export function DocViewEn() {
             <Icon name="back" size={18} />
           </button>
           <h1><span className="doc-kind">Invoice </span>{formatInvoiceNo(i.inv.no, i.inv.date)}</h1>
+          <span className="doc-top-break" aria-hidden="true" />
+          {!i.paid && (
+            <button
+              className="btn doc-icon-btn"
+              id="edit-invoice"
+              onClick={() => handleStartEditProject(p.id)}
+              title="Edit invoice"
+              aria-label="Edit invoice"
+            >
+              <Icon name="edit" size={14} />
+              <span className="btn-label">Edit invoice</span>
+            </button>
+          )}
           <DocActionButton filename={`Invoice ${formatInvoiceNo(i.inv.no, i.inv.date)}`} />
         </div>
 
