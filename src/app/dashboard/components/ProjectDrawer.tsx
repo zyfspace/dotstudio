@@ -673,8 +673,8 @@ export function ProjectDrawer() {
               Cancel {cancelTarget.label}?
             </h3>
             <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '6px 0 0', lineHeight: 1.45 }}>
-              Pembayaran {rp(cancelTarget.amount)} dibatalkan dan nilai project berkurang sebesar itu.
-              Invoice dan pembayaran yang sudah masuk tetap tercatat.
+              The {rp(cancelTarget.amount)} payment will be cancelled and the project value will
+              drop by that amount. Existing invoices and received payments stay on record.
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '14px' }}>
               <button type="button" className="btn out" onClick={() => setCancelTarget(null)}>
