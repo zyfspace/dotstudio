@@ -15,7 +15,7 @@ import { DatePicker } from '@/components/DatePicker';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { DocLangToggle } from '@/components/DocLangToggle';
 import { NewInvoicePreviewEn } from './NewDocPreviewEn';
-import { rp, dt, today, isRecurringBilling } from '@/lib/formatters';
+import { rp, dt, today, isRecurringBilling, normalizeBillingType } from '@/lib/formatters';
 
 export function NewProjectView() {
   const router = useRouter();
@@ -533,7 +533,7 @@ export function NewProjectView() {
                     />
                     <select
                       className="in"
-                      value={r.type || 'One-time'}
+                      value={normalizeBillingType(r.type)}
                       disabled={amountsLocked}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -545,10 +545,14 @@ export function NewProjectView() {
                       }}
                     >
                       <option value="One-time">One-time</option>
-                      <option value="Bulanan">Monthly</option>
                       <option value="Per Project">Per Project</option>
-                      <option value="Retainer">Retainer</option>
+                      <option value="Milestone">Milestone / Termin</option>
                       <option value="Hourly">Hourly</option>
+                      <option value="Mingguan (Recurring)">Mingguan (Recurring)</option>
+                      <option value="Monthly (Recurring)">Monthly (Recurring)</option>
+                      <option value="Quarterly (Recurring)">Quarterly (Recurring)</option>
+                      <option value="Tahunan (Recurring)">Tahunan (Recurring)</option>
+                      <option value="Retainer (Recurring)">Retainer (Recurring)</option>
                       {r.type === 'Additional' && <option value="Additional">Additional</option>}
                     </select>
                     <input
