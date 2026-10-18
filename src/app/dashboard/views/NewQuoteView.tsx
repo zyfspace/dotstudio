@@ -714,11 +714,11 @@ export function NewQuoteView() {
                       <option value="Per Project">Per Project</option>
                       <option value="Milestone">Milestone / Termin</option>
                       <option value="Hourly">Hourly</option>
-                      <option value="Mingguan (Recurring)">Mingguan (Recurring)</option>
-                      <option value="Monthly (Recurring)">Monthly (Recurring)</option>
-                      <option value="Quarterly (Recurring)">Quarterly (Recurring)</option>
-                      <option value="Tahunan (Recurring)">Tahunan (Recurring)</option>
-                      <option value="Retainer (Recurring)">Retainer (Recurring)</option>
+                      <option value="Monthly (Recurring)">Monthly</option>
+                      <option value="Tahunan (Recurring)">Yearly</option>
+                      {['Mingguan (Recurring)', 'Quarterly (Recurring)', 'Retainer (Recurring)'].includes(normalizeBillingType(r.type)) && (
+                        <option value={normalizeBillingType(r.type)}>{normalizeBillingType(r.type)}</option>
+                      )}
                     </select>
                     <input
                       className="in"
