@@ -15,7 +15,7 @@ import { DatePicker } from '@/components/DatePicker';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { DocLangToggle } from '@/components/DocLangToggle';
 import { NewInvoicePreviewEn } from './NewDocPreviewEn';
-import { rp, dt, today, isRecurringBilling, normalizeBillingType } from '@/lib/formatters';
+import { rp, dt, today, addDays, isRecurringBilling, normalizeBillingType, paymentTermDays } from '@/lib/formatters';
 
 export function NewProjectView() {
   const router = useRouter();
@@ -44,6 +44,7 @@ export function NewProjectView() {
     setEditingProjectId,
     loadProjectForEdit,
   } = useDashboard();
+  const termDays = paymentTermDays(studioProfile.paymentTermDays);
 
   const [draggedProjectItemIdx, setDraggedProjectItemIdx] = React.useState<number | null>(null);
   const [dragOverProjectItemIdx, setDragOverProjectItemIdx] = React.useState<number | null>(null);
@@ -337,7 +338,13 @@ export function NewProjectView() {
                           mail: matchedClient ? matchedClient.mail : foundQ.mail,
                           tel: matchedClient ? matchedClient.tel : foundQ.tel,
                           plan: prev.pre !== 'custom'
-                            ? generatePlanFromPreset(prev.pre, prev.due, prev.plan)
+                            ? generatePlanFromPreset(
+                                prev.pre,
+                                prev.due,
+                                prev.plan,
+                                prev.invoiceDate,
+                                studioProfile.paymentTermDays
+                              )
                             : prev.plan,
                         }));
                       }
@@ -387,8 +394,9 @@ export function NewProjectView() {
                   onChange={(val) =>
                     setNewProjectData((prev) => {
                       const nextPlan = [...prev.plan];
-                      if (nextPlan.length > 0 && (!nextPlan[0].due || nextPlan[0].due === (prev.invoiceDate || today()))) {
-                        nextPlan[0] = { ...nextPlan[0], due: val };
+                      const prevFirstDue = addDays(prev.invoiceDate || today(), termDays);
+                      if (nextPlan.length > 0 && (!nextPlan[0].due || nextPlan[0].due === prevFirstDue)) {
+                        nextPlan[0] = { ...nextPlan[0], due: addDays(val, termDays) };
                       }
                       return { ...prev, invoiceDate: val, plan: nextPlan };
                     })
@@ -410,7 +418,7 @@ export function NewProjectView() {
                           nextPlan[lastIdx] = { ...nextPlan[lastIdx], due: val };
                         }
                         if (!nextPlan[0].due) {
-                          nextPlan[0] = { ...nextPlan[0], due: prev.invoiceDate || today() };
+                          nextPlan[0] = { ...nextPlan[0], due: addDays(prev.invoiceDate || today(), termDays) };
                         }
                         if (nextPlan.length === 3 && (!nextPlan[1].due || nextPlan[1].due === prev.due) && val) {
                           const baseDate = prev.invoiceDate || today();
@@ -426,7 +434,7 @@ export function NewProjectView() {
                           }
                         }
                       } else if (nextPlan.length === 1 && !nextPlan[0].due) {
-                        nextPlan[0] = { ...nextPlan[0], due: prev.invoiceDate || today() };
+                        nextPlan[0] = { ...nextPlan[0], due: addDays(prev.invoiceDate || today(), termDays) };
                       }
                       return { ...prev, due: val, plan: nextPlan };
                     })

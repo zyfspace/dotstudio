@@ -45,6 +45,7 @@ import {
   dt,
   pad,
   isRecurringBilling,
+  paymentTermDays,
 } from '@/lib/formatters';
 import { ChartMode } from '@/components/IncomeChart';
 import { AuthUser, completeOAuthSignIn, getActiveSession, setAuthSession, touchSession, clearAuthSession } from '@/lib/auth';
@@ -73,12 +74,16 @@ export const PRESET_NAMES: Record<string, string> = {
   custom: 'Custom',
 };
 
+// The first installment is due `termDays` after the invoice date; the last one on the project deadline.
 export const generatePlanFromPreset = (
   presetKey: string,
   projectDeadline?: string,
-  currentPlan?: { l: string; pct: number; due: string }[]
+  currentPlan?: { l: string; pct: number; due: string }[],
+  invoiceDate?: string,
+  termDays?: number
 ): { l: string; pct: number; due: string }[] => {
-  const t = today();
+  const base = invoiceDate || today();
+  const t = addDays(base, paymentTermDays(termDays));
   if (presetKey === 'custom') {
     return currentPlan && currentPlan.length ? currentPlan : [{ l: '', pct: 100, due: t }];
   }
@@ -101,7 +106,7 @@ export const generatePlanFromPreset = (
   if (presetKey === 't3') {
     let midDate = '';
     if (projectDeadline) {
-      const d1 = new Date(t + 'T00:00');
+      const d1 = new Date(base + 'T00:00');
       const d2 = new Date(projectDeadline + 'T00:00');
       if (!isNaN(d1.getTime()) && !isNaN(d2.getTime()) && d2 > d1) {
         const midTime = d1.getTime() + (d2.getTime() - d1.getTime()) / 2;
@@ -1211,11 +1216,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       mail: fromQuote ? fromQuote.mail : targetClient ? targetClient.mail : '',
       tel: fromQuote ? fromQuote.tel : targetClient ? targetClient.tel : '',
       pre: 'dp',
-      plan: generatePlanFromPreset('dp', ''),
+      plan: generatePlanFromPreset('dp', '', undefined, today(), studioProfile.paymentTermDays),
       lang: fromQuote?.lang || 'id',
     });
     router.push('/dashboard/new');
-  }, [clients, isProfileComplete, router]);
+  }, [clients, isProfileComplete, router, studioProfile.paymentTermDays]);
 
   // Start creating new quotation
   const handleStartNewQuote = useCallback((targetProjectId?: number, targetClientId?: number) => {
@@ -1379,7 +1384,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setNewProjectData((prev) => ({
       ...prev,
       pre: presetKey,
-      plan: generatePlanFromPreset(presetKey, prev.due, prev.plan),
+      plan: generatePlanFromPreset(
+        presetKey,
+        prev.due,
+        prev.plan,
+        prev.invoiceDate,
+        studioProfile.paymentTermDays
+      ),
     }));
   };
 
@@ -1680,7 +1691,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     const oneTimeItems = q.items.filter((it) => !isRecurringBilling(it.type));
     const oneTimeTotal = oneTimeItems.reduce((acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0), 0);
     const tot = oneTimeTotal > 0 ? oneTimeTotal : q.items.reduce((acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0), 0);
-    const planItems = generatePlanFromPreset('dp', '');
+    const planItems = generatePlanFromPreset('dp', '', undefined, today(), studioProfile.paymentTermDays);
     let rem = tot;
     const plan: PlanItem[] = planItems.map((pi, i) => {
       const a =

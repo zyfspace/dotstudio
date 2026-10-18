@@ -77,10 +77,14 @@ CREATE TABLE IF NOT EXISTS public.studio_profiles (
   account_number TEXT DEFAULT '',
   account_holder TEXT DEFAULT '',
   default_payment_terms TEXT DEFAULT '',
+  payment_term_days INTEGER DEFAULT 7,
   default_notes TEXT DEFAULT '',
   security_pin TEXT DEFAULT '',
   updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Invoice due date = invoice date + this many days
+ALTER TABLE public.studio_profiles ADD COLUMN IF NOT EXISTS payment_term_days INTEGER DEFAULT 7;
 
 -- ENABLE ROW LEVEL SECURITY (RLS)
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;

@@ -11,6 +11,12 @@ export const ago = (n: number): string => {
 
 export const today = (): string => ago(0);
 
+export const DEFAULT_PAYMENT_TERM_DAYS = 7;
+
+// Days between invoice date and its due date; falls back to the default for unset/invalid values.
+export const paymentTermDays = (days?: number): number =>
+  typeof days === 'number' && Number.isFinite(days) && days >= 0 ? Math.floor(days) : DEFAULT_PAYMENT_TERM_DAYS;
+
 export const addDays = (dateStr: string, days: number): string => {
   if (!dateStr) return '';
   const parts = dateStr.split('-');
