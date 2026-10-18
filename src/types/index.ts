@@ -96,6 +96,7 @@ export interface StudioProfile {
   accountNumber: string;
   accountHolder: string;
   defaultPaymentTerms?: string;
+  paymentTermDays?: number;
   defaultNotes?: string;
   securityPin?: string;
 }

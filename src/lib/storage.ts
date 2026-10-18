@@ -21,6 +21,7 @@ export const DEFAULT_STUDIO_PROFILE: StudioProfile = {
   accountNumber: '',
   accountHolder: '',
   defaultPaymentTerms: '',
+  paymentTermDays: 7,
   defaultNotes: '',
 };
 
@@ -61,23 +62,27 @@ export const syncProfileToSupabase = async (profile: StudioProfile, userEmail?: 
   if (!userEmail) return;
   const targetEmail = userEmail.toLowerCase();
   try {
-    await supabase.from('studio_profiles').upsert(
-      {
-        email: targetEmail,
-        studio_name: profile.studioName || '',
-        owner_name: profile.ownerName || '',
-        tagline: profile.tagline || '',
-        phone: profile.phone || '',
-        bank_name: profile.bankName || '',
-        account_number: profile.accountNumber || '',
-        account_holder: profile.accountHolder || '',
-        default_payment_terms: profile.defaultPaymentTerms || '',
-        default_notes: profile.defaultNotes || '',
-        security_pin: profile.securityPin || '',
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'email' }
-    );
+    const row = {
+      email: targetEmail,
+      studio_name: profile.studioName || '',
+      owner_name: profile.ownerName || '',
+      tagline: profile.tagline || '',
+      phone: profile.phone || '',
+      bank_name: profile.bankName || '',
+      account_number: profile.accountNumber || '',
+      account_holder: profile.accountHolder || '',
+      default_payment_terms: profile.defaultPaymentTerms || '',
+      default_notes: profile.defaultNotes || '',
+      security_pin: profile.securityPin || '',
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase
+      .from('studio_profiles')
+      .upsert({ ...row, payment_term_days: profile.paymentTermDays ?? 7 }, { onConflict: 'email' });
+    // Databases created before payment_term_days existed reject the column; keep syncing the rest.
+    if (error && /payment_term_days/.test(error.message || '')) {
+      await supabase.from('studio_profiles').upsert(row, { onConflict: 'email' });
+    }
   } catch (e) {
     console.error('Failed to sync profile to Supabase', e);
   }
@@ -267,6 +272,8 @@ export const fetchFromSupabase = async (
         accountNumber: profileRaw.account_number || profileRaw.accountNumber || '',
         accountHolder: profileRaw.account_holder || profileRaw.accountHolder || '',
         defaultPaymentTerms: profileRaw.default_payment_terms || profileRaw.defaultPaymentTerms || '',
+        paymentTermDays:
+          typeof profileRaw.payment_term_days === 'number' ? profileRaw.payment_term_days : 7,
         defaultNotes: profileRaw.default_notes || profileRaw.defaultNotes || '',
         securityPin: profileRaw.security_pin || profileRaw.securityPin || undefined,
       };

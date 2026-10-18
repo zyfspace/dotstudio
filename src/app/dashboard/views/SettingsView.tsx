@@ -278,6 +278,24 @@ export function SettingsView() {
             </div>
 
             <div className="f">
+              <label htmlFor="st-term-days">Invoice Due (days after invoice date)</label>
+              <input
+                id="st-term-days"
+                type="number"
+                min="0"
+                disabled={!isSettingsUnlocked}
+                className="settings-input"
+                placeholder="7"
+                value={profileDraft.paymentTermDays ?? 7}
+                onWheel={(e) => e.currentTarget.blur()}
+                onChange={(e) => {
+                  const val = e.target.value === '' ? 0 : Math.max(0, Math.floor(+e.target.value || 0));
+                  setProfileDraft((prev) => ({ ...prev, paymentTermDays: val }));
+                }}
+              />
+            </div>
+
+            <div className="f">
               <label htmlFor="st-terms">Default Payment Terms (Invoice / Quotation)</label>
               <AutoTextarea
                 id="st-terms"
