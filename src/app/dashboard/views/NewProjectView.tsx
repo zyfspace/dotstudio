@@ -15,7 +15,7 @@ import { DatePicker } from '@/components/DatePicker';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { DocLangToggle } from '@/components/DocLangToggle';
 import { NewInvoicePreviewEn } from './NewDocPreviewEn';
-import { rp, dt, today, isRecurringBilling } from '@/lib/formatters';
+import { rp, dt, today, isRecurringBilling, normalizeBillingType } from '@/lib/formatters';
 
 export function NewProjectView() {
   const router = useRouter();
@@ -110,6 +110,172 @@ export function NewProjectView() {
       <div className="project-split-layout">
         {/* Left Column: Form Details */}
         <div className="project-form-col">
+          {/* Client Details Panel */}
+          <div className="panel">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '8px', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0 }}>Client</h3>
+              {clients.length > 0 && (
+                <div className="chips" style={{ margin: 0 }}>
+                  <button
+                    type="button"
+                    className={`chip ${projectClientMode === 'existing' ? 'on' : ''}`}
+                    onClick={() => {
+                      setProjectClientMode('existing');
+                      const targetClient = clients.find((c) => c.id === selectedProjectClientId) || clients[0];
+                      if (targetClient) {
+                        setSelectedProjectClientId(targetClient.id);
+                        setNewProjectData((prev) => ({
+                          ...prev,
+                          cn: targetClient.name,
+                          co: targetClient.co,
+                          mail: targetClient.mail,
+                          tel: targetClient.tel,
+                        }));
+                      }
+                    }}
+                  >
+                    Existing client
+                  </button>
+                  <button
+                    type="button"
+                    className={`chip ${projectClientMode === 'new' ? 'on' : ''}`}
+                    onClick={() => {
+                      setProjectClientMode('new');
+                      setNewProjectData((prev) => ({
+                        ...prev,
+                        cn: '',
+                        co: '',
+                        mail: '',
+                        tel: '',
+                      }));
+                    }}
+                  >
+                    New client
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {projectClientMode === 'existing' && clients.length > 0 ? (
+              <div>
+                <div className="f">
+                  <label htmlFor="select-project-client">Select client</label>
+                  <select
+                    id="select-project-client"
+                    className="in"
+                    value={selectedProjectClientId}
+                    onChange={(e) => {
+                      const chosenId = +e.target.value;
+                      setSelectedProjectClientId(chosenId);
+                      const found = clients.find((c) => c.id === chosenId);
+                      if (found) {
+                        setNewProjectData((prev) => ({
+                          ...prev,
+                          cn: found.name,
+                          co: found.co,
+                          mail: found.mail,
+                          tel: found.tel,
+                        }));
+                      }
+                    }}
+                  >
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {c.co ? `· ${c.co}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {(() => {
+                  const activeSelectedClient = clients.find((c) => c.id === selectedProjectClientId) || clients[0];
+                  if (!activeSelectedClient) return null;
+                  return (
+                    <div
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--line)',
+                        background: 'var(--soft)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        fontSize: '13px',
+                        marginTop: '8px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="mut" style={{ fontSize: '12px' }}>Company</span>
+                        <span style={{ fontWeight: 500 }}>{activeSelectedClient.co || '—'}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="mut" style={{ fontSize: '12px' }}>Email</span>
+                        <span>{activeSelectedClient.mail || '—'}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="mut" style={{ fontSize: '12px' }}>Phone</span>
+                        <span>{activeSelectedClient.tel || '—'}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : (
+              <div>
+                <div className="f">
+                  <label htmlFor="nc">Name</label>
+                  <input
+                    id="nc"
+                    type="text"
+                    placeholder="e.g. Maya Lestari"
+                    value={newProjectData.cn}
+                    onChange={(e) =>
+                      setNewProjectData((prev) => ({ ...prev, cn: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="f">
+                  <label htmlFor="no">Company</label>
+                  <input
+                    id="no"
+                    type="text"
+                    placeholder="e.g. PT Digital Nusantara"
+                    value={newProjectData.co}
+                    onChange={(e) =>
+                      setNewProjectData((prev) => ({ ...prev, co: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="two">
+                  <div className="f">
+                    <label htmlFor="nm">Email</label>
+                    <input
+                      id="nm"
+                      type="email"
+                      placeholder="client@company.com"
+                      value={newProjectData.mail}
+                      onChange={(e) =>
+                        setNewProjectData((prev) => ({ ...prev, mail: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="f">
+                    <label htmlFor="nt">Phone</label>
+                    <input
+                      id="nt"
+                      type="tel"
+                      placeholder="+62 812..."
+                      value={newProjectData.tel}
+                      onChange={(e) =>
+                        setNewProjectData((prev) => ({ ...prev, tel: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Reference Quotation Panel (Optional) */}
           {quotes.length > 0 && !editingProject && (
             <div className="panel">
@@ -367,7 +533,7 @@ export function NewProjectView() {
                     />
                     <select
                       className="in"
-                      value={r.type || 'One-time'}
+                      value={normalizeBillingType(r.type)}
                       disabled={amountsLocked}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -379,10 +545,14 @@ export function NewProjectView() {
                       }}
                     >
                       <option value="One-time">One-time</option>
-                      <option value="Bulanan">Monthly</option>
                       <option value="Per Project">Per Project</option>
-                      <option value="Retainer">Retainer</option>
+                      <option value="Milestone">Milestone / Termin</option>
                       <option value="Hourly">Hourly</option>
+                      <option value="Mingguan (Recurring)">Mingguan (Recurring)</option>
+                      <option value="Monthly (Recurring)">Monthly (Recurring)</option>
+                      <option value="Quarterly (Recurring)">Quarterly (Recurring)</option>
+                      <option value="Tahunan (Recurring)">Tahunan (Recurring)</option>
+                      <option value="Retainer (Recurring)">Retainer (Recurring)</option>
                       {r.type === 'Additional' && <option value="Additional">Additional</option>}
                     </select>
                     <input
@@ -469,172 +639,6 @@ export function NewProjectView() {
                 )}
               </b>
             </div>
-          </div>
-
-          {/* Client Details Panel */}
-          <div className="panel">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '8px', flexWrap: 'wrap' }}>
-              <h3 style={{ margin: 0 }}>Client</h3>
-              {clients.length > 0 && (
-                <div className="chips" style={{ margin: 0 }}>
-                  <button
-                    type="button"
-                    className={`chip ${projectClientMode === 'existing' ? 'on' : ''}`}
-                    onClick={() => {
-                      setProjectClientMode('existing');
-                      const targetClient = clients.find((c) => c.id === selectedProjectClientId) || clients[0];
-                      if (targetClient) {
-                        setSelectedProjectClientId(targetClient.id);
-                        setNewProjectData((prev) => ({
-                          ...prev,
-                          cn: targetClient.name,
-                          co: targetClient.co,
-                          mail: targetClient.mail,
-                          tel: targetClient.tel,
-                        }));
-                      }
-                    }}
-                  >
-                    Existing client
-                  </button>
-                  <button
-                    type="button"
-                    className={`chip ${projectClientMode === 'new' ? 'on' : ''}`}
-                    onClick={() => {
-                      setProjectClientMode('new');
-                      setNewProjectData((prev) => ({
-                        ...prev,
-                        cn: '',
-                        co: '',
-                        mail: '',
-                        tel: '',
-                      }));
-                    }}
-                  >
-                    New client
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {projectClientMode === 'existing' && clients.length > 0 ? (
-              <div>
-                <div className="f">
-                  <label htmlFor="select-project-client">Select client</label>
-                  <select
-                    id="select-project-client"
-                    className="in"
-                    value={selectedProjectClientId}
-                    onChange={(e) => {
-                      const chosenId = +e.target.value;
-                      setSelectedProjectClientId(chosenId);
-                      const found = clients.find((c) => c.id === chosenId);
-                      if (found) {
-                        setNewProjectData((prev) => ({
-                          ...prev,
-                          cn: found.name,
-                          co: found.co,
-                          mail: found.mail,
-                          tel: found.tel,
-                        }));
-                      }
-                    }}
-                  >
-                    {clients.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} {c.co ? `· ${c.co}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {(() => {
-                  const activeSelectedClient = clients.find((c) => c.id === selectedProjectClientId) || clients[0];
-                  if (!activeSelectedClient) return null;
-                  return (
-                    <div
-                      style={{
-                        padding: '12px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid var(--line)',
-                        background: 'var(--soft)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '6px',
-                        fontSize: '13px',
-                        marginTop: '8px',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className="mut" style={{ fontSize: '12px' }}>Company</span>
-                        <span style={{ fontWeight: 500 }}>{activeSelectedClient.co || '—'}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className="mut" style={{ fontSize: '12px' }}>Email</span>
-                        <span>{activeSelectedClient.mail || '—'}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className="mut" style={{ fontSize: '12px' }}>Phone</span>
-                        <span>{activeSelectedClient.tel || '—'}</span>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            ) : (
-              <div>
-                <div className="f">
-                  <label htmlFor="nc">Name</label>
-                  <input
-                    id="nc"
-                    type="text"
-                    placeholder="e.g. Maya Lestari"
-                    value={newProjectData.cn}
-                    onChange={(e) =>
-                      setNewProjectData((prev) => ({ ...prev, cn: e.target.value }))
-                    }
-                  />
-                </div>
-                <div className="f">
-                  <label htmlFor="no">Company</label>
-                  <input
-                    id="no"
-                    type="text"
-                    placeholder="e.g. PT Digital Nusantara"
-                    value={newProjectData.co}
-                    onChange={(e) =>
-                      setNewProjectData((prev) => ({ ...prev, co: e.target.value }))
-                    }
-                  />
-                </div>
-                <div className="two">
-                  <div className="f">
-                    <label htmlFor="nm">Email</label>
-                    <input
-                      id="nm"
-                      type="email"
-                      placeholder="client@company.com"
-                      value={newProjectData.mail}
-                      onChange={(e) =>
-                        setNewProjectData((prev) => ({ ...prev, mail: e.target.value }))
-                      }
-                    />
-                  </div>
-                  <div className="f">
-                    <label htmlFor="nt">Phone</label>
-                    <input
-                      id="nt"
-                      type="tel"
-                      placeholder="+62 812..."
-                      value={newProjectData.tel}
-                      onChange={(e) =>
-                        setNewProjectData((prev) => ({ ...prev, tel: e.target.value }))
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Payment Scheme Panel */}
