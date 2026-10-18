@@ -716,7 +716,8 @@ export function NewQuoteView() {
                       <option value="Hourly">Hourly</option>
                       <option value="Monthly (Recurring)">Monthly</option>
                       <option value="Tahunan (Recurring)">Yearly</option>
-                      {['Mingguan (Recurring)', 'Quarterly (Recurring)', 'Retainer (Recurring)'].includes(normalizeBillingType(r.type)) && (
+                      <option value="Retainer (Recurring)">Retainer (Recurring)</option>
+                      {['Mingguan (Recurring)', 'Quarterly (Recurring)'].includes(normalizeBillingType(r.type)) && (
                         <option value={normalizeBillingType(r.type)}>{normalizeBillingType(r.type)}</option>
                       )}
                     </select>
