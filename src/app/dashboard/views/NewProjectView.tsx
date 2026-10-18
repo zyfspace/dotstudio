@@ -116,10 +116,10 @@ export function NewProjectView() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '8px', flexWrap: 'wrap' }}>
               <h3 style={{ margin: 0 }}>Client</h3>
               {clients.length > 0 && (
-                <div className="chips" style={{ margin: 0 }}>
+                <div className="seg seg-auto" role="group" style={{ margin: 0 }}>
                   <button
                     type="button"
-                    className={`chip ${projectClientMode === 'existing' ? 'on' : ''}`}
+                    className={projectClientMode === 'existing' ? 'on' : ''}
                     onClick={() => {
                       setProjectClientMode('existing');
                       const targetClient = clients.find((c) => c.id === selectedProjectClientId) || clients[0];
@@ -139,7 +139,7 @@ export function NewProjectView() {
                   </button>
                   <button
                     type="button"
-                    className={`chip ${projectClientMode === 'new' ? 'on' : ''}`}
+                    className={projectClientMode === 'new' ? 'on' : ''}
                     onClick={() => {
                       setProjectClientMode('new');
                       setNewProjectData((prev) => ({
@@ -662,11 +662,11 @@ export function NewProjectView() {
           ) : (
           <div className="panel">
             <h3>Payment scheme</h3>
-            <div className="chips" style={{ marginTop: 0 }}>
+            <div className="seg seg-auto" role="group" style={{ marginBottom: '14px' }}>
               {Object.keys(PRESET_NAMES).map((k) => (
                 <button
                   key={k}
-                  className={`chip ${newProjectData.pre === k ? 'on' : ''}`}
+                  className={newProjectData.pre === k ? 'on' : ''}
                   onClick={() => handlePlanPresetChange(k)}
                 >
                   {PRESET_NAMES[k]}
