@@ -86,7 +86,7 @@ export function ProjectsView() {
 
       {/* Filter chips */}
       <div style={{ margin: '0 0 14px' }}>
-        <div className="chips" style={{ marginTop: 0 }}>
+        <div className="seg seg-auto" role="group">
           {(['All', 'Pending', 'Progress', 'Finished', 'Cancelled'] as const).map(
             (s) => {
               const count =
@@ -102,7 +102,7 @@ export function ProjectsView() {
               return (
                 <button
                   key={s}
-                  className={`chip ${filterStatus === s ? 'on' : ''}`}
+                  className={filterStatus === s ? 'on' : ''}
                   onClick={() => setFilterStatus(s)}
                 >
                   {label} · {count}

@@ -206,10 +206,10 @@ export function NewQuoteView() {
             >
               <h3 style={{ margin: 0 }}>Client</h3>
               {clients.length > 0 && (
-                <div className="chips" style={{ margin: 0 }}>
+                <div className="seg seg-auto" role="group" style={{ margin: 0 }}>
                   <button
                     type="button"
-                    className={`chip ${quoteClientMode === 'existing' ? 'on' : ''}`}
+                    className={quoteClientMode === 'existing' ? 'on' : ''}
                     onClick={() => {
                       setQuoteClientMode('existing');
                       const targetClient =
@@ -230,7 +230,7 @@ export function NewQuoteView() {
                   </button>
                   <button
                     type="button"
-                    className={`chip ${quoteClientMode === 'new' ? 'on' : ''}`}
+                    className={quoteClientMode === 'new' ? 'on' : ''}
                     onClick={() => {
                       setQuoteClientMode('new');
                       setNewQuoteData((prev) => ({
