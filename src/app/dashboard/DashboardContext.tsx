@@ -1158,7 +1158,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       return;
     }
     const defaultMode = clients.length > 0 ? 'existing' : 'new';
-    let targetClient = clients.find((c) => c.id === targetClientId) || clients[0];
+    let targetClient: Client | undefined = clients.find((c) => c.id === targetClientId) || clients[0];
 
     if (fromQuote) {
       const matchedClient = clients.find(
@@ -1166,12 +1166,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           c.name.toLowerCase() === fromQuote.cn.toLowerCase() ||
           (fromQuote.mail && c.mail && c.mail.toLowerCase() === fromQuote.mail.toLowerCase())
       );
-      if (matchedClient) {
-        targetClient = matchedClient;
-      }
+      // Unknown quote client: prefill as a new client instead of falling back to clients[0]
+      targetClient = matchedClient;
     }
 
-    setProjectClientMode(targetClient ? 'existing' : defaultMode);
+    setProjectClientMode(targetClient ? 'existing' : fromQuote ? 'new' : defaultMode);
     setSelectedProjectClientId(targetClient ? targetClient.id : '');
     setSelectedProjectQuoteId(fromQuote ? fromQuote.id : 0);
 
@@ -1193,7 +1192,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       ? fromQuote.items.map((it) => ({
         d: it.d,
         type: it.type || 'One-time',
-        p: it.p,
+        p: String((+it.q || 1) * (+it.p || 0)),
       }))
       : [{ d: '', type: 'One-time', p: '' }];
 
@@ -1676,66 +1675,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  // Open the new-project form prefilled from the quote so payment terms etc. can be reviewed before saving
   const handleConvertQuoteToProject = (q: Quotation) => {
-    if (!isProfileComplete) {
-      setProfileRequiredModal('project');
-      return;
-    }
-    const c = ensureClient({
-      cn: q.cn,
-      co: q.co,
-      mail: q.mail,
-      tel: q.tel,
-    });
-    const id = Date.now();
-    const oneTimeItems = q.items.filter((it) => !isRecurringBilling(it.type));
-    const oneTimeTotal = oneTimeItems.reduce((acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0), 0);
-    const tot = oneTimeTotal > 0 ? oneTimeTotal : q.items.reduce((acc, curr) => acc + (+curr.q || 1) * (+curr.p || 0), 0);
-    const planItems = generatePlanFromPreset('dp', '', undefined, today(), studioProfile.paymentTermDays);
-    let rem = tot;
-    const plan: PlanItem[] = planItems.map((pi, i) => {
-      const a =
-        i === planItems.length - 1 ? rem : Math.round((tot * pi.pct) / 100);
-      rem -= a;
-      return {
-        id: id * 10 + i,
-        l: pi.l,
-        pct: pi.pct,
-        a,
-        due: pi.due,
-        paid: false,
-        pd: '',
-        proof: null,
-        inv: null,
-      };
-    });
-
-    const newProj: Project = {
-      id,
-      name: q.title,
-      c: c ? c.id : 0,
-      v: tot,
-      billingType: q.items[0]?.type || 'One-time',
-      items: q.items.map((it) => ({
-        d: it.d || q.title,
-        type: it.type || 'One-time',
-        p: (it.q || 1) * it.p,
-      })),
-      due: '',
-      desc: q.scope && q.scope.filter((s) => s.trim()).length ? q.scope.filter((s) => s.trim()).join('\n') : '',
-      n: `From ${q.no}`,
-      plan,
-      ...(q.lang === 'en' ? { lang: 'en' as const } : {}),
-    };
-
-    setProjects((prev) => [...prev, newProj]);
-    setQuotes((prev) =>
-      prev.map((item) =>
-        item.id === q.id ? { ...item, s: 'Accepted', pid: id } : item
-      )
-    );
-    setActiveProjectDrawerId(id);
-    router.push('/dashboard/projects');
+    handleStartNewProject(undefined, q);
   };
 
   const handleTogglePaymentPaid = (

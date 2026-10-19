@@ -328,7 +328,7 @@ export function NewProjectView() {
                           items: projectItems.map((it) => ({
                             d: it.d,
                             type: it.type || 'One-time',
-                            p: it.p,
+                            p: String((+it.q || 1) * (+it.p || 0)),
                           })),
                           desc: foundQ.scope && foundQ.scope.filter((s) => s.trim()).length
                             ? foundQ.scope.filter((s) => s.trim()).join('\n')
