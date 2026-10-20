@@ -25,15 +25,15 @@ import {
 import {
   loadStoredData,
   saveStoredData,
-  fetchFromSupabase,
-  syncToSupabase,
-  deleteProjectFromSupabase,
-  deleteClientFromSupabase,
-  deleteQuoteFromSupabase,
+  fetchFromServer,
+  syncToServer,
+  deleteProjectFromServer,
+  deleteClientFromServer,
+  deleteQuoteFromServer,
   DEFAULT_STUDIO_PROFILE,
   loadStudioProfile,
   saveStudioProfile,
-  syncProfileToSupabase,
+  syncProfileToServer,
 } from '@/lib/storage';
 import {
   Y,
@@ -632,7 +632,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const remote = await fetchFromSupabase(userEmail);
+      const remote = await fetchFromServer(userEmail);
       if (remote) {
         if (remote.profile) {
           setStudioProfile(remote.profile);
@@ -700,9 +700,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setSyncFeedback(null);
     try {
       const email = authUser?.email;
-      await syncToSupabase({ clients, projects, quotes }, email);
-      await syncProfileToSupabase(studioProfile, email);
-      const remote = await fetchFromSupabase(email);
+      await syncToServer({ clients, projects, quotes }, email);
+      await syncProfileToServer(studioProfile, email);
+      const remote = await fetchFromServer(email);
       if (remote) {
         if (remote.profile) {
           setStudioProfile(remote.profile);
@@ -1847,7 +1847,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       return;
     }
     setProjects((prev) => prev.filter((p) => p.id !== projectId));
-    deleteProjectFromSupabase(projectId, authUser?.email);
+    deleteProjectFromServer(projectId, authUser?.email);
     closeDrawer();
   };
 
@@ -1874,13 +1874,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       return;
     }
     setClients((prev) => prev.filter((c) => c.id !== clientId));
-    deleteClientFromSupabase(clientId, authUser?.email);
+    deleteClientFromServer(clientId, authUser?.email);
     closeDrawer();
   };
 
   const handleDeleteQuote = (quoteId: number) => {
     setQuotes((prev) => prev.filter((q) => q.id !== quoteId));
-    deleteQuoteFromSupabase(quoteId, authUser?.email);
+    deleteQuoteFromServer(quoteId, authUser?.email);
     router.push('/dashboard/quotations');
   };
 
