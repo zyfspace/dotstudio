@@ -1,25 +1,6 @@
 import { Client, Project, Quotation, PlanItem, StudioProfile } from '../types';
 import { supabase } from './supabase';
 
-// Data lives in Neon behind /api/data; the Supabase session only proves who
-// is asking.
-const callDataApi = async (body?: Record<string, unknown>) => {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (!token) throw new Error('Not signed in');
-  const res = await fetch('/api/data', {
-    method: body ? 'POST' : 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || `Request failed (${res.status})`);
-  return json;
-};
-
 export const getStorageKey = (email?: string) => {
   const clean = email ? email.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'zyfxspace_gmail_com';
   return `zyf-studio-db-${clean}`;
@@ -72,11 +53,11 @@ export const saveStudioProfile = (profile: StudioProfile, userEmail?: string) =>
     console.error('Failed to save studio profile', e);
   }
 
-  // Also sync profile to the server in background
-  syncProfileToServer(profile, userEmail).catch(() => {});
+  // Also sync profile to Supabase in background
+  syncProfileToSupabase(profile, userEmail).catch(() => {});
 };
 
-export const syncProfileToServer = async (profile: StudioProfile, userEmail?: string) => {
+export const syncProfileToSupabase = async (profile: StudioProfile, userEmail?: string) => {
   // Profiles are keyed by the signed-in account; never guess another owner.
   if (!userEmail) return;
   const targetEmail = userEmail.toLowerCase();
@@ -93,14 +74,21 @@ export const syncProfileToServer = async (profile: StudioProfile, userEmail?: st
       default_payment_terms: profile.defaultPaymentTerms || '',
       default_notes: profile.defaultNotes || '',
       security_pin: profile.securityPin || '',
-      payment_term_days: profile.paymentTermDays ?? 7,
       updated_at: new Date().toISOString(),
     };
-    await callDataApi({ action: 'upsert', table: 'studio_profiles', rows: [row] });
+    const { error } = await supabase
+      .from('studio_profiles')
+      .upsert({ ...row, payment_term_days: profile.paymentTermDays ?? 7 }, { onConflict: 'email' });
+    // Databases created before payment_term_days existed reject the column; keep syncing the rest.
+    if (error && /payment_term_days/.test(error.message || '')) {
+      await supabase.from('studio_profiles').upsert(row, { onConflict: 'email' });
+    }
   } catch (e) {
-    console.error('Failed to sync profile', e);
+    console.error('Failed to sync profile to Supabase', e);
   }
 };
+
+export const syncStudioProfileToSupabase = syncProfileToSupabase;
 
 
 export const getInitialClients = (): Client[] => [];
@@ -160,7 +148,7 @@ export const loadStoredData = (userEmail?: string): StorageData => {
   };
 };
 
-// Save to LocalStorage and sync to the server in background
+// Save to LocalStorage and sync to Supabase in background
 export const saveStoredData = (data: StorageData, userEmail?: string) => {
   if (typeof window === 'undefined') return;
   try {
@@ -170,29 +158,45 @@ export const saveStoredData = (data: StorageData, userEmail?: string) => {
     console.error('Failed to save localStorage data', e);
   }
 
-  syncToServer(data, userEmail).catch(() => {});
+  syncToSupabase(data, userEmail).catch(() => {});
 };
 
-// Fetch from the server
-export const fetchFromServer = async (
+// Fetch from Supabase
+export const fetchFromSupabase = async (
   userEmail?: string
 ): Promise<{ data: StorageData; profile?: StudioProfile } | null> => {
   if (!userEmail) return null;
   const targetEmail = userEmail.toLowerCase();
 
   try {
-    // The server scopes rows to the signed-in account, so a session for a
-    // different email would look like an empty account; treat it as "not loaded".
+    // Without a signed-in Supabase session RLS returns no rows, which would
+    // look like an empty account; treat it as "not loaded" instead.
     const { data: sessionData } = await supabase.auth.getSession();
     if (sessionData.session?.user?.email?.toLowerCase() !== targetEmail) return null;
 
     currentSyncStatus = { ...currentSyncStatus, status: 'syncing' };
 
-    const res = await callDataApi();
-    const clientsRaw: any[] = Array.isArray(res.clients) ? res.clients : [];
-    const projectsRaw: any[] = Array.isArray(res.projects) ? res.projects : [];
-    const quotesRaw: any[] = Array.isArray(res.quotes) ? res.quotes : [];
-    const profileRaw: any = res.profile || null;
+    const [clientsRes, projectsRes, quotesRes, profileRes] = await Promise.allSettled([
+      supabase.from('clients').select('*').eq('owner_email', targetEmail),
+      supabase.from('projects').select('*').eq('owner_email', targetEmail),
+      supabase.from('quotes').select('*').eq('owner_email', targetEmail),
+      supabase.from('studio_profiles').select('*').eq('email', targetEmail).maybeSingle(),
+    ]);
+
+    let hadErrors = false;
+    let errorMsg = '';
+
+    for (const res of [clientsRes, projectsRes, quotesRes]) {
+      if (res.status === 'rejected' || res.value.error) {
+        hadErrors = true;
+        errorMsg = (res as any).value?.error?.message || 'Failed to query Supabase';
+      }
+    }
+
+    const clientsRaw = clientsRes.status === 'fulfilled' && clientsRes.value.data ? clientsRes.value.data : [];
+    const projectsRaw = projectsRes.status === 'fulfilled' && projectsRes.value.data ? projectsRes.value.data : [];
+    const quotesRaw = quotesRes.status === 'fulfilled' && quotesRes.value.data ? quotesRes.value.data : [];
+    const profileRaw = profileRes.status === 'fulfilled' && profileRes.value.data ? profileRes.value.data : null;
 
     const clients: Client[] = clientsRaw.map((c: any) => ({
       id: Number(c.id),
@@ -269,7 +273,7 @@ export const fetchFromServer = async (
         accountHolder: profileRaw.account_holder || profileRaw.accountHolder || '',
         defaultPaymentTerms: profileRaw.default_payment_terms || profileRaw.defaultPaymentTerms || '',
         paymentTermDays:
-          profileRaw.payment_term_days != null ? Number(profileRaw.payment_term_days) : 7,
+          typeof profileRaw.payment_term_days === 'number' ? profileRaw.payment_term_days : 7,
         defaultNotes: profileRaw.default_notes || profileRaw.defaultNotes || '',
         securityPin: profileRaw.security_pin || profileRaw.securityPin || undefined,
       };
@@ -277,28 +281,36 @@ export const fetchFromServer = async (
 
     // A complete answer replaces the local cache, even when the account is
     // empty, so rows deleted on another device don't linger here.
-    const syncedData = { clients, projects, quotes };
-    rememberServerRows(syncedData, targetEmail);
-    if (typeof window !== 'undefined') {
-      const key = getStorageKey(userEmail);
-      localStorage.setItem(key, JSON.stringify(syncedData));
-      if (profile) {
-        // Cache locally only; re-uploading what was just fetched is redundant.
-        localStorage.setItem(getProfileKey(userEmail), JSON.stringify(profile));
+    if (!hadErrors) {
+      const syncedData = { clients, projects, quotes };
+      rememberServerRows(syncedData, targetEmail);
+      if (typeof window !== 'undefined') {
+        const key = getStorageKey(userEmail);
+        localStorage.setItem(key, JSON.stringify(syncedData));
+        if (profile) {
+          // Cache locally only; re-uploading what was just fetched is redundant.
+          localStorage.setItem(getProfileKey(userEmail), JSON.stringify(profile));
+        }
       }
+      currentSyncStatus = {
+        lastSyncedAt: new Date().toLocaleTimeString(),
+        status: 'success',
+      };
+      return { data: syncedData, profile };
     }
+
     currentSyncStatus = {
-      lastSyncedAt: new Date().toLocaleTimeString(),
-      status: 'success',
+      lastSyncedAt: null,
+      status: 'error',
+      errorMessage: errorMsg,
     };
-    return { data: syncedData, profile };
   } catch (e: any) {
     currentSyncStatus = {
       lastSyncedAt: null,
       status: 'error',
-      errorMessage: e?.message || 'Error connecting to the server',
+      errorMessage: e?.message || 'Error connecting to Supabase',
     };
-    console.error('Error fetching data', e);
+    console.error('Error fetching from Supabase', e);
   }
   return null;
 };
@@ -312,7 +324,7 @@ const deletedIds = {
 };
 
 // The server is the source of truth. Until this tab has loaded the account's
-// rows from the server, nothing is pushed: a device with an old local cache
+// rows from Supabase, nothing is pushed: a device with an old local cache
 // (e.g. a phone not opened for a while) would otherwise re-create rows that
 // were deleted elsewhere. After loading, only rows that differ from what the
 // server last held are written.
@@ -386,7 +398,7 @@ const rememberServerRows = (data: StorageData, owner: string) => {
 };
 
 // Write the rows that changed since the server last saw them
-export const syncToServer = async (data: StorageData, userEmail?: string) => {
+export const syncToSupabase = async (data: StorageData, userEmail?: string) => {
   if (!userEmail) return;
   const targetEmail = userEmail.toLowerCase();
   if (loadedFor !== targetEmail) return;
@@ -405,13 +417,14 @@ export const syncToServer = async (data: StorageData, userEmail?: string) => {
     currentSyncStatus = { ...currentSyncStatus, status: 'syncing' };
 
     for (const { table, seen, skip, rows } of tables) {
-      const changed = rows
-        .filter((row) => !skip.has(row.id))
-        .map((row) => ({ row, json: JSON.stringify(row) }))
-        .filter(({ row, json }) => seen.get(row.id) !== json);
-      if (!changed.length) continue;
-      await callDataApi({ action: 'upsert', table, rows: changed.map(({ row }) => row) });
-      for (const { row, json } of changed) seen.set(row.id, json);
+      for (const row of rows) {
+        if (skip.has(row.id)) continue;
+        const json = JSON.stringify(row);
+        if (seen.get(row.id) === json) continue;
+        const { error } = await supabase.from(table).upsert(row, { onConflict: 'id' });
+        if (error) throw error;
+        seen.set(row.id, json);
+      }
     }
 
     currentSyncStatus = {
@@ -424,43 +437,55 @@ export const syncToServer = async (data: StorageData, userEmail?: string) => {
       status: 'error',
       errorMessage: e?.message || 'Sync failed',
     };
-    console.error('Error syncing data', e);
+    console.error('Error syncing to Supabase', e);
   }
 };
 
-// Delete single project from the server
-export const deleteProjectFromServer = async (projectId: number, userEmail?: string) => {
+// Delete single project from Supabase
+export const deleteProjectFromSupabase = async (projectId: number, userEmail?: string) => {
   if (!userEmail) return;
   deletedIds.projects.add(projectId);
   serverRows.projects.delete(projectId);
   try {
-    await callDataApi({ action: 'delete', table: 'projects', id: projectId });
+    await supabase
+      .from('projects')
+      .delete()
+      .eq('id', projectId)
+      .eq('owner_email', userEmail.toLowerCase());
   } catch (e) {
-    console.error('Error deleting project', e);
+    console.error('Error deleting project from Supabase', e);
   }
 };
 
-// Delete single client from the server
-export const deleteClientFromServer = async (clientId: number, userEmail?: string) => {
+// Delete single client from Supabase
+export const deleteClientFromSupabase = async (clientId: number, userEmail?: string) => {
   if (!userEmail) return;
   deletedIds.clients.add(clientId);
   serverRows.clients.delete(clientId);
   try {
-    await callDataApi({ action: 'delete', table: 'clients', id: clientId });
+    await supabase
+      .from('clients')
+      .delete()
+      .eq('id', clientId)
+      .eq('owner_email', userEmail.toLowerCase());
   } catch (e) {
-    console.error('Error deleting client', e);
+    console.error('Error deleting client from Supabase', e);
   }
 };
 
-// Delete single quote from the server
-export const deleteQuoteFromServer = async (quoteId: number, userEmail?: string) => {
+// Delete single quote from Supabase
+export const deleteQuoteFromSupabase = async (quoteId: number, userEmail?: string) => {
   if (!userEmail) return;
   deletedIds.quotes.add(quoteId);
   serverRows.quotes.delete(quoteId);
   try {
-    await callDataApi({ action: 'delete', table: 'quotes', id: quoteId });
+    await supabase
+      .from('quotes')
+      .delete()
+      .eq('id', quoteId)
+      .eq('owner_email', userEmail.toLowerCase());
   } catch (e) {
-    console.error('Error deleting quote', e);
+    console.error('Error deleting quote from Supabase', e);
   }
 };
 
