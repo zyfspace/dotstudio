@@ -51,7 +51,7 @@ import { ChartMode } from '@/components/IncomeChart';
 import { AuthUser, completeOAuthSignIn, getActiveSession, setAuthSession, touchSession, clearAuthSession } from '@/lib/auth';
 import { uploadFiles } from '@/lib/uploadthing';
 
-
+const PROOF_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
 
 export const PRESETS: Record<string, [string, number][]> = {
   full: [['Full payment', 100]],
@@ -1712,10 +1712,22 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     file: File,
     paidDate?: string
   ) => {
+    // Mirrors the server-side rules in api/uploadthing/core.ts; also guards the data-URL fallback below
+    const maxBytes = file.type === 'application/pdf' ? 16 * 1024 * 1024 : 8 * 1024 * 1024;
+    if (!PROOF_MIME_TYPES.includes(file.type) || file.size > maxBytes) {
+      window.alert('Payment proof must be a JPG, PNG, WebP (max 8MB) or PDF (max 16MB).');
+      return;
+    }
     setUploadingItemId(planItemId);
     try {
       const res = await uploadFiles('paymentProof', {
         files: [file],
+        headers: async (): Promise<Record<string, string>> => {
+          const { supabase } = await import('@/lib/supabase');
+          const { data } = await supabase.auth.getSession();
+          const token = data.session?.access_token;
+          return token ? { Authorization: `Bearer ${token}` } : {};
+        },
       });
       if (res && res[0]) {
         const uploadedFile = res[0];
