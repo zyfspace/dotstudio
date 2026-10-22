@@ -195,7 +195,7 @@ export function ProjectDrawer() {
                                   {uploading ? 'Uploading…' : 'Payment'}
                                   <input
                                     type="file"
-                                    accept="image/*,.pdf"
+                                    accept="image/png,image/jpeg,image/webp,application/pdf"
                                     disabled={!canUpload}
                                     onChange={(e) => {
                                       const f = e.target.files?.[0];
@@ -312,7 +312,7 @@ export function ProjectDrawer() {
                           </span>
                           <input
                             type="file"
-                            accept="image/*,.pdf"
+                            accept="image/png,image/jpeg,image/webp,application/pdf"
                             onChange={(e) => {
                               const f = e.target.files?.[0];
                               e.target.value = '';
