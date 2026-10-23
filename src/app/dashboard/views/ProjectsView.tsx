@@ -167,12 +167,7 @@ export function ProjectsView() {
                       </td>
                       <td className="mut">{dt(p.due)}</td>
                       <td>
-                        <div className="pg">
-                          <div className="prog">
-                            <i style={{ width: `${pctVal}%` }} />
-                          </div>
-                          <span className="mut">{pctVal}%</span>
-                        </div>
+                        <ProgressBar project={p} status={st} pct={pctVal} />
                       </td>
                       <td className="r">{rp(p.v)}</td>
                     </tr>
@@ -210,14 +205,7 @@ export function ProjectsView() {
                     </span>
                   </div>
 
-                  <div className="pg" style={{ margin: '2px 0 4px', gap: '8px' }}>
-                    <div className="prog" style={{ height: '4px' }}>
-                      <i style={{ width: `${pctVal}%` }} />
-                    </div>
-                    <span className="mut" style={{ fontSize: '11px', fontVariantNumeric: 'tabular-nums' }}>
-                      {pctVal}%
-                    </span>
-                  </div>
+                  <ProgressBar project={p} status={st} pct={pctVal} compact />
 
                   <div className="mob-item-bottom">
                     <span className={overdue ? 'od' : 'mut'} style={{ fontSize: '12px' }}>
@@ -231,6 +219,50 @@ export function ProjectsView() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// Received bar. A cancelled project shows what was paid against the original
+// contract (paid + cancelled installments), with the dropped share faded.
+function ProgressBar({
+  project,
+  status,
+  pct,
+  compact,
+}: {
+  project: Project;
+  status: string;
+  pct: number;
+  compact?: boolean;
+}) {
+  const cancelledAmt = project.plan.filter((i) => i.cancelled).reduce((s, i) => s + i.a, 0);
+  const isCancelled = status === 'Cancelled' && cancelledAmt > 0;
+  const original = project.v + cancelledAmt;
+  const paidPct = isCancelled && original ? Math.round((project.v / original) * 100) : pct;
+
+  return (
+    <div className="pg" style={compact ? { margin: '2px 0 4px', gap: '8px' } : undefined}>
+      <div
+        className={`prog${isCancelled ? ' prog-cancel' : ''}`}
+        tabIndex={isCancelled ? 0 : undefined}
+        aria-label={isCancelled ? 'Cancelled after the down payment' : undefined}
+        onClick={isCancelled ? (e) => e.stopPropagation() : undefined}
+      >
+        <i style={{ width: `${paidPct}%` }} />
+        {isCancelled && (
+          <>
+            <b style={{ width: `${100 - paidPct}%` }} />
+            <span className="prog-tip">Cancelled after the down payment</span>
+          </>
+        )}
+      </div>
+      <span
+        className="mut"
+        style={compact ? { fontSize: '11px', fontVariantNumeric: 'tabular-nums' } : undefined}
+      >
+        {paidPct}%
+      </span>
     </div>
   );
 }
