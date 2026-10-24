@@ -79,10 +79,38 @@ export function OverviewView() {
   // Bumped by the chart's refresh button to replay the stat count-up
   const [statReplay, setStatReplay] = useState(0);
 
+  // Privacy mode: blurs money, project and client names; remembered per browser
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('ov-privacy') === '1') setHidden(true);
+    } catch {}
+  }, []);
+
+  const togglePrivacy = () => {
+    setHidden((h) => {
+      try {
+        localStorage.setItem('ov-privacy', h ? '0' : '1');
+      } catch {}
+      return !h;
+    });
+  };
+
   return (
-    <div>
+    <div className={hidden ? 'privacy-on' : undefined}>
       <div className="top">
         <h1>Overview</h1>
+        <button
+          type="button"
+          className="ib"
+          onClick={togglePrivacy}
+          aria-pressed={hidden}
+          aria-label={hidden ? 'Show sensitive data' : 'Hide sensitive data'}
+          title={hidden ? 'Show sensitive data' : 'Hide sensitive data'}
+        >
+          <Icon name={hidden ? 'eyeoff' : 'eye'} size={16} />
+        </button>
         <button
           className="btn pri"
           id="add"
@@ -130,7 +158,7 @@ export function OverviewView() {
         <div className="stat">
           <div className="stat-info">
             <span>Total revenue</span>
-            <b><CountUp value={overviewMetrics.totalReceived} format={sh} replayKey={statReplay} /></b>
+            <b className="pv"><CountUp value={overviewMetrics.totalReceived} format={sh} replayKey={statReplay} /></b>
           </div>
           <div className="stat-icon">
             <Icon name="coins" size={18} />
@@ -139,7 +167,7 @@ export function OverviewView() {
         <div className="stat">
           <div className="stat-info">
             <span>Outstanding</span>
-            <b><CountUp value={overviewMetrics.totalOutstanding} format={sh} replayKey={statReplay} /></b>
+            <b className="pv"><CountUp value={overviewMetrics.totalOutstanding} format={sh} replayKey={statReplay} /></b>
           </div>
           <div className="stat-icon">
             <Icon name="clock" size={18} />
@@ -166,7 +194,7 @@ export function OverviewView() {
                 </div>
               </div>
             </div>
-            <b><CountUp value={overviewMetrics.thisMonthVal} format={sh} replayKey={statReplay} /></b>
+            <b className="pv"><CountUp value={overviewMetrics.thisMonthVal} format={sh} replayKey={statReplay} /></b>
           </div>
           <div className="stat-icon">
             <Icon name="cal" size={18} />
@@ -206,11 +234,11 @@ export function OverviewView() {
                   style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'stretch' }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
-                    <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{x.p.name}</span>
-                    <b style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(x.i.a)}</b>
+                    <span className="pv" style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{x.p.name}</span>
+                    <b className="pv" style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(x.i.a)}</b>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-                    <span className="mut">{c.name || '—'}</span>
+                    <span className="mut pv">{c.name || '—'}</span>
                     <span className={overdue ? 'od' : 'mut'} style={{ flexShrink: 0 }}>
                       {overdue ? 'overdue ' : 'due '}
                       {dt(x.i.due)}
@@ -244,13 +272,13 @@ export function OverviewView() {
                 >
                   {/* Line 1: Title and Value */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
-                    <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{p.name}</span>
-                    <b style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(p.v)}</b>
+                    <span className="pv" style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{p.name}</span>
+                    <b className="pv" style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(p.v)}</b>
                   </div>
 
                   {/* Line 2: Client name on left, Next due date on right */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-                    <span className="mut" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span className="mut pv" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {c.name || '—'}
                     </span>
                     {n && (
@@ -293,12 +321,12 @@ export function OverviewView() {
                   style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'stretch' }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
-                    <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{x.title}</span>
-                    <b style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(quoteTotal)}</b>
+                    <span className="pv" style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{x.title}</span>
+                    <b className="pv" style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(quoteTotal)}</b>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
                     <span className="mut">
-                      {x.cn || '—'} · <span style={{ textTransform: 'capitalize' }}>{x.s}</span>
+                      <span className="pv">{x.cn || '—'}</span> · <span style={{ textTransform: 'capitalize' }}>{x.s}</span>
                     </span>
                     <span className={expired ? 'od' : 'mut'} style={{ flexShrink: 0 }}>
                       {expired ? 'expired ' : 'until '}
