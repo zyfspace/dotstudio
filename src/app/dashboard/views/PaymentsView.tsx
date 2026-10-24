@@ -148,7 +148,7 @@ export function PaymentsView() {
           <div className="mob-card-list">
             <div style={{ padding: '8px 12px', background: 'var(--soft)', borderRadius: '8px', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <span className="mut" style={{ fontSize: '12px' }}>Total · {filtered.length} {filtered.length === 1 ? 'payment' : 'payments'}</span>
-              <b style={{ fontSize: '14px', fontVariantNumeric: 'tabular-nums' }}><Money v={totalPaymentsAmount} /></b>
+              <b className="num" style={{ fontSize: '14px', fontVariantNumeric: 'tabular-nums' }}><Money v={totalPaymentsAmount} /></b>
             </div>
             {filtered.map((x) => {
               const c = getClient(x.p.c);
