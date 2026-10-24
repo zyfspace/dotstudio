@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { rp } from '@/lib/formatters';
@@ -17,19 +17,17 @@ export function ClientsView() {
     handleStartNewProject,
   } = useDashboard();
 
-  const [openIds, setOpenIds] = useState<Set<number>>(new Set());
-  const toggle = (id: number) =>
-    setOpenIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-
   const q = searchQuery.toLowerCase();
   const filtered = clients.filter(
     (c) => (c.name + c.co + c.mail).toLowerCase().indexOf(q) > -1
   );
+  const rows = filtered.map((c) => {
+    const ps = projects.filter((p) => p.c === c.id);
+    const total = ps.reduce((acc, p) => acc + p.v, 0);
+    const paid = ps.reduce((acc, p) => acc + getProjectPaidAmount(p), 0);
+    const progress = total ? Math.round((paid / total) * 100) : 0;
+    return { c, count: ps.length, paid, total, progress };
+  });
 
   return (
     <div>
@@ -60,120 +58,91 @@ export function ClientsView() {
       {!filtered.length ? (
         <div className="empty">No clients found</div>
       ) : (
-        <div className="grid clients-grid">
-          {filtered.map((c) => {
-            const ps = projects.filter((p) => p.c === c.id);
-            const v = ps.reduce((acc, p) => acc + p.v, 0);
-            const g = ps.reduce(
-              (acc, p) => acc + getProjectPaidAmount(p),
-              0
-            );
-            const progress = v ? Math.round((g / v) * 100) : 0;
-            const isOpen = openIds.has(c.id);
-            return (
+        <>
+          <div className="tw tw-desktop-only">
+            <table className="clients-table">
+              <thead>
+                <tr>
+                  <th>Client</th>
+                  <th>Contact</th>
+                  <th className="r">Projects</th>
+                  <th>Paid progress</th>
+                  <th className="r">Paid</th>
+                  <th className="r">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(({ c, count, paid, total, progress }) => (
+                  <tr
+                    key={c.id}
+                    tabIndex={0}
+                    onClick={() => setActiveClientDrawerId(c.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') setActiveClientDrawerId(c.id);
+                    }}
+                  >
+                    <td className="wrap">
+                      <b className="client-name">{c.name}</b>
+                      {c.co && <div className="mut client-co">{c.co}</div>}
+                    </td>
+                    <td className="wrap mut client-contact">
+                      {c.mail && <div>{c.mail}</div>}
+                      {c.tel && <div>{c.tel}</div>}
+                      {!c.mail && !c.tel && '-'}
+                    </td>
+                    <td className="r">{count}</td>
+                    <td>
+                      <div className="pg client-pg">
+                        <div className="prog">
+                          <i style={{ width: `${progress}%` }} />
+                        </div>
+                        <span className="mut client-pct">{progress}%</span>
+                      </div>
+                    </td>
+                    <td className="r">{rp(paid)}</td>
+                    <td className="r">
+                      <b>{rp(total)}</b>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Clients Card List (<= 768px) */}
+          <div className="mob-card-list">
+            {rows.map(({ c, count, paid, total, progress }) => (
               <div
                 key={c.id}
-                className={`card client-card${isOpen ? ' open' : ''}`}
+                className="mob-item-card"
+                onClick={() => setActiveClientDrawerId(c.id)}
               >
-                {/* Header (toggle): Name, Company, Project Count, Chevron */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={isOpen}
-                  onClick={() => toggle(c.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      toggle(c.id);
-                    }
-                  }}
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}
-                >
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <b className="client-name">
-                      {c.name}
-                    </b>
-                    {c.co && (
-                      <div className="mut client-co">
-                        {c.co}
-                      </div>
-                    )}
+                <div className="mob-item-top">
+                  <div style={{ minWidth: 0 }}>
+                    <div className="mob-item-title">{c.name}</div>
+                    <div className="mob-item-sub">
+                      {[c.co, `${count} ${count === 1 ? 'project' : 'projects'}`]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </div>
                   </div>
-                  <span className="client-count">
-                    {ps.length} {ps.length === 1 ? 'project' : 'projects'}
-                  </span>
-                  <span className="client-chev" aria-hidden>
-                    <Icon name="chevron" size={16} />
-                  </span>
+                  <span className="mob-item-val">{rp(total)}</span>
                 </div>
-
-                <div className="client-body" aria-hidden={!isOpen}>
-                  <div className="client-body-in">
-
-                {/* Contact Details */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {c.mail && (
-                    <div className="mut kv client-contact">
-                      <Icon name="mail" size={13} />
-                      <span>
-                        {c.mail}
-                      </span>
-                    </div>
-                  )}
-                  {c.tel && (
-                    <div className="mut kv client-contact">
-                      <Icon name="phone" size={13} />
-                      <span>
-                        {c.tel}
-                      </span>
-                    </div>
-                  )}
-                  {!c.mail && !c.tel && (
-                    <div className="mut client-contact">No contact info</div>
-                  )}
-                </div>
-
-                {/* Financial Summary & Progress */}
-                <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div className="pg" style={{ margin: 0, gap: '8px', alignItems: 'center' }}>
-                    <div className="prog" style={{ flex: 1, margin: 0, height: '4px' }}>
+                <div className="mob-item-bottom">
+                  <div className="pg client-pg" style={{ flex: 1 }}>
+                    <div className="prog">
                       <i style={{ width: `${progress}%` }} />
                     </div>
-                    <span className="mut client-pct">
-                      {progress}%
-                    </span>
+                    <span className="mut client-pct">{progress}%</span>
                   </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '8px' }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div className="mut client-stat-label">Paid</div>
-                      <div className="client-stat-val">
-                        {rp(g)}
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right', minWidth: 0 }}>
-                      <div className="mut client-stat-label">Total</div>
-                      <div className="client-stat-val">
-                        {rp(v)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  className="btn"
-                  onClick={() => setActiveClientDrawerId(c.id)}
-                  tabIndex={isOpen ? 0 : -1}
-                  style={{ alignSelf: 'flex-start' }}
-                >
-                  View details
-                </button>
-                  </div>
+                  <span className="mut" style={{ fontSize: '11.5px' }}>
+                    Paid {rp(paid)}
+                  </span>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
