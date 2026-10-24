@@ -95,7 +95,7 @@ export function QuotationsPanel() {
                 >
                   <div className="accordion-title-box">
                     <div className="accordion-company-icon">
-                      <Icon name="bld" size={15} />
+                      <Icon name="company" size={18} />
                     </div>
                     <div className="accordion-name-stack">
                       <span className="accordion-client-name">

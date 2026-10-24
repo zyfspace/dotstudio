@@ -144,6 +144,17 @@ const paths: Record<string, React.ReactNode> = {
       <path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16" />
     </>
   ),
+  company: (
+    <>
+      <path d="M6 21v-16a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v16" />
+      <path d="M6 12h-2a1 1 0 0 0 -1 1v8" />
+      <path d="M18 9h2a1 1 0 0 1 1 1v11" />
+      <path d="M10 7h4" />
+      <path d="M10 11h4" />
+      <path d="M10 15h4" />
+      <path d="M2 21h20" />
+    </>
+  ),
   trash: (
     <>
       <path d="M4 7l16 0" />

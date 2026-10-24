@@ -4099,11 +4099,6 @@ input[type="file"] {
 }
 
 .accordion-company-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 7px;
-  background: var(--bg);
-  border: 1px solid var(--line);
   display: inline-flex;
   align-items: center;
   justify-content: center;
