@@ -1095,7 +1095,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
                         {b.paid > 0 && b.pending > 0 && (
                           <div className="bar-tt-divider">
                             <span>Total:</span>
-                            <b>{rp(b.t)}</b>
+                            <b className="pv">{rp(b.t)}</b>
                           </div>
                         )}
                       </div>

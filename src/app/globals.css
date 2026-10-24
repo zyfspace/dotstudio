@@ -1621,6 +1621,7 @@ td {
   white-space: nowrap;
   font-size: 13px;
   color: var(--fg);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Text columns may wrap so narrow desktops keep amount/status columns in view */
@@ -1641,10 +1642,6 @@ tbody tr {
 
 tbody tr:hover {
   background: var(--soft);
-}
-
-.r {
-  text-align: right;
 }
 
 .mut {
@@ -1857,15 +1854,14 @@ tbody tr:hover {
   min-width: 120px;
 }
 
+.clients-table .client-pg {
+  max-width: 180px;
+}
+
 .client-pct {
   font-size: 11px;
   font-variant-numeric: tabular-nums;
   min-width: 30px;
-  text-align: right;
-}
-
-.clients-table td.r {
-  font-variant-numeric: tabular-nums;
 }
 
 .row {

@@ -73,15 +73,15 @@ export function ClientDrawer() {
                 <div className="drawer-stats">
                   <div className="drawer-stat">
                     <span>Total Value</span>
-                    <b>{sh(totalVal)}</b>
+                    <b className="pv">{sh(totalVal)}</b>
                   </div>
                   <div className="drawer-stat">
                     <span>Paid</span>
-                    <b>{sh(totalPaid)}</b>
+                    <b className="pv">{sh(totalPaid)}</b>
                   </div>
                   <div className="drawer-stat">
                     <span>Balance</span>
-                    <b>{sh(balance)}</b>
+                    <b className="pv">{sh(balance)}</b>
                   </div>
                 </div>
 
@@ -205,7 +205,7 @@ export function ClientDrawer() {
                               {STATUS_LABELS[st]} · {progress}% paid
                             </div>
                           </div>
-                          <b>{sh(p.v)}</b>
+                          <b className="pv">{sh(p.v)}</b>
                         </div>
                       );
                     })
@@ -259,7 +259,7 @@ export function ClientDrawer() {
                                     {formatQuoteNo(q.no, q.date, q.senderName)} · {q.s} {linkedProj ? ` · [${linkedProj.name}]` : ' · (Standalone)'}
                                   </div>
                                 </div>
-                                <b>{sh(quoteTotal)}</b>
+                                <b className="pv">{sh(quoteTotal)}</b>
                               </div>
                             );
                           })}

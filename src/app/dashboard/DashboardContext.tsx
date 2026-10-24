@@ -225,6 +225,8 @@ interface DashboardContextType {
   toggleSidebar: () => void;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  isPrivacyOn: boolean;
+  togglePrivacy: () => void;
 
   projectClientMode: 'existing' | 'new';
   setProjectClientMode: React.Dispatch<React.SetStateAction<'existing' | 'new'>>;
@@ -451,6 +453,14 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // Sidebar & Theme
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  // Privacy mode: blurs money (and Overview names) on every tab; remembered per browser
+  const [isPrivacyOn, setIsPrivacyOn] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('ov-privacy') === '1') setIsPrivacyOn(true);
+    } catch {}
+  }, []);
 
   // Form states
   const [projectClientMode, setProjectClientMode] = useState<'existing' | 'new'>('existing');
@@ -1014,6 +1024,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const togglePrivacy = () => {
+    setIsPrivacyOn((h) => {
+      try {
+        localStorage.setItem('ov-privacy', h ? '0' : '1');
+      } catch {}
+      return !h;
+    });
   };
 
   // Helper functions
@@ -2119,6 +2138,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     toggleSidebar,
     theme,
     toggleTheme,
+    isPrivacyOn,
+    togglePrivacy,
 
     projectClientMode,
     setProjectClientMode,

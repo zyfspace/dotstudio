@@ -21,6 +21,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     theme,
     toggleTheme,
     isSidebarCollapsed,
+    isPrivacyOn,
     activeProjectDrawerId,
     activeClientDrawerId,
     closeDrawer,
@@ -46,7 +47,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div key="page-dashboard" className={`app page-view-transition ${isSidebarCollapsed ? 'c' : ''}`}>
+    <div key="page-dashboard" className={`app page-view-transition ${isSidebarCollapsed ? 'c' : ''}${isPrivacyOn ? ' privacy-on' : ''}`}>
       <MobileHeader />
       <Sidebar />
       <main id="main">

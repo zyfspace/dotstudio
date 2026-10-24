@@ -3,7 +3,8 @@
 import React from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
-import { rp, dt } from '@/lib/formatters';
+import { dt } from '@/lib/formatters';
+import { Money } from '@/components/Money';
 
 export function PaymentsView() {
   const {
@@ -73,7 +74,7 @@ export function PaymentsView() {
                   <th>Client</th>
                   <th>Type</th>
                   <th>Proof</th>
-                  <th className="r">Amount</th>
+                  <th>Amount</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,7 +128,7 @@ export function PaymentsView() {
                           '—'
                         )}
                       </td>
-                      <td className="r">{rp(x.i.a)}</td>
+                      <td><Money v={x.i.a} /></td>
                     </tr>
                   );
                 })}
@@ -135,8 +136,8 @@ export function PaymentsView() {
                   <td colSpan={5} className="mut">
                     Total · {filtered.length} payments
                   </td>
-                  <td className="r">
-                    <b>{rp(totalPaymentsAmount)}</b>
+                  <td>
+                    <b><Money v={totalPaymentsAmount} /></b>
                   </td>
                 </tr>
               </tbody>
@@ -147,7 +148,7 @@ export function PaymentsView() {
           <div className="mob-card-list">
             <div style={{ padding: '8px 12px', background: 'var(--soft)', borderRadius: '8px', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <span className="mut" style={{ fontSize: '12px' }}>Total · {filtered.length} {filtered.length === 1 ? 'payment' : 'payments'}</span>
-              <b style={{ fontSize: '14px', fontVariantNumeric: 'tabular-nums' }}>{rp(totalPaymentsAmount)}</b>
+              <b style={{ fontSize: '14px', fontVariantNumeric: 'tabular-nums' }}><Money v={totalPaymentsAmount} /></b>
             </div>
             {filtered.map((x) => {
               const c = getClient(x.p.c);
@@ -162,7 +163,7 @@ export function PaymentsView() {
                       <div className="mob-item-title">{x.p.name}</div>
                       <div className="mob-item-sub">{c.name} · {x.i.l}{x.i.pct > 0 ? ` (${x.i.pct}%)` : ''}</div>
                     </div>
-                    <span className="mob-item-val">{rp(x.i.a)}</span>
+                    <span className="mob-item-val"><Money v={x.i.a} /></span>
                   </div>
                   <div className="mob-item-bottom">
                     <span className="mut" style={{ fontSize: '11.5px' }}>

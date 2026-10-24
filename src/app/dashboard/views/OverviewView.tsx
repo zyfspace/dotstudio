@@ -74,42 +74,26 @@ export function OverviewView() {
     getProjectPct,
     openDoc,
     handleStartNewProject,
+    isPrivacyOn,
+    togglePrivacy,
   } = useDashboard();
 
   // Bumped by the chart's refresh button to replay the stat count-up
   const [statReplay, setStatReplay] = useState(0);
 
-  // Privacy mode: blurs money, project and client names; remembered per browser
-  const [hidden, setHidden] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (localStorage.getItem('ov-privacy') === '1') setHidden(true);
-    } catch {}
-  }, []);
-
-  const togglePrivacy = () => {
-    setHidden((h) => {
-      try {
-        localStorage.setItem('ov-privacy', h ? '0' : '1');
-      } catch {}
-      return !h;
-    });
-  };
-
   return (
-    <div className={hidden ? 'privacy-on' : undefined}>
+    <div>
       <div className="top">
         <h1>Overview</h1>
         <button
           type="button"
           className="ib"
           onClick={togglePrivacy}
-          aria-pressed={hidden}
-          aria-label={hidden ? 'Show sensitive data' : 'Hide sensitive data'}
-          title={hidden ? 'Show sensitive data' : 'Hide sensitive data'}
+          aria-pressed={isPrivacyOn}
+          aria-label={isPrivacyOn ? 'Show sensitive data' : 'Hide sensitive data'}
+          title={isPrivacyOn ? 'Show sensitive data' : 'Hide sensitive data'}
         >
-          <Icon name={hidden ? 'eyeoff' : 'eye'} size={16} />
+          <Icon name={isPrivacyOn ? 'eyeoff' : 'eye'} size={16} />
         </button>
         <button
           className="btn pri"

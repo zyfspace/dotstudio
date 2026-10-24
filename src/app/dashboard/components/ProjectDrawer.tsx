@@ -5,7 +5,8 @@ import { useDashboard, STATUS_LABELS } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { AutoTextarea } from '@/components/AutoTextarea';
 import { DatePicker } from '@/components/DatePicker';
-import { rp, sh, dt, isOverdue, today } from '@/lib/formatters';
+import { sh, dt, isOverdue, today } from '@/lib/formatters';
+import { Money } from '@/components/Money';
 
 export function ProjectDrawer() {
   const {
@@ -78,9 +79,9 @@ export function ProjectDrawer() {
                 <span className={`st ${k}`}>{STATUS_LABELS[k]}</span>
 
                 <div className="big" style={{ marginTop: '14px' }}>
-                  {rp(g)}{' '}
+                  <Money v={g} />{' '}
                   <span className="mut" style={{ fontSize: '14px' }}>
-                    of {rp(activeProject.v)}
+                    of <Money v={activeProject.v} />
                   </span>
                 </div>
 
@@ -95,7 +96,7 @@ export function ProjectDrawer() {
                   {k === 'Cancelled'
                     ? 'Stopped midway, remaining payments cancelled'
                     : b > 0
-                      ? `Remaining ${rp(b)}`
+                      ? <>Remaining <Money v={b} /></>
                       : 'All payments received'}
                 </div>
 
@@ -136,7 +137,7 @@ export function ProjectDrawer() {
                             className={`ins-amount ${item.paid || item.cancelled ? 'mut' : ''}`}
                             style={item.cancelled ? { textDecoration: 'line-through' } : undefined}
                           >
-                            {rp(item.a)}
+                            <Money v={item.a} />
                           </span>
                         </div>
 
@@ -380,7 +381,7 @@ export function ProjectDrawer() {
                       <div>
                         <div className="mut" style={{ fontSize: '11.5px', marginBottom: '2px' }}>Value (Rp)</div>
                         <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--fg)' }}>
-                          {rp(activeProject.v)}
+                          <Money v={activeProject.v} />
                         </div>
                       </div>
                       <div>
@@ -442,7 +443,7 @@ export function ProjectDrawer() {
                                 {it.type && <span className="mut" style={{ fontSize: '11px' }}>{it.type}</span>}
                               </div>
                               <span style={{ fontWeight: 600, color: 'var(--fg)', whiteSpace: 'nowrap' }}>
-                                {rp(+it.p || 0)}
+                                <Money v={+it.p || 0} />
                               </span>
                             </div>
                           ))}
@@ -508,7 +509,7 @@ export function ProjectDrawer() {
                                     </span>
                                   </div>
                                   <div className="mut" style={{ fontSize: '12px', marginTop: '3px' }}>
-                                    {q.title} · {rp(quoteTotal)}
+                                    {q.title} · <Money v={quoteTotal} />
                                   </div>
                                 </div>
 
@@ -673,7 +674,7 @@ export function ProjectDrawer() {
               Cancel {cancelTarget.label}?
             </h3>
             <p style={{ fontSize: '12.5px', color: 'var(--mut)', margin: '6px 0 0', lineHeight: 1.45 }}>
-              The {rp(cancelTarget.amount)} payment will be cancelled and the project value will
+              The <Money v={cancelTarget.amount} /> payment will be cancelled and the project value will
               drop by that amount. Existing invoices and received payments stay on record.
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '14px' }}>
