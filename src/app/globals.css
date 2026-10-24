@@ -6,8 +6,8 @@
   --mut: color-mix(in srgb, var(--fg) 52%, var(--bg));
   --line: color-mix(in srgb, var(--fg) 11%, var(--bg));
   --soft: color-mix(in srgb, var(--fg) 4%, var(--bg));
-  --font-sans: var(--font-geist-sans), 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: var(--font-inter-tight), 'Inter Tight', var(--font-sans);
+  --font-sans: var(--font-inter-tight), 'Inter Tight', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-geist-sans), 'Geist', var(--font-sans);
   --mono: var(--font-sans);
   box-sizing: border-box;
 }
