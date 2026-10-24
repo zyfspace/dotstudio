@@ -362,7 +362,7 @@ export function DocView() {
         <p style={{ color: 'var(--mut)', marginBottom: '20px', fontSize: '14px' }}>
           The requested quotation could not be found or has been removed.
         </p>
-        <button className="btn pri" onClick={() => router.push('/dashboard/quotations')}>
+        <button className="btn pri" onClick={() => router.push('/dashboard/invoices')}>
           Back to Quotations
         </button>
       </div>
@@ -382,7 +382,7 @@ export function DocView() {
         <button
           className="ib"
           id="bk"
-          onClick={() => router.push('/dashboard/quotations')}
+          onClick={() => router.push('/dashboard/invoices')}
           aria-label="Back"
         >
           <Icon name="back" size={18} />
@@ -450,7 +450,7 @@ export function DocView() {
           id="del-quote"
           onClick={() => {
             handleDeleteQuote(q.id);
-            router.push('/dashboard/quotations');
+            router.push('/dashboard/invoices');
           }}
           title="Delete quotation"
           aria-label="Delete quotation"

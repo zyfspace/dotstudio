@@ -15,7 +15,6 @@ export function Sidebar() {
     toggleSidebar,
     projects,
     clients,
-    quotes,
     theme,
     toggleTheme,
     setAuthUser,
@@ -29,8 +28,11 @@ export function Sidebar() {
     if (pathname.startsWith('/dashboard/projects') || pathname === '/dashboard/new') return 'projects';
     if (pathname.startsWith('/dashboard/clients')) return 'clients';
     if (pathname.startsWith('/dashboard/payments')) return 'payments';
-    if (pathname.startsWith('/dashboard/invoices')) return 'invoices';
-    if (pathname.startsWith('/dashboard/quotations') || pathname === '/dashboard/quote') return 'quotations';
+    if (
+      pathname.startsWith('/dashboard/invoices') ||
+      pathname.startsWith('/dashboard/quotations') ||
+      pathname === '/dashboard/quote'
+    ) return 'invoices';
     if (pathname.startsWith('/dashboard/settings')) return 'settings';
     return '';
   };
@@ -115,20 +117,8 @@ export function Sidebar() {
         style={{ textDecoration: 'none' }}
       >
         <Icon name="file" size={17} />
-        <span className="lb">Invoices</span>
-        <span className="sidebar-tooltip">Invoices</span>
-      </Link>
-
-      <Link
-        href="/dashboard/quotations"
-        className={`nav ${activeNavKey === 'quotations' ? 'on' : ''}`}
-        onClick={handleNavClick}
-        style={{ textDecoration: 'none' }}
-      >
-        <Icon name="file" size={17} />
-        <span className="lb">Quotations</span>
-        <em>{quotes.length}</em>
-        <span className="sidebar-tooltip">Quotations</span>
+        <span className="lb">Documents</span>
+        <span className="sidebar-tooltip">Invoices &amp; quotations</span>
       </Link>
 
       <Link

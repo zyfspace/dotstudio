@@ -14,6 +14,7 @@ export function MobileHeader() {
     if (pathname === '/dashboard') return 'Dashboard';
     if (pathname === '/dashboard/new') return 'New Project';
     if (pathname === '/dashboard/quote') return 'New Quote';
+    if (pathname.startsWith('/dashboard/invoices')) return 'Documents';
     if (pathname.startsWith('/dashboard/doc')) {
       return docState?.t === 'inv' ? 'Invoice' : 'Quotation';
     }

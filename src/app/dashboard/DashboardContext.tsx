@@ -1893,7 +1893,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const handleDeleteQuote = (quoteId: number) => {
     setQuotes((prev) => prev.filter((q) => q.id !== quoteId));
     deleteQuoteFromSupabase(quoteId, authUser?.email);
-    router.push('/dashboard/quotations');
+    router.push('/dashboard/invoices');
   };
 
   const filterDateRange = useMemo(() => {
