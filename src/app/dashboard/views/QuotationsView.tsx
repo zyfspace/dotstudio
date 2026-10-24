@@ -5,17 +5,15 @@ import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { rp, dt, isRecurringBilling } from '@/lib/formatters';
 
-export function QuotationsView() {
+// Right column of the Invoices & Quotations page.
+export function QuotationsPanel() {
   const {
     quotes,
     projects,
     searchQuery,
-    setSearchQuery,
-    searchInputRef,
     formatQuoteNo,
     openDoc,
     setActiveProjectDrawerId,
-    handleStartNewQuote,
     handleStartEditQuote,
   } = useDashboard();
 
@@ -59,33 +57,14 @@ export function QuotationsView() {
   });
 
   return (
-    <div>
-      <div className="top">
-        <h1>Quotations</h1>
-        <label className="search">
-          <Icon name="search" />
-          <input
-            ref={searchInputRef}
-            id="q"
-            placeholder="Search…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            autoComplete="off"
-          />
-          <kbd>/</kbd>
-        </label>
-        <button
-          className="btn pri"
-          id="add"
-          onClick={() => handleStartNewQuote()}
-        >
-          <Icon name="plus" />
-          New quotation
-        </button>
+    <section className="doc-col" aria-labelledby="doc-col-quo">
+      <div className="doc-col-head">
+        <h2 id="doc-col-quo">Quotations</h2>
+        <span>{filtered.length}</span>
       </div>
 
       {!filtered.length ? (
-        <div className="empty">No quotations yet</div>
+        <div className="empty">{q ? 'No matching quotations.' : 'No quotations yet.'}</div>
       ) : (
         <div>
           {grouped.map(({ company, items }) => {
@@ -347,6 +326,6 @@ export function QuotationsView() {
           })}
         </div>
       )}
-    </div>
+    </section>
   );
 }

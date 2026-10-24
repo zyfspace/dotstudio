@@ -5,12 +5,11 @@ import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { rp, dt, isOverdue } from '@/lib/formatters';
 
-export function InvoicesView() {
+// Left column of the Invoices & Quotations page.
+export function InvoicesPanel() {
   const {
     allPayments,
     searchQuery,
-    setSearchQuery,
-    searchInputRef,
     getClient,
     formatInvoiceNo,
     openDoc,
@@ -57,25 +56,14 @@ export function InvoicesView() {
   });
 
   return (
-    <div>
-      <div className="top">
-        <h1>Invoices</h1>
-        <label className="search">
-          <Icon name="search" />
-          <input
-            ref={searchInputRef}
-            id="q"
-            placeholder="Search…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            autoComplete="off"
-          />
-          <kbd>/</kbd>
-        </label>
+    <section className="doc-col" aria-labelledby="doc-col-inv">
+      <div className="doc-col-head">
+        <h2 id="doc-col-inv">Invoices</h2>
+        <span>{invoicesList.length}</span>
       </div>
 
       {!invoicesList.length ? (
-        <div className="empty">No invoices found.</div>
+        <div className="empty">{q ? 'No matching invoices.' : 'No invoices yet.'}</div>
       ) : (
         <div>
           {grouped.map(({ company, items }) => {
@@ -291,6 +279,6 @@ export function InvoicesView() {
           })}
         </div>
       )}
-    </div>
+    </section>
   );
 }

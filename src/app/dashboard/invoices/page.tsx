@@ -1,7 +1,7 @@
 'use client';
 
-import { InvoicesView } from '../views/InvoicesView';
+import { BillingView } from '../views/BillingView';
 
 export default function InvoicesPage() {
-  return <InvoicesView />;
+  return <BillingView />;
 }
