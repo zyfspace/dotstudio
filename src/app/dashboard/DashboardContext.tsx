@@ -50,6 +50,7 @@ import {
 import { ChartMode } from '@/components/IncomeChart';
 import { AuthUser, completeOAuthSignIn, getActiveSession, setAuthSession, touchSession, clearAuthSession } from '@/lib/auth';
 import { uploadFiles } from '@/lib/uploadthing';
+import { useOverlayBackStack } from '@/lib/overlayHistory';
 
 const PROOF_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
 
@@ -568,6 +569,29 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       setPinModalMode('unlock');
     }
   }, [router, studioProfile.securityPin, isSettingsUnlocked]);
+
+  // Back gesture closes the top-most overlay instead of the page behind it
+  const overlayLayers = [
+    activeProjectDrawerId !== null || activeClientDrawerId !== null,
+    isMobileMenuOpen,
+    showSchemaModal,
+    profileRequiredModal !== null,
+    pinModalMode !== 'none',
+    previewProof !== null,
+  ];
+  const overlayDepth = overlayLayers.filter(Boolean).length;
+  useOverlayBackStack(overlayDepth, () => {
+    if (previewProof) return setPreviewProof(null);
+    if (pinModalMode !== 'none') {
+      setPinModalMode('none');
+      setPinError('');
+      return;
+    }
+    if (profileRequiredModal) return setProfileRequiredModal(null);
+    if (showSchemaModal) return setShowSchemaModal(false);
+    if (isMobileMenuOpen) return setIsMobileMenuOpen(false);
+    closeDrawer();
+  });
 
   // Preview Proof Esc listener
   useEffect(() => {
