@@ -1853,13 +1853,30 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     openDoc('inv', projectId, planItemId);
   };
 
+  // A client created from a project or quotation goes away with it once
+  // nothing else (another project or quotation) still points at it.
+  const pruneOrphanClient = (clientId: number, remainingProjects: Project[], remainingQuotes: Quotation[]) => {
+    const client = clients.find((c) => c.id === clientId);
+    if (!client) return;
+    const name = client.name.trim().toLowerCase();
+    const inUse =
+      remainingProjects.some((p) => p.c === clientId) ||
+      remainingQuotes.some((q) => q.cn.trim().toLowerCase() === name);
+    if (inUse) return;
+    setClients((prev) => prev.filter((c) => c.id !== clientId));
+    deleteClientFromSupabase(clientId, authUser?.email);
+  };
+
   const handleDeleteProject = (projectId: number) => {
     if (!deleteArmed) {
       setDeleteArmed(true);
       return;
     }
-    setProjects((prev) => prev.filter((p) => p.id !== projectId));
+    const target = projects.find((p) => p.id === projectId);
+    const remainingProjects = projects.filter((p) => p.id !== projectId);
+    setProjects(remainingProjects);
     deleteProjectFromSupabase(projectId, authUser?.email);
+    if (target) pruneOrphanClient(target.c, remainingProjects, quotes);
     closeDrawer();
   };
 
@@ -1891,8 +1908,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   };
 
   const handleDeleteQuote = (quoteId: number) => {
-    setQuotes((prev) => prev.filter((q) => q.id !== quoteId));
+    const target = quotes.find((q) => q.id === quoteId);
+    const remainingQuotes = quotes.filter((q) => q.id !== quoteId);
+    setQuotes(remainingQuotes);
     deleteQuoteFromSupabase(quoteId, authUser?.email);
+    if (target) {
+      const name = target.cn.trim().toLowerCase();
+      const client = clients.find((c) => c.name.trim().toLowerCase() === name);
+      if (client) pruneOrphanClient(client.id, projects, remainingQuotes);
+    }
     router.push('/dashboard/invoices');
   };
 
