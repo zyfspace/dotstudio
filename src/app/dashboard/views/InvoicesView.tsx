@@ -140,8 +140,8 @@ export function InvoicesPanel() {
                                   openDoc('inv', x.p.id, x.i.id)
                                 }
                               >
-                                <td>{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</td>
-                                <td className="mut">{dt(x.i.inv!.date)}</td>
+                                <td className="num">{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</td>
+                                <td className="mut num">{dt(x.i.inv!.date)}</td>
                                 <td className="wrap">
                                   <div className="cell-two">
                                     <span>{x.p.name}</span>

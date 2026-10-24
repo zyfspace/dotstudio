@@ -170,7 +170,7 @@ export function ProjectsView() {
                           {STATUS_LABELS[st]}
                         </span>
                       </td>
-                      <td className="mut">{dt(p.due)}</td>
+                      <td className="mut num">{dt(p.due)}</td>
                       <td>
                         <ProgressBar project={p} status={st} pct={pctVal} />
                       </td>
