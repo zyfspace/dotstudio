@@ -3,7 +3,7 @@
 import React from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
-import { rp } from '@/lib/formatters';
+import { Money } from '@/components/Money';
 
 export function ClientsView() {
   const {
@@ -65,10 +65,10 @@ export function ClientsView() {
                 <tr>
                   <th>Client</th>
                   <th>Contact</th>
-                  <th className="r">Projects</th>
+                  <th>Projects</th>
                   <th>Paid progress</th>
-                  <th className="r">Paid</th>
-                  <th className="r">Total</th>
+                  <th>Paid</th>
+                  <th>Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -90,7 +90,7 @@ export function ClientsView() {
                       {c.tel && <div>{c.tel}</div>}
                       {!c.mail && !c.tel && '-'}
                     </td>
-                    <td className="r">{count}</td>
+                    <td>{count}</td>
                     <td>
                       <div className="pg client-pg">
                         <div className="prog">
@@ -99,9 +99,9 @@ export function ClientsView() {
                         <span className="mut client-pct">{progress}%</span>
                       </div>
                     </td>
-                    <td className="r">{rp(paid)}</td>
-                    <td className="r">
-                      <b>{rp(total)}</b>
+                    <td><Money v={paid} /></td>
+                    <td>
+                      <b><Money v={total} /></b>
                     </td>
                   </tr>
                 ))}
@@ -126,7 +126,7 @@ export function ClientsView() {
                         .join(' · ')}
                     </div>
                   </div>
-                  <span className="mob-item-val">{rp(total)}</span>
+                  <span className="mob-item-val"><Money v={total} /></span>
                 </div>
                 <div className="mob-item-bottom">
                   <div className="pg client-pg" style={{ flex: 1 }}>
@@ -136,7 +136,7 @@ export function ClientsView() {
                     <span className="mut client-pct">{progress}%</span>
                   </div>
                   <span className="mut" style={{ fontSize: '11.5px' }}>
-                    Paid {rp(paid)}
+                    Paid <Money v={paid} />
                   </span>
                 </div>
               </div>

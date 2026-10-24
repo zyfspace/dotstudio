@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { useDashboard, STATUS_LABELS } from '../DashboardContext';
 import { Project } from '@/types';
 import { Icon } from '@/components/Icons';
-import { rp, dt, isOverdue } from '@/lib/formatters';
+import { dt, isOverdue } from '@/lib/formatters';
+import { Money } from '@/components/Money';
 
 export function ProjectsView() {
   const {
@@ -137,7 +138,7 @@ export function ProjectsView() {
                   <th className="s" onClick={() => toggleSort('pg')}>
                     Received {sortKey === 'pg' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
                   </th>
-                  <th className="s r" onClick={() => toggleSort('v')}>
+                  <th className="s" onClick={() => toggleSort('v')}>
                     Value {sortKey === 'v' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
                   </th>
                 </tr>
@@ -173,7 +174,7 @@ export function ProjectsView() {
                       <td>
                         <ProgressBar project={p} status={st} pct={pctVal} />
                       </td>
-                      <td className="r">{rp(p.v)}</td>
+                      <td><Money v={p.v} /></td>
                     </tr>
                   );
                 })}
@@ -232,7 +233,7 @@ export function ProjectsView() {
                         <span className={overdue ? 'od' : 'mut'} style={{ fontSize: '12px' }}>
                           {overdue ? 'Overdue: ' : 'Due: '}{dt(p.due)}
                         </span>
-                        <span className="mob-item-val">{rp(p.v)}</span>
+                        <span className="mob-item-val"><Money v={p.v} /></span>
                       </div>
 
                       <button

@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
-import { rp, dt, isOverdue } from '@/lib/formatters';
+import { dt, isOverdue } from '@/lib/formatters';
+import { Money } from '@/components/Money';
 
 // Left column of the Invoices & Quotations page.
 export function InvoicesPanel() {
@@ -107,7 +108,7 @@ export function InvoicesPanel() {
                   </div>
                   <div className="accordion-meta-box">
                     <span className="accordion-total-amount">
-                      {rp(totalGroupAmount)}
+                      <Money v={totalGroupAmount} />
                     </span>
                     <span className={`accordion-chevron ${isOpen ? 'expanded' : ''}`}>
                       <Icon name="chevron" size={15} />
@@ -126,7 +127,7 @@ export function InvoicesPanel() {
                             <th>Date</th>
                             <th>Project</th>
                             <th>Status</th>
-                            <th className="r">Amount</th>
+                            <th>Amount</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -236,7 +237,7 @@ export function InvoicesPanel() {
                                     </span>
                                   )}
                                 </td>
-                                <td className="r">{rp(x.i.a)}</td>
+                                <td><Money v={x.i.a} /></td>
                               </tr>
                             );
                           })}
@@ -265,7 +266,7 @@ export function InvoicesPanel() {
                             </div>
                             <div className="mob-item-bottom">
                               <span className="mut mob-doc-date">{dt(x.i.inv!.date)}</span>
-                              <span className="mob-item-val">{rp(x.i.a)}</span>
+                              <span className="mob-item-val"><Money v={x.i.a} /></span>
                             </div>
                           </div>
                         );

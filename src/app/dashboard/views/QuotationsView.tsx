@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
-import { rp, dt, isRecurringBilling } from '@/lib/formatters';
+import { dt, isRecurringBilling } from '@/lib/formatters';
+import { Money } from '@/components/Money';
 
 // Right column of the Invoices & Quotations page.
 export function QuotationsPanel() {
@@ -114,7 +115,7 @@ export function QuotationsPanel() {
                   </div>
                   <div className="accordion-meta-box">
                     <span className="accordion-total-amount">
-                      {rp(totalGroupAmount)}
+                      <Money v={totalGroupAmount} />
                     </span>
                     <span className={`accordion-chevron ${isOpen ? 'expanded' : ''}`}>
                       <Icon name="chevron" size={15} />
@@ -135,7 +136,7 @@ export function QuotationsPanel() {
                             <th>Project</th>
                             <th>Valid until</th>
                             <th>Status</th>
-                            <th className="r">Total</th>
+                            <th>Total</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -211,7 +212,7 @@ export function QuotationsPanel() {
                                     )}
                                   </div>
                                 </td>
-                                <td className="r">
+                                <td>
                                   {(() => {
                                     const oneTime = x.items
                                       .filter((it) => !isRecurringBilling(it.type))
@@ -223,9 +224,9 @@ export function QuotationsPanel() {
                                     if (recurring > 0 && oneTime > 0) {
                                       return (
                                         <div>
-                                          <div style={{ fontWeight: 600 }}>{rp(oneTime)}</div>
+                                          <div style={{ fontWeight: 600 }}><Money v={oneTime} /></div>
                                           <div className="mut" style={{ fontSize: '11px' }}>
-                                            +{rp(recurring)}/bln
+                                            +<Money v={recurring} />/bln
                                           </div>
                                         </div>
                                       );
@@ -233,12 +234,12 @@ export function QuotationsPanel() {
                                     if (recurring > 0) {
                                       return (
                                         <div>
-                                          <div style={{ fontWeight: 600 }}>{rp(recurring)}</div>
+                                          <div style={{ fontWeight: 600 }}><Money v={recurring} /></div>
                                           <div className="mut" style={{ fontSize: '11px' }}>/bulan</div>
                                         </div>
                                       );
                                     }
-                                    return <span className="mob-item-val">{rp(oneTime)}</span>;
+                                    return <span className="mob-item-val"><Money v={oneTime} /></span>;
                                   })()}
                                 </td>
                               </tr>
@@ -296,18 +297,18 @@ export function QuotationsPanel() {
                               <div className="mob-item-amount">
                                 {recurring > 0 && oneTime > 0 ? (
                                   <div>
-                                    <div className="mob-item-val">{rp(oneTime)}</div>
+                                    <div className="mob-item-val"><Money v={oneTime} /></div>
                                     <div className="mut" style={{ fontSize: '11px', fontWeight: 400 }}>
-                                      +{rp(recurring)}/bln recurring
+                                      +<Money v={recurring} />/bln recurring
                                     </div>
                                   </div>
                                 ) : recurring > 0 ? (
                                   <div>
-                                    <div className="mob-item-val">{rp(recurring)}</div>
+                                    <div className="mob-item-val"><Money v={recurring} /></div>
                                     <div className="mut" style={{ fontSize: '11px', fontWeight: 400 }}>/bulan</div>
                                   </div>
                                 ) : (
-                                  <span className="mob-item-val">{rp(oneTime)}</span>
+                                  <span className="mob-item-val"><Money v={oneTime} /></span>
                                 )}
                               </div>
                               <span className="mut mob-doc-date">
