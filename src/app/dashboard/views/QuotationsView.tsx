@@ -151,8 +151,8 @@ export function QuotationsPanel() {
                                 key={x.id}
                                 onClick={() => openDoc('quo', x.id)}
                               >
-                                <td>{formatQuoteNo(x.no, x.date, x.senderName)}</td>
-                                <td className="mut">{dt(x.date)}</td>
+                                <td className="num">{formatQuoteNo(x.no, x.date, x.senderName)}</td>
+                                <td className="mut num">{dt(x.date)}</td>
                                 <td className="wrap">{x.title}</td>
                                 <td className="wrap">
                                   {linkedProj ? (
@@ -189,7 +189,7 @@ export function QuotationsPanel() {
                                     </span>
                                   )}
                                 </td>
-                                <td className="mut">{dt(x.valid)}</td>
+                                <td className="mut num">{dt(x.valid)}</td>
                                 <td>
                                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                                     <span className={`st ${QS[x.s]}`}>

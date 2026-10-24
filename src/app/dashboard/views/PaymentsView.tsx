@@ -85,12 +85,12 @@ export function PaymentsView() {
                       key={x.i.id}
                       onClick={() => setActiveProjectDrawerId(x.p.id)}
                     >
-                      <td className="mut">{dt(x.i.pd)}</td>
+                      <td className="mut num">{dt(x.i.pd)}</td>
                       <td className="wrap">{x.p.name}</td>
                       <td className="wrap">{c.name}</td>
                       <td className="wrap">
                         {x.i.l}{' '}
-                        {x.i.pct > 0 && <span className="mut">{x.i.pct}%</span>}
+                        {x.i.pct > 0 && <span className="mut num">{x.i.pct}%</span>}
                       </td>
                       <td className="mut wrap">
                         {x.i.proof && x.i.proof.n ? (

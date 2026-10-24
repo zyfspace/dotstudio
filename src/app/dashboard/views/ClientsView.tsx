@@ -90,7 +90,7 @@ export function ClientsView() {
                       {c.tel && <div>{c.tel}</div>}
                       {!c.mail && !c.tel && '-'}
                     </td>
-                    <td>{count}</td>
+                    <td className="num">{count}</td>
                     <td>
                       <div className="pg client-pg">
                         <div className="prog">
