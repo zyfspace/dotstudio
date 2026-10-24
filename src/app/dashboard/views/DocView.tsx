@@ -7,7 +7,7 @@ import { Icon } from '@/components/Icons';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { DocActionButton } from '@/components/DocActionButton';
 import { PaidStamp } from '@/components/PaidStamp';
-import { dt, isRecurringBilling, getBillingTypeDocLabel } from '@/lib/formatters';
+import { dt, isRecurringBilling, getBillingTypeDocLabel, invoiceFilename } from '@/lib/formatters';
 import { useA4Fit } from '@/lib/useA4Fit';
 import { DocViewEn } from './DocViewEn';
 
@@ -124,7 +124,14 @@ export function DocView() {
               <span className="btn-label">Edit invoice</span>
             </button>
           )}
-          <DocActionButton filename={`Invoice ${formatInvoiceNo(i.inv.no, i.inv.date)}`} />
+          <DocActionButton
+            filename={invoiceFilename(
+              c.co || c.name || '',
+              formatInvoiceNo(i.inv.no, i.inv.date),
+              p.plan.map((x) => x.l),
+              p.plan.findIndex((x) => x.id === i.id)
+            )}
+          />
         </div>
 
         <div className="docx-paper docx-a4" ref={page.ref} style={page.style}>

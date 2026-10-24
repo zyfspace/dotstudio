@@ -90,28 +90,16 @@ export function ClientsView() {
                   style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}
                 >
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <b style={{ fontSize: '15px', fontWeight: 600, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <b className="client-name">
                       {c.name}
                     </b>
                     {c.co && (
-                      <div className="mut" style={{ fontSize: '12.5px', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div className="mut client-co">
                         {c.co}
                       </div>
                     )}
                   </div>
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      fontWeight: 500,
-                      color: 'var(--mut)',
-                      background: 'var(--soft)',
-                      border: '1px solid var(--line)',
-                      padding: '2px 7px',
-                      borderRadius: '6px',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0,
-                    }}
-                  >
+                  <span className="client-count">
                     {ps.length} {ps.length === 1 ? 'project' : 'projects'}
                   </span>
                   <span className="client-chev" aria-hidden>
@@ -125,23 +113,23 @@ export function ClientsView() {
                 {/* Contact Details */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {c.mail && (
-                    <div className="mut kv" style={{ padding: 0, fontSize: '12.5px' }}>
+                    <div className="mut kv client-contact">
                       <Icon name="mail" size={13} />
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span>
                         {c.mail}
                       </span>
                     </div>
                   )}
                   {c.tel && (
-                    <div className="mut kv" style={{ padding: 0, fontSize: '12.5px' }}>
+                    <div className="mut kv client-contact">
                       <Icon name="phone" size={13} />
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span>
                         {c.tel}
                       </span>
                     </div>
                   )}
                   {!c.mail && !c.tel && (
-                    <div className="mut" style={{ fontSize: '12.5px' }}>No contact info</div>
+                    <div className="mut client-contact">No contact info</div>
                   )}
                 </div>
 
@@ -151,21 +139,21 @@ export function ClientsView() {
                     <div className="prog" style={{ flex: 1, margin: 0, height: '4px' }}>
                       <i style={{ width: `${progress}%` }} />
                     </div>
-                    <span className="mut" style={{ fontSize: '11px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    <span className="mut client-pct">
                       {progress}%
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '8px' }}>
                     <div style={{ minWidth: 0 }}>
-                      <div className="mut" style={{ fontSize: '11px', marginBottom: '1px' }}>Paid</div>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--fg)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                      <div className="mut client-stat-label">Paid</div>
+                      <div className="client-stat-val">
                         {rp(g)}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', minWidth: 0 }}>
-                      <div className="mut" style={{ fontSize: '11px', marginBottom: '1px' }}>Total</div>
-                      <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--fg)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                      <div className="mut client-stat-label">Total</div>
+                      <div className="client-stat-val">
                         {rp(v)}
                       </div>
                     </div>
