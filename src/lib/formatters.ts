@@ -100,3 +100,34 @@ export const getRecurringIntervalLabel = (type?: string): string => {
   if (t.includes('week') || t.includes('minggu')) return '/ minggu';
   return '/ bulan';
 };
+
+const DP_LABEL = /\b(dp|down ?payment|uang muka)\b/i;
+const FINAL_LABEL = /\b(final|pelunasan|lunas|settlement)\b/i;
+
+/** Installment name for the invoice filename: DP, Termin N, Pelunasan.
+ *  Empty for a single full payment. */
+export const installmentFileLabel = (labels: string[], index: number): string => {
+  if (labels.length <= 1 || index < 0) return '';
+  const last = labels.length - 1;
+  if (DP_LABEL.test(labels[0] || '')) {
+    if (index === 0) return 'DP';
+    if (index === last) return 'Pelunasan';
+    return `Termin ${index}`;
+  }
+  if (index === last && FINAL_LABEL.test(labels[index] || '')) return 'Pelunasan';
+  return `Termin ${index + 1}`;
+};
+
+/** e.g. Invoice-Domma-INVZS_1023012-DP. INV/ZS/10/23/012 becomes INVZS_1023012. */
+export const invoiceFilename = (
+  company: string,
+  invoiceNo: string,
+  labels: string[],
+  index: number
+): string => {
+  const [kind = '', brand = '', ...rest] = invoiceNo.split('/');
+  const no = rest.length ? `${kind}${brand}_${rest.join('')}` : invoiceNo.replace(/\//g, '');
+  return ['Invoice', company.trim(), no, installmentFileLabel(labels, index)]
+    .filter(Boolean)
+    .join('-');
+};
