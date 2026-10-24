@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useDashboard, STATUS_LABELS } from '../DashboardContext';
 import { Project } from '@/types';
 import { Icon } from '@/components/Icons';
@@ -24,6 +24,10 @@ export function ProjectsView() {
     setActiveProjectDrawerId,
     handleStartNewProject,
   } = useDashboard();
+
+  // Mobile cards: one open at a time
+  const [openId, setOpenId] = useState<number | null>(null);
+  const toggleCard = (id: number) => setOpenId((cur) => (cur === id ? null : id));
 
   const toggleSort = (k: 'name' | 'due' | 'pg' | 'v') => {
     if (sortKey === k) {
@@ -184,14 +188,26 @@ export function ProjectsView() {
               const st = getProjectStatus(p);
               const pctVal = getProjectPct(p);
               const overdue = isOverdue(p.due, st === 'Finished');
+              const isOpen = openId === p.id;
               return (
                 <div
                   key={p.id}
-                  className="mob-item-card"
-                  onClick={() => setActiveProjectDrawerId(p.id)}
+                  className={`mob-item-card mob-toggle${isOpen ? ' open' : ''}`}
                 >
-                  <div className="mob-item-top">
-                    <div style={{ minWidth: 0 }}>
+                  <div
+                    className="mob-item-top"
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isOpen}
+                    onClick={() => toggleCard(p.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleCard(p.id);
+                      }
+                    }}
+                  >
+                    <div style={{ minWidth: 0, flex: 1 }}>
                       <div className="mob-item-title proj-name">
                         {p.name}
                         <AddOnChip project={p} />
@@ -203,15 +219,31 @@ export function ProjectsView() {
                     <span className={`st ${st}`} style={{ fontSize: '11.5px', flexShrink: 0 }}>
                       {STATUS_LABELS[st]}
                     </span>
+                    <span className="client-chev" aria-hidden>
+                      <Icon name="chevron" size={16} />
+                    </span>
                   </div>
 
-                  <ProgressBar project={p} status={st} pct={pctVal} compact />
+                  <div className="mob-toggle-body" aria-hidden={!isOpen}>
+                    <div className="mob-toggle-in">
+                      <ProgressBar project={p} status={st} pct={pctVal} compact />
 
-                  <div className="mob-item-bottom">
-                    <span className={overdue ? 'od' : 'mut'} style={{ fontSize: '12px' }}>
-                      {overdue ? 'Overdue: ' : 'Due: '}{dt(p.due)}
-                    </span>
-                    <span className="mob-item-val">{rp(p.v)}</span>
+                      <div className="mob-item-bottom">
+                        <span className={overdue ? 'od' : 'mut'} style={{ fontSize: '12px' }}>
+                          {overdue ? 'Overdue: ' : 'Due: '}{dt(p.due)}
+                        </span>
+                        <span className="mob-item-val">{rp(p.v)}</span>
+                      </div>
+
+                      <button
+                        className="btn"
+                        onClick={() => setActiveProjectDrawerId(p.id)}
+                        tabIndex={isOpen ? 0 : -1}
+                        style={{ alignSelf: 'flex-start', fontSize: '12.5px' }}
+                      >
+                        View details
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
