@@ -421,6 +421,31 @@ aside #tg {
   margin-left: -6px;
 }
 
+/* Overview privacy mode: blur money, project and client names */
+.pv,
+.income-period-summary,
+.y-tick-left,
+.bar-tt-val {
+  transition: filter 0.2s ease;
+}
+
+.privacy-on .pv,
+.privacy-on .income-period-summary,
+.privacy-on .y-tick-left,
+.privacy-on .bar-tt-val {
+  filter: blur(6px);
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv,
+  .income-period-summary,
+  .y-tick-left,
+  .bar-tt-val {
+    transition: none;
+  }
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
