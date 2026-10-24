@@ -1,7 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
-import { GeistMono } from 'geist/font/mono';
+import { Inter_Tight } from 'next/font/google';
 import './globals.css';
+
+const interTight = Inter_Tight({
+  subsets: ['latin'],
+  variable: '--font-inter-tight',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'DotStudio — Projects, Payments & Documents',
@@ -28,17 +34,9 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      className={`${GeistSans.variable} ${interTight.variable}`}
       suppressHydrationWarning
     >
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body suppressHydrationWarning>
         {children}
       </body>
