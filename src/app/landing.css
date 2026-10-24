@@ -20,7 +20,7 @@ body:has(.lp-root) {
   --soft: color-mix(in srgb, var(--fg) 4%, var(--bg));
   background: var(--bg);
   color: var(--fg);
-  font-family: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.55;
   font-weight: 400;
@@ -35,7 +35,7 @@ body:has(.lp-root) {
 .lp-root * {
   box-sizing: border-box;
   margin: 0;
-  font-family: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 400;
 }
 
@@ -44,6 +44,15 @@ body:has(.lp-root) {
 .lp-root h3,
 .lp-root b {
   font-weight: 500;
+}
+
+.lp-root h1,
+.lp-root h2,
+.lp-root h3,
+.lp-root h4,
+.lp-root h5,
+.lp-root h6 {
+  font-family: var(--font-display);
 }
 
 .lp-root button {

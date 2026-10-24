@@ -6,6 +6,9 @@
   --mut: color-mix(in srgb, var(--fg) 52%, var(--bg));
   --line: color-mix(in srgb, var(--fg) 11%, var(--bg));
   --soft: color-mix(in srgb, var(--fg) 4%, var(--bg));
+  --font-sans: var(--font-geist-sans), 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-inter-tight), 'Inter Tight', var(--font-sans);
+  --mono: var(--font-sans);
   box-sizing: border-box;
 }
 
@@ -39,7 +42,7 @@ html {
 * {
   box-sizing: border-box;
   margin: 0;
-  font-family: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 400;
 }
 
@@ -47,7 +50,7 @@ input,
 select,
 textarea,
 button {
-  font-family: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
 }
 
 input[type="date"],
@@ -55,7 +58,7 @@ input[type="datetime-local"],
 input[type="time"],
 input[type="month"],
 input[type="week"] {
-  font-family: var(--font-geist-sans), 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
   color-scheme: light dark;
 }
 
@@ -83,7 +86,7 @@ input[type="date"]::-webkit-datetime-edit-day-field,
 input[type="date"]::-webkit-datetime-edit-year-field,
 input[type="date"]::-webkit-inner-spin-button,
 input[type="date"]::-webkit-calendar-picker-indicator {
-  font-family: var(--font-geist-sans), 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
 }
 
 body {
@@ -95,6 +98,15 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   touch-action: pan-y;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
 }
 
 h1 {
@@ -2560,7 +2572,7 @@ textarea:focus,
   position: relative;
   display: inline-block;
   width: 100%;
-  font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .custom-datepicker-trigger {
@@ -2578,7 +2590,7 @@ textarea:focus,
   cursor: pointer;
   user-select: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .custom-datepicker-trigger:hover {
@@ -2598,7 +2610,7 @@ textarea:focus,
 }
 
 .custom-datepicker-val {
-  font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+  font-family: var(--font-sans);
   font-size: inherit;
   color: var(--fg);
   font-variant-numeric: tabular-nums;
@@ -2628,7 +2640,7 @@ textarea:focus,
   border-radius: 10px;
   padding: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
-  font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+  font-family: var(--font-sans);
   animation: modalFadeIn 0.12s ease-out;
 }
 
@@ -2643,7 +2655,7 @@ textarea:focus,
   font-size: 13.5px;
   font-weight: 600;
   color: var(--fg);
-  font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .custom-datepicker-nav-btns {
@@ -2680,7 +2692,7 @@ textarea:focus,
   font-size: 11px;
   font-weight: 500;
   color: var(--mut);
-  font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .custom-datepicker-grid {
@@ -2694,7 +2706,7 @@ textarea:focus,
   display: grid;
   place-items: center;
   font-size: 12.5px;
-  font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+  font-family: var(--font-sans);
   color: var(--fg);
   border-radius: 6px;
   border: 0;
@@ -2735,7 +2747,7 @@ textarea:focus,
 
 .custom-datepicker-footer-btn {
   font-size: 12px;
-  font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+  font-family: var(--font-sans);
   color: var(--mut);
   padding: 4px 8px;
   border-radius: 6px;
@@ -2962,7 +2974,7 @@ input[type="file"] {
   max-width: 820px;
   width: 100%;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
-  font-family: var(--font-geist-sans), 'Geist', sans-serif;
+  font-family: var(--font-sans);
   font-size: 13.5px;
   line-height: 1.5;
   margin: 0 auto 40px auto;
@@ -3186,7 +3198,7 @@ input[type="file"] {
   position: absolute;
   left: 49px;
   top: 0;
-  font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+  font-family: var(--font-sans);
   font-size: 12px;
   line-height: 16px;
   letter-spacing: -0.06em;
@@ -3197,7 +3209,7 @@ input[type="file"] {
   position: absolute;
   left: 45px;
   top: 8px;
-  font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+  font-family: var(--font-sans);
   font-size: 50px;
   font-weight: 500;
   line-height: 60px;
@@ -3697,7 +3709,7 @@ input[type="file"] {
   border-radius: 8px;
   padding: 20px 22px;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
-  font-family: var(--font-geist-sans), 'Geist', sans-serif;
+  font-family: var(--font-sans);
   font-size: 12.5px;
   line-height: 1.45;
 }
@@ -3812,7 +3824,7 @@ input[type="file"] {
     line-height: 1.4 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    font-family: var(--font-geist-sans), 'Geist', sans-serif !important;
+    font-family: var(--font-sans) !important;
     overflow: hidden !important;
   }
 
@@ -5668,7 +5680,7 @@ input[type="file"] {
   height: calc(188px * var(--s));
   margin: 14px 0 0 auto;
   opacity: 0.2;
-  font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+  font-family: var(--font-sans);
   user-select: none;
   pointer-events: none;
   break-inside: avoid;

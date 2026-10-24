@@ -57,7 +57,7 @@ export function DotStudioPaperLogo({
         style={{
           boxSizing: 'border-box',
           color: color,
-          fontFamily: "'Geist', var(--font-geist-sans), system-ui, -apple-system, sans-serif",
+          fontFamily: 'var(--font-sans)',
           fontSize: `${128 * finalScale}px`,
           fontWeight: 500,
           left: `${149 * finalScale}px`,
@@ -104,7 +104,7 @@ export function Logo({
         y="117"
         fill={color}
         style={{
-          fontFamily: "'Geist', var(--font-geist-sans), system-ui, -apple-system, sans-serif",
+          fontFamily: 'var(--font-sans)',
           fontSize: '128px',
           fontWeight: 500,
           letterSpacing: '-0.06em',
