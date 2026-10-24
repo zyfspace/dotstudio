@@ -8,7 +8,9 @@
   --soft: color-mix(in srgb, var(--fg) 4%, var(--bg));
   --font-sans: var(--font-inter-tight), 'Inter Tight', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: var(--font-geist-sans), 'Geist', var(--font-sans);
-  --mono: var(--font-sans);
+  --font-geist: var(--font-geist-sans), 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-num: var(--font-geist);
+  --mono: var(--font-num);
   box-sizing: border-box;
 }
 
@@ -2964,6 +2966,14 @@ input[type="file"] {
 }
 
 /* Authentic Zyf.Space Quotation Document */
+/* Invoice and quotation documents stay on Geist; the UI uses Inter Tight */
+.paper,
+.docx-paper,
+.docx-watermark-paper,
+.settings-preview-paper {
+  --font-sans: var(--font-geist);
+}
+
 /* Authentic Zyf.Space Quotation Document */
 .docx-paper {
   background: #ffffff !important;
@@ -3824,6 +3834,7 @@ input[type="file"] {
     line-height: 1.4 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    --font-sans: var(--font-geist);
     font-family: var(--font-sans) !important;
     overflow: hidden !important;
   }
@@ -5986,4 +5997,24 @@ input[type="file"] {
 
 .project-preview-sticky-wrap .docx-a4 .docx-watermark {
   margin-top: 0;
+}
+
+/* Numbers (amounts, counts, dates) stay on Geist */
+.num,
+.stat b,
+.income-period-summary,
+.calendar-day-cell,
+.y-tick-left,
+.bar-tt-val,
+.lr b,
+.client-pct,
+.drawer-stat b,
+.ins-amount,
+.client-project-item b,
+.mob-item-title.mob-doc-no,
+.mob-item-val,
+.doc-col-head span,
+.custom-datepicker-val,
+.custom-datepicker-day-cell {
+  font-family: var(--font-num);
 }

@@ -291,7 +291,7 @@ function ProgressBar({
         )}
       </div>
       <span
-        className="mut"
+        className="mut num"
         style={compact ? { fontSize: '11px', fontVariantNumeric: 'tabular-nums' } : undefined}
       >
         {paidPct}%

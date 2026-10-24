@@ -219,7 +219,7 @@ export function OverviewView() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
                     <span className="pv" style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{x.p.name}</span>
-                    <b className="pv" style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(x.i.a)}</b>
+                    <b className="pv num" style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(x.i.a)}</b>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
                     <span className="mut pv">{c.name || '—'}</span>
@@ -257,7 +257,7 @@ export function OverviewView() {
                   {/* Line 1: Title and Value */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
                     <span className="pv" style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{p.name}</span>
-                    <b className="pv" style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(p.v)}</b>
+                    <b className="pv num" style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(p.v)}</b>
                   </div>
 
                   {/* Line 2: Client name on left, Next due date on right */}
@@ -278,7 +278,7 @@ export function OverviewView() {
                     <div className="prog" style={{ height: '4px' }}>
                       <i style={{ width: `${progress}%` }} />
                     </div>
-                    <span className="mut" style={{ fontSize: '11.5px', fontVariantNumeric: 'tabular-nums' }}>{progress}%</span>
+                    <span className="mut num" style={{ fontSize: '11.5px', fontVariantNumeric: 'tabular-nums' }}>{progress}%</span>
                   </div>
                 </div>
               );
@@ -306,7 +306,7 @@ export function OverviewView() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
                     <span className="pv" style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '13.5px' }}>{x.title}</span>
-                    <b className="pv" style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(quoteTotal)}</b>
+                    <b className="pv num" style={{ fontVariantNumeric: 'tabular-nums', fontSize: '13.5px', color: 'var(--fg)', flexShrink: 0 }}>{sh(quoteTotal)}</b>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
                     <span className="mut">
