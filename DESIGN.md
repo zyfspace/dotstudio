@@ -13,6 +13,7 @@ Source of truth for styling, tokens, and components for Studio Dashboard.
   - **Stat Card Value**: `20px` (desktop) / `17px` (mobile), weight 600, `tracking: -0.025em`, `tabular-nums`, `color: var(--fg)`
   - **Stat Card Label**: `12px`, weight 400, `color: var(--mut)`
   - **Primary Item / Row Title**: `13px` - `13.5px`, weight 500, `color: var(--fg)`
+  - **Client Names (Clients cards, Invoices/Quotations accordions)**: weight 400, `color: var(--fg)`
   - **Amounts / Values**: `13px`, weight 600, `tabular-nums`, `color: var(--fg)`
   - **Secondary Subtext / Metadata**: `11.5px` - `12px`, weight 400, `color: var(--mut)`
   - **Table Headers `th`**: `11.5px`, weight 500, `tracking: 0.02em`, `color: var(--mut)`
