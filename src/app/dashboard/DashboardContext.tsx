@@ -1811,7 +1811,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         return {
           ...p,
           plan: p.plan.map((item) => {
-            if (item.id !== planItemId) return item;
+            // Paid or cancelled installments keep their recorded date
+            if (item.id !== planItemId || item.paid || item.cancelled) return item;
             return {
               ...item,
               due: newDate,
