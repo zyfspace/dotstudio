@@ -34,6 +34,7 @@ export function ProjectDrawer() {
     deleteArmed,
     handleDeleteProject,
     handleCancelPlanItem,
+    handleUpdateDueDate,
   } = useDashboard();
 
   const [cancelTarget, setCancelTarget] = useState<{ projectId: number; itemId: number; label: string; amount: number } | null>(null);
@@ -126,6 +127,14 @@ export function ProjectDrawer() {
                                 <span style={{ fontSize: '12px', fontWeight: 500 }}>
                                   {item.pd ? dt(item.pd) : '—'}
                                 </span>
+                              ) : !item.cancelled ? (
+                                <DatePicker
+                                  value={item.due || ''}
+                                  onChange={(val) => {
+                                    if (val) handleUpdateDueDate(activeProject.id, item.id, val);
+                                  }}
+                                  placeholder="Set due date"
+                                />
                               ) : (
                                 <span style={{ fontSize: '12px', fontWeight: 500, color: overdue ? 'var(--red, #ef4444)' : 'inherit' }}>
                                   {item.due ? dt(item.due) : '—'}
