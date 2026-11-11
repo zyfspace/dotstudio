@@ -9,6 +9,7 @@ import { ProjectDrawer } from './components/ProjectDrawer';
 import { ClientDrawer } from './components/ClientDrawer';
 import { Modals } from './components/Modals';
 import { AuthScreen } from '@/components/AuthScreen';
+import { UpdateNotice } from '@/components/UpdateNotice';
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const {
@@ -65,6 +66,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       <ClientDrawer />
       <Modals />
       <MobileNav />
+      <UpdateNotice />
     </div>
   );
 }
