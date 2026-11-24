@@ -16,8 +16,10 @@ import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { DocLangToggle } from '@/components/DocLangToggle';
 import { NewInvoicePreviewEn } from './NewDocPreviewEn';
 import { rp, dt, today, addDays, isRecurringBilling, normalizeBillingType, paymentTermDays } from '@/lib/formatters';
+import { useA4Fit } from '@/lib/useA4Fit';
 
 export function NewProjectView() {
+  const page = useA4Fit();
   const router = useRouter();
   const searchParams = useSearchParams();
   const editParam = searchParams.get('edit');
@@ -854,7 +856,7 @@ export function NewProjectView() {
             {newProjectData.lang === 'en' ? (
               <NewInvoicePreviewEn />
             ) : (
-            <div className="docx-paper docx-a4">
+            <div className="docx-paper docx-a4" ref={page.ref} style={page.style}>
               <div className="docx-body-content">
                 {/* Header */}
                 <div className="docx-header-grid">
@@ -950,21 +952,7 @@ export function NewProjectView() {
                 </table>
 
                 {/* Payment Method & Summary Grid */}
-                <div className="docx-payment-summary-grid">
-                  <div className="docx-payment-method-box">
-                    <div style={{ fontWeight: 700, marginBottom: '4px' }}>Payment Method</div>
-                    {studioProfile.bankName || studioProfile.accountNumber ? (
-                      <>
-                        <div><b>Bank:</b> {studioProfile.bankName || '—'}</div>
-                        <div><b>Account Number:</b> {studioProfile.accountNumber || '—'}</div>
-                        <div><b>Account Holder:</b> {studioProfile.accountHolder || studioProfile.ownerName || studioProfile.studioName || '—'}</div>
-                      </>
-                    ) : (
-                      <div style={{ color: '#71717a', fontSize: '12px', fontStyle: 'italic', lineHeight: 1.4, marginTop: '4px' }}>
-                        Payment method not set in Settings.
-                      </div>
-                    )}
-                  </div>
+                <div className="docx-total-row">
                   <div className="docx-calc-box">
                     <div className="docx-calc-row">
                       <span>Sub-total</span>
@@ -984,6 +972,23 @@ export function NewProjectView() {
                         Rp{Math.round(((+newProjectData.v || 0) * (+newProjectData.plan[0]?.pct || 100)) / 100).toLocaleString('id-ID')}
                       </span>
                     </div>
+                  </div>
+                </div>
+
+                <div className="docx-payment-summary-grid">
+                  <div className="docx-payment-method-box">
+                    <div style={{ fontWeight: 700, marginBottom: '4px' }}>Payment Method</div>
+                    {studioProfile.bankName || studioProfile.accountNumber ? (
+                      <>
+                        <div><b>Bank:</b> {studioProfile.bankName || '—'}</div>
+                        <div><b>Account Number:</b> {studioProfile.accountNumber || '—'}</div>
+                        <div><b>Account Holder:</b> {studioProfile.accountHolder || studioProfile.ownerName || studioProfile.studioName || '—'}</div>
+                      </>
+                    ) : (
+                      <div style={{ color: '#71717a', fontSize: '12px', fontStyle: 'italic', lineHeight: 1.4, marginTop: '4px' }}>
+                        Payment method not set in Settings.
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -7,7 +7,8 @@ export const A4_HEIGHT = 1123;
 // Pieces that never split across two pages; tables and lists split per row/item
 const SPLIT = 'table, thead, tbody, tfoot, ol, ul, .docx-body-content';
 // Pieces that move to the next page together with the piece after them
-const KEEP_WITH_NEXT = '.docx-sec-title, thead tr';
+// (a heading with its content, the last table row with the totals)
+const KEEP_WITH_NEXT = '.docx-sec-title, thead tr, tbody tr:last-child';
 
 type Pushed = { el: HTMLElement; prop: string };
 

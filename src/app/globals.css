@@ -2359,66 +2359,6 @@ textarea:focus,
   align-items: center;
 }
 
-.project-preview-sticky-wrap .docx-paper {
-  width: 100%;
-  max-width: 100%;
-  min-height: auto;
-  margin: 0 auto;
-  padding: 34px 38px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.09);
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  font-size: 12.5px;
-  line-height: 1.45;
-}
-
-.project-preview-sticky-wrap .docx-h-title {
-  font-size: 18px;
-}
-
-.project-preview-sticky-wrap .docx-sec-title {
-  font-size: 13px;
-  margin: 16px 0 8px;
-}
-
-.project-preview-sticky-wrap .docx-list {
-  margin: 0 0 14px 0;
-  font-size: 12.5px;
-  gap: 4px;
-  padding-left: 18px;
-}
-
-.project-preview-sticky-wrap .docx-cost-table {
-  margin-bottom: 14px;
-}
-
-.project-preview-sticky-wrap .docx-cost-table th,
-.project-preview-sticky-wrap .docx-cost-table td {
-  padding: 6px 10px;
-  font-size: 12px;
-}
-
-.project-preview-sticky-wrap .docx-payment-summary-grid {
-  margin: 12px 0 16px;
-  gap: 16px;
-  font-size: 12px;
-}
-
-.project-preview-sticky-wrap .docx-footer-wrap {
-  margin-top: 24px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.project-preview-sticky-wrap .docx-footer {
-  font-size: 12px;
-}
-
-.project-preview-sticky-wrap .docx-watermark {
-  margin-top: 14px;
-}
-
 .sticky {
   position: sticky;
   top: 24px;
@@ -5796,7 +5736,7 @@ input[type="file"] {
 
 .docx-a4 .docx-footer-wrap {
   margin-top: auto !important;
-  padding-top: 14px !important;
+  padding-top: 28px !important;
   break-inside: avoid !important;
   page-break-inside: avoid !important;
 }
@@ -5927,10 +5867,25 @@ input[type="file"] {
   text-align: right !important;
 }
 
+/* Totals follow the cost table directly, in the right half like the
+   table's price column, so they move down as items are added */
+.docx-a4 .docx-total-row {
+  display: flex !important;
+  justify-content: flex-end !important;
+  padding-top: 10px !important;
+}
+
+.docx-a4 .docx-total-row .docx-calc-box {
+  width: calc(50% - 20px) !important;
+}
+
+/* Payment details and closing notes sit just above the footer; spare room
+   on the page goes above them, and longer notes grow the block upward */
 .docx-a4 .docx-payment-summary-grid {
   grid-template-columns: 1fr 1fr !important;
   gap: 40px !important;
-  margin: 12px 0 0 !important;
+  margin: auto 0 0 !important;
+  padding-top: 12px !important;
   font-size: 11.5px !important;
   line-height: 1.5 !important;
 }
@@ -6000,26 +5955,10 @@ input[type="file"] {
   }
 }
 
-/* Live preview (new project / new quotation): A4 styling at the column's own
-   width, so text stays at its real size instead of shrinking with a zoom */
+/* Live preview (new project / new quotation): the same A4 page as the
+   document view, scaled down to the column by useA4Fit */
 .project-preview-sticky-wrap .docx-paper.docx-a4 {
-  width: 100% !important;
-  min-height: 800px !important;
   margin: 0 !important;
-  padding: 36px 40px 28px !important;
-}
-
-.project-preview-sticky-wrap .docx-a4 .docx-header-grid {
-  gap: 16px !important;
-}
-
-.project-preview-sticky-wrap .docx-a4 .docx-footer-wrap {
-  border-top: 0;
-  padding-top: 20px !important;
-}
-
-.project-preview-sticky-wrap .docx-a4 .docx-watermark {
-  margin-top: 0;
 }
 
 /* Numbers (amounts, counts, dates) stay on Geist */

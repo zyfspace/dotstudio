@@ -251,39 +251,7 @@ export function DocView() {
             </table>
 
             {/* Payment Method & Calculation Summary Box */}
-            <div className="docx-payment-summary-grid">
-              <div className="docx-payment-method-box">
-                <div style={{ fontWeight: 700, marginBottom: '4px' }}>Payment Method</div>
-                {studioProfile.bankName || studioProfile.accountNumber ? (
-                  <>
-                    <div>
-                      <b>Bank:</b> {studioProfile.bankName || '—'}
-                    </div>
-                    <div>
-                      <b>Account Number:</b> {studioProfile.accountNumber || '—'}
-                    </div>
-                    <div>
-                      <b>Account Holder:</b>{' '}
-                      {studioProfile.accountHolder ||
-                        studioProfile.ownerName ||
-                        brandName ||
-                        '—'}
-                    </div>
-                  </>
-                ) : (
-                  <div
-                    style={{
-                      color: '#71717a',
-                      fontSize: '12px',
-                      fontStyle: 'italic',
-                      lineHeight: 1.4,
-                      marginTop: '4px',
-                    }}
-                  >
-                    Payment method not yet set in Settings.
-                  </div>
-                )}
-              </div>
+            <div className="docx-total-row">
               {(() => {
                 const itemIndex = p.plan.findIndex((x) => x.id === i.id);
                 const priorInstallments = p.plan.slice(0, itemIndex > 0 ? itemIndex : 0);
@@ -317,6 +285,41 @@ export function DocView() {
                   </div>
                 );
               })()}
+            </div>
+
+            <div className="docx-payment-summary-grid">
+              <div className="docx-payment-method-box">
+                <div style={{ fontWeight: 700, marginBottom: '4px' }}>Payment Method</div>
+                {studioProfile.bankName || studioProfile.accountNumber ? (
+                  <>
+                    <div>
+                      <b>Bank:</b> {studioProfile.bankName || '—'}
+                    </div>
+                    <div>
+                      <b>Account Number:</b> {studioProfile.accountNumber || '—'}
+                    </div>
+                    <div>
+                      <b>Account Holder:</b>{' '}
+                      {studioProfile.accountHolder ||
+                        studioProfile.ownerName ||
+                        brandName ||
+                        '—'}
+                    </div>
+                  </>
+                ) : (
+                  <div
+                    style={{
+                      color: '#71717a',
+                      fontSize: '12px',
+                      fontStyle: 'italic',
+                      lineHeight: 1.4,
+                      marginTop: '4px',
+                    }}
+                  >
+                    Payment method not yet set in Settings.
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Section: Catatan dan Ketentuan */}

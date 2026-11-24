@@ -4,6 +4,7 @@ import React from 'react';
 import { useDashboard } from '../DashboardContext';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { dt, today, isRecurringBilling, getBillingTypeDocLabel } from '@/lib/formatters';
+import { useA4Fit } from '@/lib/useA4Fit';
 
 /**
  * English live previews for +New Project (invoice) and +New Quotation. They
@@ -23,6 +24,7 @@ const billingLabelEn = (type?: string) =>
 const termEn = (t: string) => t.replace(/^Syarat pembayaran:/i, 'Payment terms:');
 
 export function NewInvoicePreviewEn() {
+  const page = useA4Fit();
   const { newProjectData, studioProfile, getNextInvoiceNo, formatInvoiceNo, projects, editingProjectId } =
     useDashboard();
   const editingInv = editingProjectId
@@ -34,7 +36,7 @@ export function NewInvoicePreviewEn() {
   );
 
   return (
-    <div className="docx-paper docx-a4">
+    <div className="docx-paper docx-a4" ref={page.ref} style={page.style}>
       <div className="docx-body-content">
         {/* Header */}
         <div className="docx-header-grid">
@@ -128,21 +130,7 @@ export function NewInvoicePreviewEn() {
         </table>
 
         {/* Payment Method & Summary Grid */}
-        <div className="docx-payment-summary-grid">
-          <div className="docx-payment-method-box">
-            <div style={{ fontWeight: 700, marginBottom: '4px' }}>Payment Method</div>
-            {studioProfile.bankName || studioProfile.accountNumber ? (
-              <>
-                <div><b>Bank:</b> {studioProfile.bankName || '—'}</div>
-                <div><b>Account Number:</b> {studioProfile.accountNumber || '—'}</div>
-                <div><b>Account Holder:</b> {studioProfile.accountHolder || studioProfile.ownerName || studioProfile.studioName || '—'}</div>
-              </>
-            ) : (
-              <div style={{ color: '#71717a', fontSize: '12px', fontStyle: 'italic', lineHeight: 1.4, marginTop: '4px' }}>
-                Payment method not set in Settings.
-              </div>
-            )}
-          </div>
+        <div className="docx-total-row">
           <div className="docx-calc-box">
             <div className="docx-calc-row">
               <span>Sub-total</span>
@@ -160,6 +148,23 @@ export function NewInvoicePreviewEn() {
               <span>Amount Due</span>
               <span>{money(firstPay)}</span>
             </div>
+          </div>
+        </div>
+
+        <div className="docx-payment-summary-grid">
+          <div className="docx-payment-method-box">
+            <div style={{ fontWeight: 700, marginBottom: '4px' }}>Payment Method</div>
+            {studioProfile.bankName || studioProfile.accountNumber ? (
+              <>
+                <div><b>Bank:</b> {studioProfile.bankName || '—'}</div>
+                <div><b>Account Number:</b> {studioProfile.accountNumber || '—'}</div>
+                <div><b>Account Holder:</b> {studioProfile.accountHolder || studioProfile.ownerName || studioProfile.studioName || '—'}</div>
+              </>
+            ) : (
+              <div style={{ color: '#71717a', fontSize: '12px', fontStyle: 'italic', lineHeight: 1.4, marginTop: '4px' }}>
+                Payment method not set in Settings.
+              </div>
+            )}
           </div>
         </div>
 
@@ -195,12 +200,13 @@ export function NewInvoicePreviewEn() {
 }
 
 export function NewQuotePreviewEn() {
+  const page = useA4Fit();
   const { newQuoteData, studioProfile, quotes, editingQuoteId, getNextQuoteNo, formatQuoteNo } =
     useDashboard();
   const existingQuote = editingQuoteId ? quotes.find((q) => q.id === editingQuoteId) : null;
 
   return (
-    <div className="docx-paper docx-a4">
+    <div className="docx-paper docx-a4" ref={page.ref} style={page.style}>
       <div className="docx-body-content">
         {/* Header */}
         <div className="docx-header-grid">

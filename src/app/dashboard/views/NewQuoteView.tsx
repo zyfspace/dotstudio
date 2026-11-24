@@ -18,8 +18,10 @@ import {
   normalizeBillingType,
   getBillingTypeDocLabel,
 } from '@/lib/formatters';
+import { useA4Fit } from '@/lib/useA4Fit';
 
 export function NewQuoteView() {
+  const page = useA4Fit();
   const router = useRouter();
   const searchParams = useSearchParams();
   const editParam = searchParams.get('edit');
@@ -1103,7 +1105,7 @@ export function NewQuoteView() {
             {newQuoteData.lang === 'en' ? (
               <NewQuotePreviewEn />
             ) : (
-            <div className="docx-paper docx-a4">
+            <div className="docx-paper docx-a4" ref={page.ref} style={page.style}>
               <div className="docx-body-content">
                 {/* Header */}
                 <div className="docx-header-grid">
