@@ -130,21 +130,7 @@ export function NewInvoicePreviewEn() {
         </table>
 
         {/* Payment Method & Summary Grid */}
-        <div className="docx-payment-summary-grid">
-          <div className="docx-payment-method-box">
-            <div style={{ fontWeight: 700, marginBottom: '4px' }}>Payment Method</div>
-            {studioProfile.bankName || studioProfile.accountNumber ? (
-              <>
-                <div><b>Bank:</b> {studioProfile.bankName || '—'}</div>
-                <div><b>Account Number:</b> {studioProfile.accountNumber || '—'}</div>
-                <div><b>Account Holder:</b> {studioProfile.accountHolder || studioProfile.ownerName || studioProfile.studioName || '—'}</div>
-              </>
-            ) : (
-              <div style={{ color: '#71717a', fontSize: '12px', fontStyle: 'italic', lineHeight: 1.4, marginTop: '4px' }}>
-                Payment method not set in Settings.
-              </div>
-            )}
-          </div>
+        <div className="docx-total-row">
           <div className="docx-calc-box">
             <div className="docx-calc-row">
               <span>Sub-total</span>
@@ -162,6 +148,23 @@ export function NewInvoicePreviewEn() {
               <span>Amount Due</span>
               <span>{money(firstPay)}</span>
             </div>
+          </div>
+        </div>
+
+        <div className="docx-payment-summary-grid">
+          <div className="docx-payment-method-box">
+            <div style={{ fontWeight: 700, marginBottom: '4px' }}>Payment Method</div>
+            {studioProfile.bankName || studioProfile.accountNumber ? (
+              <>
+                <div><b>Bank:</b> {studioProfile.bankName || '—'}</div>
+                <div><b>Account Number:</b> {studioProfile.accountNumber || '—'}</div>
+                <div><b>Account Holder:</b> {studioProfile.accountHolder || studioProfile.ownerName || studioProfile.studioName || '—'}</div>
+              </>
+            ) : (
+              <div style={{ color: '#71717a', fontSize: '12px', fontStyle: 'italic', lineHeight: 1.4, marginTop: '4px' }}>
+                Payment method not set in Settings.
+              </div>
+            )}
           </div>
         </div>
 

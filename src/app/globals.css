@@ -5867,6 +5867,18 @@ input[type="file"] {
   text-align: right !important;
 }
 
+/* Totals follow the cost table directly, in the right half like the
+   table's price column, so they move down as items are added */
+.docx-a4 .docx-total-row {
+  display: flex !important;
+  justify-content: flex-end !important;
+  padding-top: 10px !important;
+}
+
+.docx-a4 .docx-total-row .docx-calc-box {
+  width: calc(50% - 20px) !important;
+}
+
 /* Payment details and closing notes sit just above the footer; spare room
    on the page goes above them, and longer notes grow the block upward */
 .docx-a4 .docx-payment-summary-grid {
