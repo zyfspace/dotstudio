@@ -27,6 +27,7 @@ function collect(root: Element, out: HTMLElement[]) {
  */
 function paginate(paper: HTMLElement, pushed: Pushed[]): number {
   for (const { el, prop } of pushed.splice(0)) el.style.removeProperty(prop);
+  paper.querySelectorAll(':scope > .docx-repeat-head').forEach((el) => el.remove());
   paper.classList.remove('docx-a4-fit');
   paper.style.setProperty('min-height', '0px', 'important');
 
@@ -54,8 +55,34 @@ function paginate(paper: HTMLElement, pushed: Pushed[]): number {
     const top = (el: HTMLElement) => (el.getBoundingClientRect().top - y0) / scale;
     const bottom = (el: HTMLElement) => (el.getBoundingClientRect().bottom - y0) / scale;
 
+    // A table that continues on a new page repeats its header row there,
+    // drawn over the gap left above the first row moved to that page
+    const repeatHead = (el: HTMLElement, by: number) => {
+      const table = el.closest('table');
+      const head = el.parentElement?.tagName === 'TBODY' ? table?.querySelector('thead') : null;
+      if (!table || !head) return by;
+      const headH = head.getBoundingClientRect().height / scale;
+      const box = table.getBoundingClientRect();
+      const paperBox = paper.getBoundingClientRect();
+      const copy = table.cloneNode(false) as HTMLElement;
+      copy.appendChild(head.cloneNode(true));
+      copy.classList.add('docx-repeat-head');
+      copy.setAttribute('aria-hidden', 'true');
+      const place = {
+        position: 'absolute',
+        margin: '0',
+        left: `${(box.left - paperBox.left) / scale - paper.clientLeft}px`,
+        top: `${top(el) + by - paper.clientTop}px`,
+        width: `${box.width / scale}px`,
+      };
+      for (const [prop, value] of Object.entries(place)) copy.style.setProperty(prop, value, 'important');
+      paper.appendChild(copy);
+      return by + headH;
+    };
+
     const push = (el: HTMLElement, by: number) => {
       if (el.tagName === 'TR') {
+        by = repeatHead(el, by);
         for (const td of Array.from(el.children) as HTMLElement[]) {
           const pad = parseFloat(getComputedStyle(td).paddingTop) || 0;
           td.style.setProperty('padding-top', `${pad + by}px`, 'important');
