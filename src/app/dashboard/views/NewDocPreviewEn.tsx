@@ -4,6 +4,7 @@ import React from 'react';
 import { useDashboard } from '../DashboardContext';
 import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { dt, today, isRecurringBilling, getBillingTypeDocLabel } from '@/lib/formatters';
+import { useA4Fit } from '@/lib/useA4Fit';
 
 /**
  * English live previews for +New Project (invoice) and +New Quotation. They
@@ -23,6 +24,7 @@ const billingLabelEn = (type?: string) =>
 const termEn = (t: string) => t.replace(/^Syarat pembayaran:/i, 'Payment terms:');
 
 export function NewInvoicePreviewEn() {
+  const page = useA4Fit();
   const { newProjectData, studioProfile, getNextInvoiceNo, formatInvoiceNo, projects, editingProjectId } =
     useDashboard();
   const editingInv = editingProjectId
@@ -34,7 +36,7 @@ export function NewInvoicePreviewEn() {
   );
 
   return (
-    <div className="docx-paper docx-a4">
+    <div className="docx-paper docx-a4" ref={page.ref} style={page.style}>
       <div className="docx-body-content">
         {/* Header */}
         <div className="docx-header-grid">
@@ -195,12 +197,13 @@ export function NewInvoicePreviewEn() {
 }
 
 export function NewQuotePreviewEn() {
+  const page = useA4Fit();
   const { newQuoteData, studioProfile, quotes, editingQuoteId, getNextQuoteNo, formatQuoteNo } =
     useDashboard();
   const existingQuote = editingQuoteId ? quotes.find((q) => q.id === editingQuoteId) : null;
 
   return (
-    <div className="docx-paper docx-a4">
+    <div className="docx-paper docx-a4" ref={page.ref} style={page.style}>
       <div className="docx-body-content">
         {/* Header */}
         <div className="docx-header-grid">

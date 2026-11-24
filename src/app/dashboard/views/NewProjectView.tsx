@@ -16,8 +16,10 @@ import { DocumentWatermark } from '@/components/DocumentWatermark';
 import { DocLangToggle } from '@/components/DocLangToggle';
 import { NewInvoicePreviewEn } from './NewDocPreviewEn';
 import { rp, dt, today, addDays, isRecurringBilling, normalizeBillingType, paymentTermDays } from '@/lib/formatters';
+import { useA4Fit } from '@/lib/useA4Fit';
 
 export function NewProjectView() {
+  const page = useA4Fit();
   const router = useRouter();
   const searchParams = useSearchParams();
   const editParam = searchParams.get('edit');
@@ -854,7 +856,7 @@ export function NewProjectView() {
             {newProjectData.lang === 'en' ? (
               <NewInvoicePreviewEn />
             ) : (
-            <div className="docx-paper docx-a4">
+            <div className="docx-paper docx-a4" ref={page.ref} style={page.style}>
               <div className="docx-body-content">
                 {/* Header */}
                 <div className="docx-header-grid">
