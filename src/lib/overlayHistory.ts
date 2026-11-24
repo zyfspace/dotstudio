@@ -88,12 +88,18 @@ function install() {
       queue.push(() => window.history.pushState(...args));
       return;
     }
-    // Overlay entries left behind by a layer that closed in the same tick:
-    // drop them first so the new route replaces them in the stack.
-    const stale = entries - currentDepth;
-    if (stale > 0) {
-      queue.push(() => window.history.pushState(...args));
-      goBack(stale);
+    // A route push while overlay entries sit in the stack (a layer that
+    // closed in the same tick, or one that opened alongside the navigation,
+    // e.g. saving a project opens its drawer on /projects): drop the entries
+    // first, push the route, then put entries for the still-open layers back
+    // on top. Otherwise they end up under the new route, and closing the
+    // layer later traverses back to the previous page.
+    if (entries > 0) {
+      queue.push(() => {
+        window.history.pushState(...args);
+        reconcile();
+      });
+      goBack(entries);
       return;
     }
     return nativePush(...args);
