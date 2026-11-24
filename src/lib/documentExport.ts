@@ -45,31 +45,15 @@ const download: DocumentAction = async (page, { filename }) => {
       clone.style.setProperty('width', `${A4_PX.w}px`);
       clone.style.setProperty('box-shadow', 'none');
       clone.style.setProperty('margin', '0');
-
-      // Auto-fit to 1 page if document slightly overflows (up to 12% over 1 page)
-      const targetH = A4_PX.h;
-      if (clone.scrollHeight > targetH && clone.scrollHeight <= targetH * 1.15) {
-        clone.style.setProperty('padding', '13mm 16mm 10mm', 'important');
-        const footerWrap = clone.querySelector('.docx-footer-wrap') as HTMLElement;
-        if (footerWrap) {
-          footerWrap.style.setProperty('padding-top', '8px', 'important');
-        }
-        const watermark = clone.querySelector('.docx-watermark-wrap') as HTMLElement;
-        if (watermark) {
-          watermark.style.setProperty('margin-top', '6px', 'important');
-        }
-      }
+      // Page-gap bands are screen-only; each PDF page is cut at the A4 edge
+      clone.style.setProperty('background-image', 'none', 'important');
     },
   });
 
   const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   const pageH = Math.round((canvas.width * A4_MM.h) / A4_MM.w);
-  const scale = canvas.width / A4_PX.w;
-  // If the canvas only overflows by a small margin (<= 50px at 1x), keep it as 1 page
-  const singlePageThreshold = pageH + Math.round(50 * scale);
-  const effectiveHeight =
-    canvas.height > pageH && canvas.height <= singlePageThreshold ? pageH : canvas.height;
-  const pages = Math.max(1, Math.ceil((effectiveHeight - 2) / pageH));
+  // useA4Fit already lays the page out as whole A4 sheets
+  const pages = Math.max(1, Math.round(canvas.height / pageH));
 
   for (let n = 0; n < pages; n++) {
     const slice = document.createElement('canvas');
