@@ -5771,6 +5771,29 @@ input[type="file"] {
   flex: 1 0 auto !important;
 }
 
+/* Long documents run onto more A4 pages (see useA4Fit); on screen a band in
+   the page background marks where one sheet ends and the next begins */
+.docx-paper.docx-a4 {
+  --a4-pages: 1;
+  background-image: repeating-linear-gradient(to bottom, transparent 0 1111px, var(--bg) 1111px 1123px) !important;
+  background-size: 100% calc((var(--a4-pages) - 1) * 1123px) !important;
+  background-position: 0 6px !important;
+  background-repeat: no-repeat !important;
+}
+
+/* Slightly over one page: tighter margins keep it on a single sheet */
+.docx-paper.docx-a4.docx-a4-fit {
+  padding: 13mm 16mm 10mm !important;
+}
+
+.docx-a4.docx-a4-fit .docx-footer-wrap {
+  padding-top: 8px !important;
+}
+
+.docx-a4.docx-a4-fit .docx-watermark-wrap {
+  margin-top: 6px !important;
+}
+
 .docx-a4 .docx-footer-wrap {
   margin-top: auto !important;
   padding-top: 14px !important;
