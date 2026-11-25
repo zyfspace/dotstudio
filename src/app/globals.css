@@ -5890,6 +5890,10 @@ input[type="file"] {
   line-height: 1.5 !important;
 }
 
+.docx-a4.docx-a4-flow .docx-payment-summary-grid {
+  margin-top: 0 !important;
+}
+
 .docx-a4 .docx-calc-row {
   font-size: 11.5px !important;
 }

@@ -28,7 +28,7 @@ function collect(root: Element, out: HTMLElement[]) {
 function paginate(paper: HTMLElement, pushed: Pushed[]): number {
   for (const { el, prop } of pushed.splice(0)) el.style.removeProperty(prop);
   paper.querySelectorAll(':scope > .docx-repeat-head').forEach((el) => el.remove());
-  paper.classList.remove('docx-a4-fit');
+  paper.classList.remove('docx-a4-fit', 'docx-a4-flow');
   paper.style.setProperty('min-height', '0px', 'important');
 
   const scale = paper.getBoundingClientRect().width / A4_WIDTH || 1;
@@ -47,6 +47,12 @@ function paginate(paper: HTMLElement, pushed: Pushed[]): number {
     const padTop = parseFloat(cs.paddingTop) || 0;
     const padBottom = parseFloat(cs.paddingBottom) || 0;
     const room = A4_HEIGHT - padTop - padBottom;
+
+    // The payment block normally sits low on the page (auto top margin), which
+    // only takes effect once the page gets its final height and would shift
+    // everything after it past the edges measured here; it follows the
+    // content instead while the pages are laid out
+    paper.classList.add('docx-a4-flow');
 
     const pieces: HTMLElement[] = [];
     collect(paper, pieces);
@@ -129,6 +135,15 @@ function paginate(paper: HTMLElement, pushed: Pushed[]): number {
           push(heading, (page + 1) * A4_HEIGHT + padTop - start);
         }
       }
+    }
+
+    // On the last page nothing below the payment block moves, so it can sit
+    // just above the footer again, as on a one-page document
+    const low = paper.querySelector<HTMLElement>('.docx-payment-summary-grid');
+    const after = (el: HTMLElement) =>
+      !!low && (low.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    if (low && Math.floor(top(low) / A4_HEIGHT) === pages - 1 && !pushed.some((p) => after(p.el))) {
+      paper.classList.remove('docx-a4-flow');
     }
   }
 
