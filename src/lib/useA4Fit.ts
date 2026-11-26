@@ -28,7 +28,7 @@ function collect(root: Element, out: HTMLElement[]) {
 function paginate(paper: HTMLElement, pushed: Pushed[]): number {
   for (const { el, prop } of pushed.splice(0)) el.style.removeProperty(prop);
   paper.querySelectorAll(':scope > .docx-repeat-head').forEach((el) => el.remove());
-  paper.classList.remove('docx-a4-fit', 'docx-a4-flow');
+  paper.classList.remove('docx-a4-fit');
   paper.style.setProperty('min-height', '0px', 'important');
 
   const scale = paper.getBoundingClientRect().width / A4_WIDTH || 1;
@@ -47,12 +47,6 @@ function paginate(paper: HTMLElement, pushed: Pushed[]): number {
     const padTop = parseFloat(cs.paddingTop) || 0;
     const padBottom = parseFloat(cs.paddingBottom) || 0;
     const room = A4_HEIGHT - padTop - padBottom;
-
-    // The payment block normally sits low on the page (auto top margin), which
-    // only takes effect once the page gets its final height and would shift
-    // everything after it past the edges measured here; it follows the
-    // content instead while the pages are laid out
-    paper.classList.add('docx-a4-flow');
 
     const pieces: HTMLElement[] = [];
     collect(paper, pieces);
@@ -101,6 +95,14 @@ function paginate(paper: HTMLElement, pushed: Pushed[]): number {
       }
     };
 
+    // The closing section (last heading through the footer) stays on one page
+    // when it fits there, so no single note is left on a page of its own
+    const footerAt = footer ? pieces.indexOf(footer) : -1;
+    let closing = -1;
+    for (let n = footerAt - 1; n >= 0 && closing < 0; n--) {
+      if (pieces[n].matches('.docx-sec-title')) closing = n;
+    }
+
     for (let n = 0; n < pieces.length; n++) {
       const el = pieces[n];
       if (el === footer) break;
@@ -109,6 +111,7 @@ function paginate(paper: HTMLElement, pushed: Pushed[]): number {
       for (let j = n; pieces[j].matches(KEEP_WITH_NEXT) && pieces[j + 1] && pieces[j + 1] !== footer; ) {
         end = bottom(pieces[++j]);
       }
+      if (n === closing && footer && bottom(footer) - start <= room) end = bottom(footer);
       const page = Math.floor(start / A4_HEIGHT);
       const pageTop = page * A4_HEIGHT + padTop;
       if (page > 0 && start < pageTop) push(el, pageTop - start);
@@ -122,29 +125,6 @@ function paginate(paper: HTMLElement, pushed: Pushed[]): number {
     const page = Math.floor(top(last) / A4_HEIGHT);
     const overflows = bottom(last) > (page + 1) * A4_HEIGHT - padBottom;
     pages = overflows ? page + 2 : page + 1;
-
-    // A sign-off alone on the last page looks lost: the closing section
-    // (from the last heading) goes along with it when the two fit together
-    if (overflows && footer) {
-      const end = pieces.indexOf(footer);
-      const heading = pieces.slice(0, end).reverse().find((p) => p.matches('.docx-sec-title'));
-      if (heading) {
-        const start = top(heading);
-        const at = Math.floor(start / A4_HEIGHT);
-        if (at === page && bottom(footer) - start <= room) {
-          push(heading, (page + 1) * A4_HEIGHT + padTop - start);
-        }
-      }
-    }
-
-    // On the last page nothing below the payment block moves, so it can sit
-    // just above the footer again, as on a one-page document
-    const low = paper.querySelector<HTMLElement>('.docx-payment-summary-grid');
-    const after = (el: HTMLElement) =>
-      !!low && (low.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
-    if (low && Math.floor(top(low) / A4_HEIGHT) === pages - 1 && !pushed.some((p) => after(p.el))) {
-      paper.classList.remove('docx-a4-flow');
-    }
   }
 
   paper.style.setProperty('min-height', `${pages * A4_HEIGHT}px`, 'important');
