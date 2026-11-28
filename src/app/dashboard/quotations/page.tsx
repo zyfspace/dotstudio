@@ -1,6 +1,7 @@
-import { redirect } from 'next/navigation';
+'use client';
 
-// Quotations now live next to invoices on one page.
+import { QuotationsView } from '../views/QuotationsView';
+
 export default function QuotationsPage() {
-  redirect('/dashboard/invoices');
+  return <QuotationsView />;
 }

@@ -94,11 +94,8 @@ export function Sidebar() {
     if (pathname.startsWith('/dashboard/projects') || pathname === '/dashboard/new') return 'projects';
     if (pathname.startsWith('/dashboard/clients')) return 'clients';
     if (pathname.startsWith('/dashboard/payments')) return 'payments';
-    if (
-      pathname.startsWith('/dashboard/invoices') ||
-      pathname.startsWith('/dashboard/quotations') ||
-      pathname === '/dashboard/quote'
-    ) return 'documents';
+    if (pathname.startsWith('/dashboard/invoices')) return 'invoices';
+    if (pathname.startsWith('/dashboard/quotations') || pathname === '/dashboard/quote') return 'quotations';
     if (pathname.startsWith('/dashboard/settings')) return 'settings';
     return '';
   };
@@ -124,7 +121,8 @@ export function Sidebar() {
       label: 'Money',
       items: [
         { key: 'payments', href: '/dashboard/payments', icon: 'wallet', label: 'Payments', count: duePayments },
-        { key: 'documents', href: '/dashboard/invoices', icon: 'file', label: 'Invoices & quotes', count: openQuotes },
+        { key: 'invoices', href: '/dashboard/invoices', icon: 'file', label: 'Invoices' },
+        { key: 'quotations', href: '/dashboard/quotations', icon: 'quote', label: 'Quotations', count: openQuotes },
       ],
     },
     {

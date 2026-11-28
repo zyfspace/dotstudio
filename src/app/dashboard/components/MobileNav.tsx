@@ -24,13 +24,8 @@ export function MobileNav() {
     if (tab === 'overview') return pathname === '/dashboard';
     if (tab === 'projects') return pathname.startsWith('/dashboard/projects') || pathname === '/dashboard/new';
     if (tab === 'clients') return pathname.startsWith('/dashboard/clients');
-    if (tab === 'invoices') {
-      return (
-        pathname.startsWith('/dashboard/invoices') ||
-        pathname.startsWith('/dashboard/quotations') ||
-        pathname === '/dashboard/quote'
-      );
-    }
+    if (tab === 'invoices') return pathname.startsWith('/dashboard/invoices');
+    if (tab === 'quotations') return pathname.startsWith('/dashboard/quotations') || pathname === '/dashboard/quote';
     if (tab === 'payments') return pathname.startsWith('/dashboard/payments');
     if (tab === 'settings') return pathname.startsWith('/dashboard/settings');
     return false;
@@ -39,6 +34,7 @@ export function MobileNav() {
   const isMoreActive =
     isMobileMenuOpen ||
     isTabActive('payments') ||
+    isTabActive('quotations') ||
     isTabActive('settings');
 
   const handleNavClick = () => {
@@ -93,7 +89,7 @@ export function MobileNav() {
           style={{ textDecoration: 'none' }}
         >
           <Icon name="file" size={18} />
-          <span>Documents</span>
+          <span>Invoices</span>
         </Link>
 
 
@@ -154,6 +150,32 @@ export function MobileNav() {
           >
             <Icon name="coins" size={16} />
             <span>Payments &amp; Income</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              handleNavClick();
+              router.push('/dashboard/quotations');
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              textAlign: 'left',
+              background: isTabActive('quotations') ? 'var(--soft)' : 'transparent',
+              color: 'var(--fg)',
+              fontSize: '13.5px',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            <Icon name="quote" size={16} />
+            <span>Quotations</span>
           </button>
 
           <button

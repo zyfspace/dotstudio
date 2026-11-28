@@ -1961,7 +1961,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       const client = clients.find((c) => c.name.trim().toLowerCase() === name);
       if (client) pruneOrphanClient(client.id, projects, remainingQuotes);
     }
-    router.push('/dashboard/invoices');
+    router.push('/dashboard/quotations');
   };
 
   const filterDateRange = useMemo(() => {
