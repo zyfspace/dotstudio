@@ -27,6 +27,16 @@ let pendingTimer: ReturnType<typeof setTimeout> | null = null;
 let queue: HistoryWrite[] = [];
 let closeTopLayer: (() => void) | null = null;
 let currentDepth = 0;
+// Set by navigateFromOverlay: the next route push takes over the top overlay
+// entry (replaceState) instead of traversing back first.
+let handoff = false;
+let handoffTimer: ReturnType<typeof setTimeout> | null = null;
+
+function endHandoff() {
+  handoff = false;
+  if (handoffTimer) clearTimeout(handoffTimer);
+  handoffTimer = null;
+}
 
 function flushQueue() {
   const ops = queue;
@@ -69,6 +79,7 @@ function reconcile() {
     queue.push(reconcile);
     return;
   }
+  if (handoff && currentDepth < entries) return;
   if (currentDepth > entries) {
     for (let i = entries; i < currentDepth; i++) pushOverlayEntry();
   } else if (currentDepth < entries) {
@@ -86,6 +97,15 @@ function install() {
   window.history.pushState = function pushState(...args: Parameters<History['pushState']>) {
     if (pendingPops > 0) {
       queue.push(() => window.history.pushState(...args));
+      return;
+    }
+    // Navigating out of a closing overlay: reuse its entry for the new route.
+    // No traversal means no late popstate that could undo the navigation.
+    if (handoff && entries > 0) {
+      endHandoff();
+      entries -= 1;
+      nativeReplace(...args);
+      reconcile();
       return;
     }
     // A route push while overlay entries sit in the stack (a layer that
@@ -131,6 +151,24 @@ function install() {
     },
     true
   );
+}
+
+/**
+ * Runs a route navigation that also closes overlay layers (e.g. a link in the
+ * mobile menu). The route takes over the overlay's history entry, so Back
+ * from the new page returns to the page the overlay was opened on.
+ */
+export function navigateFromOverlay(navigate: () => void) {
+  if (typeof window !== 'undefined' && installed && entries > 0 && pendingPops === 0) {
+    handoff = true;
+    if (handoffTimer) clearTimeout(handoffTimer);
+    // No route push came (e.g. same URL): drop the entries the usual way.
+    handoffTimer = setTimeout(() => {
+      endHandoff();
+      reconcile();
+    }, 1500);
+  }
+  navigate();
 }
 
 /**
