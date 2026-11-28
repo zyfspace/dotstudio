@@ -1,11 +1,53 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useDashboard, STATUS_LABELS } from '../DashboardContext';
+import { useDashboard } from '../DashboardContext';
 import { Project } from '@/types';
 import { Icon } from '@/components/Icons';
-import { dt, isOverdue } from '@/lib/formatters';
+import { today, isOverdue } from '@/lib/formatters';
+import { Pager, usePagination } from '@/components/Pager';
 import { Money } from '@/components/Money';
+
+type View = 'Pending' | 'Progress' | 'Overdue' | 'Finished' | 'Cancelled';
+
+const VIEW_LABELS: Record<View, string> = {
+  Pending: 'Not started',
+  Progress: 'In progress',
+  Overdue: 'Overdue',
+  Finished: 'Completed',
+  Cancelled: 'Cancelled',
+};
+
+// "In progress" also holds projects that have not started yet, so the tabs add up to All
+const TABS: { id: string; label: string; views: View[] }[] = [
+  { id: 'All', label: 'All', views: ['Pending', 'Progress', 'Overdue', 'Finished', 'Cancelled'] },
+  { id: 'Progress', label: 'In progress', views: ['Pending', 'Progress'] },
+  { id: 'Overdue', label: 'Overdue', views: ['Overdue'] },
+  { id: 'Finished', label: 'Completed', views: ['Finished'] },
+  { id: 'Cancelled', label: 'Cancelled', views: ['Cancelled'] },
+];
+
+const shortDate = (s: string) => {
+  const d = new Date(s + 'T00:00');
+  if (isNaN(d.getTime())) return 'No date';
+  const sameYear = s.slice(0, 4) === today().slice(0, 4);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', ...(sameYear ? {} : { year: 'numeric' }) });
+};
+
+// Earliest unpaid installment, described the way the table shows it
+const nextPayment = (p: Project, view: View) => {
+  if (view === 'Cancelled') return { text: 'Cancelled', late: false };
+  if (!p.plan.length) return { text: 'No plan', late: false };
+  const next = p.plan
+    .filter((i) => !i.paid && !i.cancelled)
+    .sort((a, b) => (a.due || '9').localeCompare(b.due || '9'))[0];
+  if (!next) return { text: 'All settled', late: false };
+  if (isOverdue(next.due)) {
+    const days = Math.round((Date.parse(today()) - Date.parse(next.due)) / 86_400_000);
+    return { text: `${next.l} · ${days} day${days > 1 ? 's' : ''} late`, late: true };
+  }
+  return { text: `${next.l} · ${next.due ? shortDate(next.due) : 'No date'}`, late: false };
+};
 
 export function ProjectsView() {
   const {
@@ -39,14 +81,18 @@ export function ProjectsView() {
     }
   };
 
+  const getView = (p: Project): View => {
+    const status = getProjectStatus(p);
+    if (status === 'Finished' || status === 'Cancelled') return status;
+    return p.plan.some((i) => !i.cancelled && isOverdue(i.due, i.paid)) ? 'Overdue' : status;
+  };
+
+  const tab = TABS.find((t) => t.id === filterStatus) || TABS[0];
+
   const q = searchQuery.toLowerCase();
   const filtered = projects.filter((p) => {
     const c = getClient(p.c);
-    const status = getProjectStatus(p);
-    const matchesFilter = filterStatus === 'All' || status === filterStatus;
-    const matchesSearch =
-      (p.name + c.name + c.co).toLowerCase().indexOf(q) > -1;
-    return matchesFilter && matchesSearch;
+    return tab.views.includes(getView(p)) && (p.name + c.name + c.co).toLowerCase().indexOf(q) > -1;
   });
 
   filtered.sort((a, b) => {
@@ -63,59 +109,56 @@ export function ProjectsView() {
     return (x > y ? 1 : x < y ? -1 : 0) * sortDir;
   });
 
+  const { pageItems, ...pager } = usePagination(filtered, `${q}|${tab.id}|${sortKey}|${sortDir}`);
+  const totalValue = projects.reduce((acc, p) => acc + p.v, 0);
+  const arrow = (k: string) => (sortKey === k ? (sortDir > 0 ? ' ↑' : ' ↓') : '');
+
   return (
-    <div>
-      <div className="top">
-        <h1>Projects</h1>
-        <label className="search">
-          <Icon name="search" />
+    <div className="prj-page">
+      <div className="crumbs">
+        <span>Workspace</span>
+        <span aria-hidden="true">/</span>
+        <b>Projects</b>
+      </div>
+
+      <div className="page-head">
+        <div className="page-title">
+          <h1>Projects</h1>
+          <p>
+            {projects.length} {projects.length === 1 ? 'project' : 'projects'} · <Money v={totalValue} /> total value
+          </p>
+        </div>
+        <label className="page-search">
+          <Icon name="search" size={15} />
           <input
             ref={searchInputRef}
             id="q"
-            placeholder="Search…"
+            placeholder="Search projects"
+            aria-label="Search projects"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             autoComplete="off"
           />
-          <kbd>/</kbd>
         </label>
-        <button
-          className="btn pri"
-          id="add"
-          onClick={() => handleStartNewProject()}
-        >
-          <Icon name="plus" />
+        <button className="page-btn" id="add" onClick={() => handleStartNewProject()}>
+          <Icon name="plus" size={15} />
           New project
         </button>
       </div>
 
-      {/* Filter chips */}
-      <div style={{ margin: '0 0 14px' }}>
-        <div className="seg seg-auto" role="group">
-          {(['All', 'Pending', 'Progress', 'Finished', 'Cancelled'] as const).map(
-            (s) => {
-              const count =
-                s === 'All'
-                  ? projects.length
-                  : projects.filter(
-                    (p) => getProjectStatus(p) === s
-                  ).length;
-              const label =
-                s === 'Progress'
-                  ? 'In progress'
-                  : s;
-              return (
-                <button
-                  key={s}
-                  className={filterStatus === s ? 'on' : ''}
-                  onClick={() => setFilterStatus(s)}
-                >
-                  {label} · {count}
-                </button>
-              );
-            }
-          )}
-        </div>
+      <div className="seg" role="tablist" aria-label="Filter projects">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={tab.id === t.id}
+            className={tab.id === t.id ? 'on' : ''}
+            onClick={() => setFilterStatus(t.id)}
+          >
+            {t.label}
+            <em>{projects.filter((p) => t.views.includes(getView(p))).length}</em>
+          </button>
+        ))}
       </div>
 
       {/* Table */}
@@ -123,58 +166,41 @@ export function ProjectsView() {
         <div className="empty">No projects found</div>
       ) : (
         <>
-          <div className="tw tw-desktop-only">
-            <table>
+          <div className="pay-table-wrap">
+            <table className="pay-table">
               <thead>
                 <tr>
-                  <th className="s" onClick={() => toggleSort('name')}>
-                    Project {sortKey === 'name' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
-                  </th>
-                  <th>Client</th>
+                  <th className="s" onClick={() => toggleSort('name')}>Project{arrow('name')}</th>
                   <th>Status</th>
-                  <th className="s" onClick={() => toggleSort('due')}>
-                    Due {sortKey === 'due' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
-                  </th>
-                  <th className="s" onClick={() => toggleSort('pg')}>
-                    Received {sortKey === 'pg' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
-                  </th>
-                  <th className="s" onClick={() => toggleSort('v')}>
-                    Value {sortKey === 'v' ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}
-                  </th>
+                  <th className="s prj-paid" onClick={() => toggleSort('pg')}>Paid / outstanding{arrow('pg')}</th>
+                  <th className="s" onClick={() => toggleSort('due')}>Next payment{arrow('due')}</th>
+                  <th className="s r" onClick={() => toggleSort('v')}>Value{arrow('v')}</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((p) => {
+                {pageItems.map((p) => {
                   const c = getClient(p.c);
-                  const st = getProjectStatus(p);
-                  const pctVal = getProjectPct(p);
+                  const view = getView(p);
+                  const next = nextPayment(p, view);
                   return (
-                    <tr
-                      key={p.id}
-                      onClick={() => setActiveProjectDrawerId(p.id)}
-                    >
-                      <td className="wrap">
-                        <span className="proj-name">
+                    <tr key={p.id} onClick={() => setActiveProjectDrawerId(p.id)}>
+                      <td>
+                        <div className="pay-inst-name proj-name">
                           {p.name}
                           <AddOnChip project={p} />
-                        </span>
-                      </td>
-                      <td className="wrap">
-                        <div className="cell-two">
-                          <span>{c.name}</span>
-                          {c.co && <span className="mut">{c.co}</span>}
+                        </div>
+                        <div className="pay-inst-sub">
+                          {c.name}{c.co ? ` · ${c.co}` : ''}
                         </div>
                       </td>
                       <td>
-                        <span className={`st ${st}`}>
-                          {STATUS_LABELS[st]}
-                        </span>
+                        <span className={`prj-chip is-${view}`}>{VIEW_LABELS[view]}</span>
                       </td>
-                      <td className="mut num">{dt(p.due)}</td>
                       <td>
-                        <ProgressBar project={p} status={st} pct={pctVal} />
+                        <ProgressBar project={p} status={getProjectStatus(p)} pct={getProjectPct(p)} />
                       </td>
-                      <td><Money v={p.v} /></td>
+                      <td className={`pay-date${next.late ? ' is-late' : ''}`}>{next.text}</td>
+                      <td className="r pay-amt"><Money v={p.v} /></td>
                     </tr>
                   );
                 })}
@@ -184,11 +210,12 @@ export function ProjectsView() {
 
           {/* Mobile Card List (<= 768px) */}
           <div className="mob-card-list">
-            {filtered.map((p) => {
+            {pageItems.map((p) => {
               const c = getClient(p.c);
               const st = getProjectStatus(p);
               const pctVal = getProjectPct(p);
-              const overdue = isOverdue(p.due, st === 'Finished');
+              const view = getView(p);
+              const next = nextPayment(p, view);
               const isOpen = openId === p.id;
               return (
                 <div
@@ -217,9 +244,7 @@ export function ProjectsView() {
                         {c.name}{c.co ? ` · ${c.co}` : ''}
                       </div>
                     </div>
-                    <span className={`st ${st}`} style={{ fontSize: '11.5px', flexShrink: 0 }}>
-                      {STATUS_LABELS[st]}
-                    </span>
+                    <span className={`prj-chip is-${view}`}>{VIEW_LABELS[view]}</span>
                     <span className="client-chev" aria-hidden>
                       <Icon name="chevron" size={16} />
                     </span>
@@ -230,8 +255,8 @@ export function ProjectsView() {
                       <ProgressBar project={p} status={st} pct={pctVal} compact />
 
                       <div className="mob-item-bottom">
-                        <span className={overdue ? 'od' : 'mut'} style={{ fontSize: '12px' }}>
-                          {overdue ? 'Overdue: ' : 'Due: '}{dt(p.due)}
+                        <span className={`pay-date${next.late ? ' is-late' : ''}`} style={{ fontSize: '12px' }}>
+                          {next.text}
                         </span>
                         <span className="mob-item-val"><Money v={p.v} /></span>
                       </div>
@@ -250,6 +275,8 @@ export function ProjectsView() {
               );
             })}
           </div>
+
+          <Pager {...pager} />
         </>
       )}
     </div>

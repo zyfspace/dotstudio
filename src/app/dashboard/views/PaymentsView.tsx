@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { DatePicker } from '@/components/DatePicker';
+import { Pager, usePagination } from '@/components/Pager';
 import { rp, today } from '@/lib/formatters';
 import type { PlanItem, Project } from '@/types';
 
@@ -82,6 +83,8 @@ export function PaymentsView() {
       if (a.kind === 'paid') return a.i.pd < b.i.pd ? 1 : -1;
       return (a.i.due || '9') < (b.i.due || '9') ? -1 : 1;
     });
+
+  const { pageItems, ...pager } = usePagination(visible, `${q}|${tab}`);
 
   const counts: Record<Tab, number> = {
     all: rows.length,
@@ -312,7 +315,7 @@ export function PaymentsView() {
                 </tr>
               </thead>
               <tbody>
-                {visible.map((r) => (
+                {pageItems.map((r) => (
                   <tr key={`${r.p.id}-${r.i.id}`} onClick={() => setActiveProjectDrawerId(r.p.id)}>
                     <td>
                       <div className="pay-inst">
@@ -335,7 +338,7 @@ export function PaymentsView() {
           </div>
 
           <div className="pay-cards">
-            {visible.map((r) => (
+            {pageItems.map((r) => (
               <div
                 key={`${r.p.id}-${r.i.id}`}
                 className="pay-card"
@@ -358,6 +361,8 @@ export function PaymentsView() {
               </div>
             ))}
           </div>
+
+          <Pager {...pager} />
         </>
       )}
 
