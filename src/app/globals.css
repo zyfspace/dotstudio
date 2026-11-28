@@ -7419,3 +7419,86 @@ aside.sb .sb-theme-mini {
   background: color-mix(in srgb, var(--fg) 7%, transparent);
   color: var(--fg);
 }
+
+/* Pagination */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pager-btns {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pager .btn {
+  min-width: 28px;
+  justify-content: center;
+}
+
+.pager .btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  background: transparent;
+}
+
+/* Projects */
+.app .pay-table th.s {
+  cursor: pointer;
+  user-select: none;
+}
+
+.app .pay-table th.s:hover {
+  color: var(--fg);
+}
+
+.prj-paid {
+  width: 200px;
+}
+
+.prj-page .prog {
+  height: 6px;
+}
+
+.prj-page .prog:not(.prog-cancel) {
+  background: var(--ac-soft);
+}
+
+.prj-chip {
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 2px 9px;
+  border: 1px solid transparent;
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.prj-chip.is-Progress {
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+}
+
+.prj-chip.is-Overdue {
+  border-color: var(--ac);
+  color: var(--ac);
+}
+
+.prj-chip.is-Finished {
+  background: var(--ac);
+  color: #0a0a0a;
+}
+
+.prj-chip.is-Pending,
+.prj-chip.is-Cancelled {
+  border-color: var(--line);
+  color: var(--mut);
+}
