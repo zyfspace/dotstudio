@@ -91,7 +91,8 @@ export function InvoicesView() {
   });
 
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const selected = filtered.find((x) => x.key === selectedKey) || filtered[0] || null;
+  // Nothing is previewed until the user picks an invoice
+  const selected = filtered.find((x) => x.key === selectedKey) || null;
 
   const [openGroups, setOpenGroups] = useState<Set<string> | null>(null);
   // First visit: open the group holding the newest invoice
@@ -105,7 +106,7 @@ export function InvoicesView() {
   const isOpen = (key: string) => (q ? true : opened.has(key));
 
   const pick = (x: (typeof filtered)[number]) => {
-    if (wide) setSelectedKey(x.key);
+    if (wide) setSelectedKey(selectedKey === x.key ? null : x.key);
     else openDoc('inv', x.p.id, x.i.id);
   };
 
@@ -203,6 +204,13 @@ export function InvoicesView() {
             })}
           </div>
 
+          {wide && !selected && (
+            <aside className="inv-preview is-empty" aria-label="Invoice preview">
+              <Icon name="file" size={22} />
+              <p>Select an invoice to preview it here.</p>
+            </aside>
+          )}
+
           {wide && selected && (
             <aside className="inv-preview" aria-label="Invoice preview">
               <div className="inv-preview-head">
@@ -213,6 +221,15 @@ export function InvoicesView() {
                   onClick={() => openDoc('inv', selected.p.id, selected.i.id)}
                 >
                   Open
+                </button>
+                <button
+                  type="button"
+                  className="sb-ib inv-close"
+                  onClick={() => setSelectedKey(null)}
+                  aria-label="Close preview"
+                  title="Close preview"
+                >
+                  <Icon name="x" size={16} />
                 </button>
                 <DocActionButton
                   filename={invoiceFilename(
