@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
 import { setAuthSession } from '@/lib/auth';
+import { navigateFromOverlay } from '@/lib/overlayHistory';
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -46,6 +47,14 @@ export function MobileNav() {
       const mainEl = document.querySelector('.app main') || document.getElementById('main');
       if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const goTo = (href: string) => {
+    navigateFromOverlay(() => {
+      setIsMobileMenuOpen(false);
+      handleNavClick();
+      router.push(href);
+    });
   };
 
   return (
@@ -128,11 +137,7 @@ export function MobileNav() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <button
             type="button"
-            onClick={() => {
-              setIsMobileMenuOpen(false);
-              handleNavClick();
-              router.push('/dashboard/payments');
-            }}
+            onClick={() => goTo('/dashboard/payments')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -154,11 +159,7 @@ export function MobileNav() {
 
           <button
             type="button"
-            onClick={() => {
-              setIsMobileMenuOpen(false);
-              handleNavClick();
-              router.push('/dashboard/quotations');
-            }}
+            onClick={() => goTo('/dashboard/quotations')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -180,11 +181,7 @@ export function MobileNav() {
 
           <button
             type="button"
-            onClick={() => {
-              setIsMobileMenuOpen(false);
-              handleNavClick();
-              router.push('/dashboard/settings');
-            }}
+            onClick={() => goTo('/dashboard/settings')}
             style={{
               display: 'flex',
               alignItems: 'center',
