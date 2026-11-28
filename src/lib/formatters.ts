@@ -131,3 +131,17 @@ export const invoiceFilename = (
     .filter(Boolean)
     .join('-');
 };
+
+// Compact Indonesian amount: 9.200.000 -> "9,2 jt", 1.250.000.000 -> "1,3 M", 750.000 -> "750 rb"
+export const idShort = (n?: number): string => {
+  const val = n || 0;
+  if (val === 0) return '0';
+  const units: [number, string][] = [[1_000_000_000, 'M'], [1_000_000, 'jt'], [1_000, 'rb']];
+  for (const [size, unit] of units) {
+    if (Math.abs(val) >= size) {
+      const v = (val / size).toFixed(1).replace(/\.0$/, '').replace('.', ',');
+      return `${v} ${unit}`;
+    }
+  }
+  return String(val);
+};

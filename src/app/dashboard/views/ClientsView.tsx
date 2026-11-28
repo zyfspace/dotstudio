@@ -1,9 +1,39 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
-import { Money } from '@/components/Money';
+import { idShort } from '@/lib/formatters';
+
+const RING_C = 2 * Math.PI * 15;
+
+const initials = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() || '')
+    .join('');
+
+function PaidRing({ pct }: { pct: number }) {
+  return (
+    <svg className="cl-ring" width="56" height="56" viewBox="0 0 36 36" role="img" aria-label={`${pct}% paid`}>
+      <circle cx="18" cy="18" r="15" className="cl-ring-track" />
+      {pct > 0 && (
+        <circle
+          cx="18"
+          cy="18"
+          r="15"
+          transform="rotate(-90 18 18)"
+          className="cl-ring-bar"
+          strokeDasharray={`${((RING_C * pct) / 100).toFixed(1)} ${RING_C.toFixed(1)}`}
+        />
+      )}
+    </svg>
+  );
+}
+
+const EMPTY_FORM = { name: '', co: '', mail: '', tel: '' };
 
 export function ClientsView() {
   const {
@@ -14,135 +44,209 @@ export function ClientsView() {
     searchInputRef,
     getProjectPaidAmount,
     setActiveClientDrawerId,
-    handleStartNewProject,
+    ensureClient,
   } = useDashboard();
 
-  const q = searchQuery.toLowerCase();
-  const filtered = clients.filter(
-    (c) => (c.name + c.co + c.mail).toLowerCase().indexOf(q) > -1
-  );
-  const rows = filtered.map((c) => {
+  const [isAdding, setIsAdding] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [formError, setFormError] = useState('');
+
+  // Open the add form when arriving from the sidebar "New client" action
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('add') === '1') {
+      setIsAdding(true);
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
+  const closeAdd = () => {
+    setIsAdding(false);
+    setForm(EMPTY_FORM);
+    setFormError('');
+  };
+
+  const submitAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = form.name.trim();
+    if (!name) {
+      setFormError('Client name is required.');
+      return;
+    }
+    if (clients.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+      setFormError('A client with this name already exists.');
+      return;
+    }
+    ensureClient({ cn: name, co: form.co.trim(), mail: form.mail.trim(), tel: form.tel.trim() });
+    closeAdd();
+  };
+
+  const allRows = clients.map((c) => {
     const ps = projects.filter((p) => p.c === c.id);
     const total = ps.reduce((acc, p) => acc + p.v, 0);
     const paid = ps.reduce((acc, p) => acc + getProjectPaidAmount(p), 0);
-    const progress = total ? Math.round((paid / total) * 100) : 0;
-    return { c, count: ps.length, paid, total, progress };
+    const progress = total ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+    return { c, count: ps.length, paid, outstanding: Math.max(0, total - paid), total, progress };
   });
+  const lifetimePaid = allRows.reduce((acc, r) => acc + r.paid, 0);
+
+  const q = searchQuery.toLowerCase();
+  const rows = allRows.filter(({ c }) => (c.name + c.co + c.mail).toLowerCase().includes(q));
 
   return (
-    <div>
-      <div className="top">
-        <h1>Clients</h1>
-        <label className="search">
-          <Icon name="search" />
+    <div className="cl-page">
+      <div className="crumbs">
+        <span>Workspace</span>
+        <span aria-hidden="true">/</span>
+        <b>Clients</b>
+      </div>
+
+      <div className="cl-head">
+        <div className="cl-title">
+          <h1>Clients</h1>
+          <p>
+            {clients.length} {clients.length === 1 ? 'client' : 'clients'} ·{' '}
+            <span className="pv">Rp {idShort(lifetimePaid)}</span> paid lifetime
+          </p>
+        </div>
+        <label className="cl-search">
+          <Icon name="search" size={15} />
           <input
             ref={searchInputRef}
             id="q"
-            placeholder="Search…"
+            placeholder="Search clients"
+            aria-label="Search clients"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             autoComplete="off"
           />
-          <kbd>/</kbd>
         </label>
-        <button
-          className="btn pri"
-          id="add"
-          onClick={() => handleStartNewProject()}
-        >
-          <Icon name="plus" />
-          New project
+        <button className="cl-add" id="add" onClick={() => setIsAdding(true)}>
+          <Icon name="plus" size={15} />
+          Add client
         </button>
       </div>
 
-      {!filtered.length ? (
-        <div className="empty">No clients found</div>
+      {!rows.length ? (
+        <div className="empty">{clients.length ? 'No clients match your search' : 'No clients yet'}</div>
       ) : (
-        <>
-          <div className="tw tw-desktop-only">
-            <table className="clients-table">
-              <thead>
-                <tr>
-                  <th>Client</th>
-                  <th>Contact</th>
-                  <th>Projects</th>
-                  <th>Paid progress</th>
-                  <th>Paid</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(({ c, count, paid, total, progress }) => (
-                  <tr
-                    key={c.id}
-                    tabIndex={0}
-                    onClick={() => setActiveClientDrawerId(c.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') setActiveClientDrawerId(c.id);
-                    }}
-                  >
-                    <td className="wrap">
-                      <b className="client-name">{c.name}</b>
-                      {c.co && <div className="mut client-co">{c.co}</div>}
-                    </td>
-                    <td className="wrap mut client-contact">
-                      {c.mail && <div>{c.mail}</div>}
-                      {c.tel && <div>{c.tel}</div>}
-                      {!c.mail && !c.tel && '-'}
-                    </td>
-                    <td className="num">{count}</td>
-                    <td>
-                      <div className="pg client-pg">
-                        <div className="prog">
-                          <i style={{ width: `${progress}%` }} />
-                        </div>
-                        <span className="mut client-pct">{progress}%</span>
-                      </div>
-                    </td>
-                    <td><Money v={paid} /></td>
-                    <td>
-                      <b><Money v={total} /></b>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="cl-grid">
+          {rows.map(({ c, count, paid, outstanding, progress }) => (
+            <button
+              key={c.id}
+              type="button"
+              className="cl-card"
+              onClick={() => setActiveClientDrawerId(c.id)}
+            >
+              <div className="cl-card-top">
+                <span className="cl-ini">{initials(c.name)}</span>
+                <span className="cl-who">
+                  <span className="cl-name">{c.name}</span>
+                  {c.co && <span className="cl-co">{c.co}</span>}
+                </span>
+                <Icon name="upright" size={16} className="cl-go" />
+              </div>
 
-          {/* Mobile Clients Card List (<= 768px) */}
-          <div className="mob-card-list">
-            {rows.map(({ c, count, paid, total, progress }) => (
-              <div
-                key={c.id}
-                className="mob-item-card"
-                onClick={() => setActiveClientDrawerId(c.id)}
-              >
-                <div className="mob-item-top">
-                  <div style={{ minWidth: 0 }}>
-                    <div className="mob-item-title">{c.name}</div>
-                    <div className="mob-item-sub">
-                      {[c.co, `${count} ${count === 1 ? 'project' : 'projects'}`]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </div>
+              <div className="cl-card-mid">
+                <PaidRing pct={progress} />
+                <div className="cl-stats">
+                  <div>
+                    Paid
+                    <b className="pv">{idShort(paid)}</b>
                   </div>
-                  <span className="mob-item-val"><Money v={total} /></span>
-                </div>
-                <div className="mob-item-bottom">
-                  <div className="pg client-pg" style={{ flex: 1 }}>
-                    <div className="prog">
-                      <i style={{ width: `${progress}%` }} />
-                    </div>
-                    <span className="mut client-pct">{progress}%</span>
+                  <div>
+                    Outstanding
+                    <b className="pv">{idShort(outstanding)}</b>
                   </div>
-                  <span className="mut" style={{ fontSize: '11.5px' }}>
-                    Paid <Money v={paid} />
-                  </span>
+                  <div className="cl-meta">
+                    {count} {count === 1 ? 'project' : 'projects'} · {progress}% paid
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </>
+
+              <div className="cl-card-foot">
+                <span>{c.mail || 'No email'}</span>
+                <span>{c.tel || 'No phone'}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {isAdding && (
+        <div
+          className="pin-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeAdd();
+          }}
+        >
+          <form
+            className="pin-modal-card cl-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cl-add-title"
+            onSubmit={submitAdd}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') closeAdd();
+            }}
+          >
+            <div>
+              <h3 id="cl-add-title">Add client</h3>
+              <p>Save their contact now and add projects whenever you are ready.</p>
+            </div>
+            <div className="f">
+              <label htmlFor="ncn">Name</label>
+              <input
+                id="ncn"
+                type="text"
+                autoFocus
+                value={form.name}
+                onChange={(e) => {
+                  setForm({ ...form, name: e.target.value });
+                  setFormError('');
+                }}
+              />
+            </div>
+            <div className="f">
+              <label htmlFor="ncc">Company</label>
+              <input
+                id="ncc"
+                type="text"
+                value={form.co}
+                onChange={(e) => setForm({ ...form, co: e.target.value })}
+              />
+            </div>
+            <div className="two">
+              <div className="f">
+                <label htmlFor="ncm">Email</label>
+                <input
+                  id="ncm"
+                  type="email"
+                  value={form.mail}
+                  onChange={(e) => setForm({ ...form, mail: e.target.value })}
+                />
+              </div>
+              <div className="f">
+                <label htmlFor="nct">Phone</label>
+                <input
+                  id="nct"
+                  type="tel"
+                  value={form.tel}
+                  onChange={(e) => setForm({ ...form, tel: e.target.value })}
+                />
+              </div>
+            </div>
+            {formError && <div className="cl-err">{formError}</div>}
+            <div className="cl-modal-actions">
+              <button type="button" className="btn" onClick={closeAdd}>
+                Cancel
+              </button>
+              <button type="submit" className="btn pri">
+                Add client
+              </button>
+            </div>
+          </form>
+        </div>
       )}
     </div>
   );

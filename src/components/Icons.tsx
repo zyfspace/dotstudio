@@ -308,6 +308,12 @@ const paths: Record<string, React.ReactNode> = {
       <path d="M15 19m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
     </>
   ),
+  upright: (
+    <>
+      <path d="M17 7l-10 10" />
+      <path d="M8 7h9v9" />
+    </>
+  ),
   external: (
     <>
       <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />
