@@ -7389,3 +7389,33 @@ aside.sb .sb-theme-mini {
   font-size: 12.5px;
   border-radius: 8px;
 }
+
+.inv-preview.is-empty {
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 420px;
+  border-style: dashed;
+  background: transparent;
+  color: var(--mut);
+  font-size: 13px;
+  text-align: center;
+}
+
+.inv-close {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--mut);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  order: 3;
+}
+
+.inv-close:hover {
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+  color: var(--fg);
+}
