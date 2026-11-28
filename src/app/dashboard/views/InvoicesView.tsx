@@ -1,285 +1,237 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useDashboard } from '../DashboardContext';
 import { Icon } from '@/components/Icons';
-import { dt, isOverdue } from '@/lib/formatters';
-import { Money } from '@/components/Money';
+import { DocActionButton } from '@/components/DocActionButton';
+import { invoiceFilename, rp, today } from '@/lib/formatters';
+import { DocView } from './DocView';
 
-// Left column of the Invoices & Quotations page.
-export function InvoicesPanel() {
+type Status = 'Paid' | 'Overdue' | 'Outstanding' | 'Cancelled';
+
+const shortDate = (s?: string) => {
+  if (!s) return '';
+  const d = new Date(s + 'T00:00');
+  if (isNaN(d.getTime())) return '';
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', ...(sameYear ? {} : { year: 'numeric' }) });
+};
+
+const initials = (s: string) =>
+  s
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() || '')
+    .join('') || '—';
+
+// Wide enough to show the list and the A4 preview side by side
+const useWide = () => {
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1100px)');
+    const on = () => setWide(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return wide;
+};
+
+export function InvoicesView() {
   const {
     allPayments,
     searchQuery,
+    setSearchQuery,
+    searchInputRef,
     getClient,
     formatInvoiceNo,
     openDoc,
   } = useDashboard();
 
-  // Groups start closed and only one is open at a time.
-  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const wide = useWide();
+  const now = today();
+
+  const invoices = allPayments
+    .filter((x) => x.i.inv)
+    .map((x) => {
+      const c = getClient(x.p.c);
+      const status: Status = x.i.paid
+        ? 'Paid'
+        : x.i.cancelled
+          ? 'Cancelled'
+          : x.i.due && x.i.due < now
+            ? 'Overdue'
+            : 'Outstanding';
+      return {
+        ...x,
+        c,
+        no: formatInvoiceNo(x.i.inv!.no, x.i.inv!.date),
+        key: `${x.p.id}-${x.i.id}`,
+        status,
+      };
+    })
+    .sort((a, b) => (a.i.inv!.date < b.i.inv!.date ? 1 : -1));
 
   const q = searchQuery.toLowerCase();
-  const invoicesList = allPayments
-    .filter((x) => {
-      if (!x.i.inv) return false;
-      const c = getClient(x.p.c);
-      const invFormattedNo = formatInvoiceNo(x.i.inv.no, x.i.inv.date);
-      return (
-        (invFormattedNo + x.p.name + c.name + (c.co || ''))
-          .toLowerCase()
-          .indexOf(q) > -1
-      );
-    })
-    .sort((a, b) =>
-      a.i.inv!.date < b.i.inv!.date ? 1 : -1
-    );
+  const filtered = invoices.filter((x) =>
+    (x.no + x.p.name + x.c.name + (x.c.co || '') + x.i.l).toLowerCase().includes(q)
+  );
 
-  // Group by Company / Business Name
-  const grouped: { company: string; items: typeof invoicesList }[] = [];
-  const companyMap = new Map<string, typeof invoicesList>();
-  // Client names and company shown in each group header.
-  const groupLabels = new Map<string, { names: Set<string>; companyName: string }>();
-
-  invoicesList.forEach((item) => {
-    const c = getClient(item.p.c);
-    const comp = (c.co && c.co.trim()) ? c.co.trim() : (c.name && c.name.trim() ? `${c.name} (Individual)` : 'General / Unassigned');
-    if (!companyMap.has(comp)) {
-      companyMap.set(comp, []);
-      groupLabels.set(comp, { names: new Set(), companyName: (c.co || '').trim() });
+  // Group by company, falling back to the client name for individuals
+  const groups: { key: string; title: string; sub: string; items: typeof filtered }[] = [];
+  filtered.forEach((x) => {
+    const key = x.c.co?.trim() || x.c.name?.trim() || 'Unassigned';
+    let g = groups.find((y) => y.key === key);
+    if (!g) {
+      g = { key, title: key, sub: x.c.co?.trim() ? x.c.name : 'Individual', items: [] };
+      groups.push(g);
     }
-    companyMap.get(comp)!.push(item);
-    if (c.name && c.name.trim()) groupLabels.get(comp)!.names.add(c.name.trim());
+    g.items.push(x);
   });
 
-  companyMap.forEach((items, company) => {
-    grouped.push({ company, items });
-  });
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const selected = filtered.find((x) => x.key === selectedKey) || filtered[0] || null;
+
+  const [openGroups, setOpenGroups] = useState<Set<string> | null>(null);
+  // First visit: open the group holding the newest invoice
+  const opened = openGroups ?? new Set(groups[0] ? [groups[0].key] : []);
+  const toggleGroup = (key: string) => {
+    const next = new Set(opened);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setOpenGroups(next);
+  };
+  const isOpen = (key: string) => (q ? true : opened.has(key));
+
+  const pick = (x: (typeof filtered)[number]) => {
+    if (wide) setSelectedKey(x.key);
+    else openDoc('inv', x.p.id, x.i.id);
+  };
 
   return (
-    <section className="doc-col" aria-labelledby="doc-col-inv">
-      <div className="doc-col-head">
-        <h2 id="doc-col-inv">Invoices</h2>
-        <span>{invoicesList.length}</span>
+    <div className="inv-page">
+      <div className="crumbs">
+        <span>Money</span>
+        <span aria-hidden="true">/</span>
+        <b>Invoices</b>
       </div>
 
-      {!invoicesList.length ? (
-        <div className="empty">{q ? 'No matching invoices.' : 'No invoices yet.'}</div>
+      <div className="page-head">
+        <div className="page-title">
+          <h1>Invoices</h1>
+          <p>
+            {invoices.length} {invoices.length === 1 ? 'invoice' : 'invoices'}, grouped by client.
+            {wide && invoices.length > 0 && ' Select one to preview.'}
+          </p>
+        </div>
+        <label className="page-search">
+          <Icon name="search" size={15} />
+          <input
+            ref={searchInputRef}
+            id="q"
+            placeholder="Search by no. or client"
+            aria-label="Search invoices"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            autoComplete="off"
+          />
+        </label>
+      </div>
+
+      {!filtered.length ? (
+        <div className="empty">
+          {q ? 'No matching invoices.' : 'No invoices yet. Create one from an installment in a project.'}
+        </div>
       ) : (
-        <div>
-          {grouped.map(({ company, items }) => {
-            const isOpen = openGroup === company;
-            const toggle = () => setOpenGroup(isOpen ? null : company);
-            const totalGroupAmount = items.reduce((acc, curr) => acc + curr.i.a, 0);
-
-            return (
-              <div key={company} className="accordion-group">
-                <div
-                  className="accordion-header"
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={isOpen}
-                  onClick={toggle}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      toggle();
-                    }
-                  }}
-                >
-                  <div className="accordion-title-box">
-                    <div className="accordion-company-icon">
-                      <Icon name="company" size={18} />
-                    </div>
-                    <div className="accordion-name-stack">
-                      <span className="accordion-client-name">
-                        {[...(groupLabels.get(company)?.names || [])].join(', ') || 'Unassigned'}
+        <div className="inv-split">
+          <div className="inv-list">
+            {groups.map((g) => {
+              const total = g.items.reduce((a, x) => a + x.i.a, 0);
+              const paid = g.items.filter((x) => x.status === 'Paid').reduce((a, x) => a + x.i.a, 0);
+              const pct = total ? Math.round((paid / total) * 100) : 0;
+              const open = isOpen(g.key);
+              return (
+                <div className="inv-group" key={g.key}>
+                  <button
+                    type="button"
+                    className="inv-group-head"
+                    aria-expanded={open}
+                    onClick={() => toggleGroup(g.key)}
+                  >
+                    <span className="inv-ini">{initials(g.title)}</span>
+                    <span className="inv-group-who">
+                      <span className="inv-group-title">{g.title}</span>
+                      <span className="inv-group-sub">
+                        {g.sub} · {g.items.length} {g.items.length === 1 ? 'invoice' : 'invoices'}
                       </span>
-                      <span className="accordion-company-sub">
-                        {groupLabels.get(company)?.companyName || 'Individual'}
-                        <span className="accordion-count-inline">
-                          {' · '}{items.length} {items.length === 1 ? 'invoice' : 'invoices'}
-                        </span>
-                      </span>
-                    </div>
-                    <span className="accordion-count-badge">
-                      {items.length} {items.length === 1 ? 'invoice' : 'invoices'}
                     </span>
-                  </div>
-                  <div className="accordion-meta-box">
-                    <span className="accordion-total-amount">
-                      <Money v={totalGroupAmount} />
+                    <span className="inv-group-bar" title={`${pct}% paid`} aria-label={`${pct}% paid`}>
+                      <span style={{ flex: pct }} className="is-paid" />
+                      <span style={{ flex: 100 - pct }} className="is-rest" />
                     </span>
-                    <span className={`accordion-chevron ${isOpen ? 'expanded' : ''}`}>
-                      <Icon name="chevron" size={15} />
-                    </span>
-                  </div>
-                </div>
+                    <span className="inv-group-total pv">{rp(total)}</span>
+                    <Icon name="chevron" size={16} className={`inv-chev${open ? ' is-open' : ''}`} />
+                  </button>
 
-                <div className={`accordion-collapse ${isOpen ? 'open' : ''}`} inert={!isOpen}>
-                  <div className="accordion-collapse-inner">
-                  <div className="accordion-body">
-                    <div className="tw-desktop-only">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>No.</th>
-                            <th>Date</th>
-                            <th>Project</th>
-                            <th>Status</th>
-                            <th>Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {items.map((x) => {
-                            const overdue = isOverdue(x.i.due, x.i.paid || x.i.cancelled);
-                            return (
-                              <tr
-                                key={x.i.id}
-                                onClick={() =>
-                                  openDoc('inv', x.p.id, x.i.id)
-                                }
-                              >
-                                <td className="num">{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</td>
-                                <td className="mut num">{dt(x.i.inv!.date)}</td>
-                                <td className="wrap">
-                                  <div className="cell-two">
-                                    <span>{x.p.name}</span>
-                                    {x.i.l && <span className="mut">{x.i.l}</span>}
-                                  </div>
-                                </td>
-                                <td>
-                                  {x.i.paid ? (
-                                    <span
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        color: '#10b981',
-                                        fontSize: '13px',
-                                        fontWeight: 500,
-                                      }}
-                                    >
-                                      <span
-                                        style={{
-                                          width: '15px',
-                                          height: '15px',
-                                          borderRadius: '50%',
-                                          background: 'rgba(16, 185, 129, 0.15)',
-                                          border: '1px solid rgba(16, 185, 129, 0.4)',
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          flexShrink: 0,
-                                        }}
-                                      >
-                                        <svg
-                                          width="9"
-                                          height="9"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="3"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                        >
-                                          <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                      </span>
-                                      Paid
-                                    </span>
-                                  ) : x.i.cancelled ? (
-                                    <span style={{ color: 'var(--mut)', fontSize: '13px' }}>Cancelled</span>
-                                  ) : overdue ? (
-                                    <span
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        color: '#ef4444',
-                                        fontSize: '13px',
-                                      }}
-                                    >
-                                      <span
-                                        style={{
-                                          width: '7px',
-                                          height: '7px',
-                                          borderRadius: '50%',
-                                          background: '#ef4444',
-                                          display: 'inline-block',
-                                          flexShrink: 0,
-                                        }}
-                                      />
-                                      Overdue
-                                    </span>
-                                  ) : (
-                                    <span
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        color: 'var(--mut)',
-                                        fontSize: '13px',
-                                      }}
-                                    >
-                                      <span
-                                        style={{
-                                          width: '7px',
-                                          height: '7px',
-                                          borderRadius: '50%',
-                                          border: '1.5px solid var(--mut)',
-                                          background: 'transparent',
-                                          display: 'inline-block',
-                                          flexShrink: 0,
-                                        }}
-                                      />
-                                      Unpaid
-                                    </span>
-                                  )}
-                                </td>
-                                <td><Money v={x.i.a} /></td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Mobile Invoices Card List */}
-                    <div className="mob-card-list">
-                      {items.map((x) => {
-                        const overdue = isOverdue(x.i.due, x.i.paid || x.i.cancelled);
+                  {open && (
+                    <div className="inv-rows">
+                      {g.items.map((x) => {
+                        const on = wide && selected?.key === x.key;
                         return (
-                          <div
-                            key={x.i.id}
-                            className="mob-item-card"
-                            onClick={() => openDoc('inv', x.p.id, x.i.id)}
+                          <button
+                            type="button"
+                            key={x.key}
+                            className={`inv-row${on ? ' is-on' : ''}`}
+                            aria-current={on ? 'true' : undefined}
+                            onClick={() => pick(x)}
                           >
-                            <div className="mob-item-top">
-                              <div>
-                                <div className="mob-item-title mob-doc-no">{formatInvoiceNo(x.i.inv!.no, x.i.inv!.date)}</div>
-                                <div className="mob-item-sub">{x.p.name} · {x.i.l}</div>
-                              </div>
-                              <span style={{ fontSize: '12px', fontWeight: 500, color: x.i.paid ? '#10b981' : overdue ? '#ef4444' : 'var(--mut)' }}>
-                                {x.i.paid ? 'Paid' : x.i.cancelled ? 'Cancelled' : overdue ? 'Overdue' : 'Unpaid'}
-                              </span>
-                            </div>
-                            <div className="mob-item-bottom">
-                              <span className="mut mob-doc-date">{dt(x.i.inv!.date)}</span>
-                              <span className="mob-item-val"><Money v={x.i.a} /></span>
-                            </div>
-                          </div>
+                            <span className="inv-no">{x.no}</span>
+                            <span className="inv-label">
+                              {x.i.l}
+                              <span className="inv-sub"> · {x.p.name} · {shortDate(x.i.inv!.date)}</span>
+                            </span>
+                            <span className={`inv-chip is-${x.status.toLowerCase()}`}>{x.status}</span>
+                            <span className="inv-amt pv">{rp(x.i.a)}</span>
+                          </button>
                         );
                       })}
                     </div>
-                  </div>
-                  </div>
+                  )}
                 </div>
+              );
+            })}
+          </div>
+
+          {wide && selected && (
+            <aside className="inv-preview" aria-label="Invoice preview">
+              <div className="inv-preview-head">
+                <span className="inv-no">{selected.no}</span>
+                <button
+                  type="button"
+                  className="pay-act"
+                  onClick={() => openDoc('inv', selected.p.id, selected.i.id)}
+                >
+                  Open
+                </button>
+                <DocActionButton
+                  filename={invoiceFilename(
+                    selected.c.co || selected.c.name || '',
+                    selected.no,
+                    selected.p.plan.map((x) => x.l),
+                    selected.p.plan.findIndex((x) => x.id === selected.i.id)
+                  )}
+                />
               </div>
-            );
-          })}
+              <div className="inv-preview-body">
+                <Suspense fallback={null}>
+                  <DocView key={selected.key} doc={{ t: 'inv', a: selected.p.id, b: selected.i.id }} embedded />
+                </Suspense>
+              </div>
+            </aside>
+          )}
         </div>
       )}
-    </section>
+    </div>
   );
 }

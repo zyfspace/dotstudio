@@ -6,7 +6,7 @@ import { Icon } from '@/components/Icons';
 import { dt, isRecurringBilling } from '@/lib/formatters';
 import { Money } from '@/components/Money';
 
-// Right column of the Invoices & Quotations page.
+// Grouped quotation list used by the Quotations page.
 export function QuotationsPanel() {
   const {
     quotes,
@@ -328,5 +328,47 @@ export function QuotationsPanel() {
         </div>
       )}
     </section>
+  );
+}
+
+export function QuotationsView() {
+  const { quotes, searchQuery, setSearchQuery, searchInputRef, handleStartNewQuote } = useDashboard();
+  const open = quotes.filter((x) => x.s !== 'Accepted').length;
+
+  return (
+    <div className="quo-page">
+      <div className="crumbs">
+        <span>Money</span>
+        <span aria-hidden="true">/</span>
+        <b>Quotations</b>
+      </div>
+
+      <div className="page-head">
+        <div className="page-title">
+          <h1>Quotations</h1>
+          <p>
+            {quotes.length} {quotes.length === 1 ? 'quotation' : 'quotations'} · {open} still open
+          </p>
+        </div>
+        <label className="page-search">
+          <Icon name="search" size={15} />
+          <input
+            ref={searchInputRef}
+            id="q"
+            placeholder="Search by no. or client"
+            aria-label="Search quotations"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            autoComplete="off"
+          />
+        </label>
+        <button className="page-btn" id="add" onClick={() => handleStartNewQuote()}>
+          <Icon name="plus" size={15} />
+          New quotation
+        </button>
+      </div>
+
+      <QuotationsPanel />
+    </div>
   );
 }

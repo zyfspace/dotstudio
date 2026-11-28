@@ -9,6 +9,7 @@ import { DocActionButton } from '@/components/DocActionButton';
 import { PaidStamp } from '@/components/PaidStamp';
 import { dt, isRecurringBilling, getBillingTypeDocLabel, invoiceFilename } from '@/lib/formatters';
 import { useA4Fit } from '@/lib/useA4Fit';
+import type { DocViewProps } from './DocView';
 
 /**
  * English version of DocView (invoice + quotation), shown when the project or
@@ -29,7 +30,7 @@ const billingLabelEn = (type?: string) =>
 
 const termEn = (t: string) => t.replace(/^Syarat pembayaran:/i, 'Payment terms:');
 
-export function DocViewEn() {
+export function DocViewEn({ doc = null, embedded = false }: DocViewProps = {}) {
   const page = useA4Fit();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,13 +57,13 @@ export function DocViewEn() {
   const bParam = searchParams?.get('b') ? Number(searchParams.get('b')) : undefined;
 
   const currentDoc =
-    docState || (tParam && aParam ? { t: tParam, a: aParam, b: bParam } : null);
+    doc || docState || (tParam && aParam ? { t: tParam, a: aParam, b: bParam } : null);
 
   useEffect(() => {
-    if (!docState && tParam && aParam) {
+    if (!doc && !docState && tParam && aParam) {
       setDocState({ t: tParam, a: aParam, b: bParam });
     }
-  }, [docState, tParam, aParam, bParam, setDocState]);
+  }, [doc, docState, tParam, aParam, bParam, setDocState]);
 
   if (!currentDoc) {
     return (
@@ -112,6 +113,7 @@ export function DocViewEn() {
 
     return (
       <div>
+        {!embedded && (
         <div className="top doc-top noprint">
           <button
             className="ib"
@@ -144,6 +146,7 @@ export function DocViewEn() {
             )}
           />
         </div>
+        )}
 
         <div className="docx-paper docx-a4" ref={page.ref} style={page.style}>
           <div className="docx-body-content">
@@ -380,7 +383,7 @@ export function DocViewEn() {
         <p style={{ color: 'var(--mut)', marginBottom: '20px', fontSize: '14px' }}>
           The requested quotation could not be found or has been removed.
         </p>
-        <button className="btn pri" onClick={() => router.push('/dashboard/invoices')}>
+        <button className="btn pri" onClick={() => router.push('/dashboard/quotations')}>
           Back to Quotations
         </button>
       </div>
@@ -396,11 +399,12 @@ export function DocViewEn() {
 
   return (
     <div>
+      {!embedded && (
       <div className="top doc-top noprint">
         <button
           className="ib"
           id="bk"
-          onClick={() => router.push('/dashboard/invoices')}
+          onClick={() => router.push('/dashboard/quotations')}
           aria-label="Back"
         >
           <Icon name="back" size={18} />
@@ -468,7 +472,7 @@ export function DocViewEn() {
           id="del-quote"
           onClick={() => {
             handleDeleteQuote(q.id);
-            router.push('/dashboard/invoices');
+            router.push('/dashboard/quotations');
           }}
           title="Delete quotation"
           aria-label="Delete quotation"
@@ -477,6 +481,7 @@ export function DocViewEn() {
           <span className="btn-label">Delete</span>
         </button>
       </div>
+      )}
 
       <div className="docx-paper docx-a4" ref={page.ref} style={page.style}>
         <div className="docx-body-content">

@@ -101,15 +101,15 @@ export function ClientsView() {
         <b>Clients</b>
       </div>
 
-      <div className="cl-head">
-        <div className="cl-title">
+      <div className="page-head">
+        <div className="page-title">
           <h1>Clients</h1>
           <p>
             {clients.length} {clients.length === 1 ? 'client' : 'clients'} ·{' '}
             <span className="pv">Rp {idShort(lifetimePaid)}</span> paid lifetime
           </p>
         </div>
-        <label className="cl-search">
+        <label className="page-search">
           <Icon name="search" size={15} />
           <input
             ref={searchInputRef}
@@ -121,7 +121,7 @@ export function ClientsView() {
             autoComplete="off"
           />
         </label>
-        <button className="cl-add" id="add" onClick={() => setIsAdding(true)}>
+        <button className="page-btn" id="add" onClick={() => setIsAdding(true)}>
           <Icon name="plus" size={15} />
           Add client
         </button>
@@ -184,14 +184,14 @@ export function ClientsView() {
             className="pin-modal-card cl-modal"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="cl-add-title"
+            aria-labelledby="page-btn-title"
             onSubmit={submitAdd}
             onKeyDown={(e) => {
               if (e.key === 'Escape') closeAdd();
             }}
           >
             <div>
-              <h3 id="cl-add-title">Add client</h3>
+              <h3 id="page-btn-title">Add client</h3>
               <p>Save their contact now and add projects whenever you are ready.</p>
             </div>
             <div className="f">

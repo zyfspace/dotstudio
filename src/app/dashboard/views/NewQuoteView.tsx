@@ -182,7 +182,7 @@ export function NewQuoteView() {
             if (editingQuoteId) {
               router.push(`/dashboard/doc?t=quo&a=${editingQuoteId}`);
             } else {
-              router.push('/dashboard/invoices');
+              router.push('/dashboard/quotations');
             }
           }}
           aria-label={editingQuoteId ? 'Back to document' : 'Back to quotations'}
